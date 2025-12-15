@@ -1,0 +1,14 @@
+runtime: python311
+entrypoint: gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app
+
+instance_class: F4_1G
+
+env_variables:
+  GOOGLE_API_KEY: "AIzaSyAyIwGe50wCM3MvMDt9pcUWdhyJtn5ytl8"
+  PINECONE_API_KEY: "pcsk_6Tv8WD_KQALaCTjXvJzwp7KDfS5i4g7T94KG3hmasJEm1374CYTZNy1P4mi2z2tZnDEaFo"
+  PINECONE_INDEX_NAME: "htv2025"
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 10
+  target_cpu_utilization: 0.6

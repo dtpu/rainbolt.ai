@@ -487,6 +487,17 @@ export default function LearningPage() {
     console.log('User authenticated:', !!user);
     console.log('Firebase user ID:', firebaseUserId);
     console.log('Auth loading state:', isLoading);
+    
+    if (!user) {
+      alert('Please log in to upload images and create sessions');
+      return;
+    }
+    
+    if (!firebaseUserId) {
+      alert('Authentication is still loading. Please wait a moment and try again.');
+      return;
+    }
+    
     setShowUploadModal(true);
     console.log('Modal should now be open, new state:', true);
   };
@@ -495,11 +506,20 @@ export default function LearningPage() {
     try {
       console.log('=== CREATE SESSION FROM UPLOAD ===');
       console.log('Creating session with title:', title);
+      console.log('User:', user);
       console.log('Firebase User ID:', firebaseUserId);
+      console.log('Is Loading:', isLoading);
+      
+      if (!user) {
+        console.error('Cannot create session: User not authenticated');
+        alert('Please log in to create a session');
+        throw new Error('Please log in to continue');
+      }
       
       if (!firebaseUserId) {
         console.error('Cannot create session: No firebase user ID');
-        throw new Error('Please make sure you are logged in');
+        alert('Authentication is still loading. Please wait a moment and try again.');
+        throw new Error('Please wait for authentication to complete');
       }
       
       const sessionId = await createSession(title);

@@ -1,10 +1,14 @@
-fastapi
-uvicorn[standard]
-pillow
-python-dotenv
-langchain
-langchain_google_genai
-pinecone
-torch
-git+https://github.com/openai/CLIP.git
-python-multipart
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+gunicorn==21.2.0
+python-dotenv==1.0.0
+pinecone-client==3.0.0
+torch==2.1.2
+torchvision==0.16.2
+clip @ git+https://github.com/openai/CLIP.git
+pillow==10.2.0
+langchain==0.1.0
+langchain-google-genai==0.0.6
+python-multipart==0.0.6
+websockets==12.0
+pydantic==2.5.3
