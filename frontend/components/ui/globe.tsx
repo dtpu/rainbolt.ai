@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import getStarfield from "../../utils/getStarfield";
 import { latLongToVector3 } from "../../utils/coordinates";
 
@@ -111,8 +111,8 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
 
     const textureLoader = new THREE.TextureLoader();
     const starSprite = textureLoader.load("/circle.png");
-    const otherMap = textureLoader.load("/04_rainbow1k.jpg");
-    const colorMap = textureLoader.load("/00_earthmap1k.jpg");
+    const otherMap = textureLoader.load("/00_earthmap1k.jpg");
+    const colorMap = textureLoader.load("/03_earthlights1k.jpg");
     const elevMap = textureLoader.load("/01_earthbump1k.jpg");
     const alphaMap = textureLoader.load("/02_earthspec1k.jpg");
 
@@ -277,41 +277,40 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     waterlooLabel.className = 'waterloo-label';
     waterlooLabel.style.cssText = `
       position: fixed;
-      background: rgba(0, 0, 0, 0.92);
-      color: white;
-      padding: 28px 32px;
-      border-radius: 16px;
-      font-family: Inter, system-ui, sans-serif;
+      background: rgba(11, 17, 32, 0.9);
+      color: #e6eaf2;
+      padding: 20px;
+      border-radius: 12px;
+      font-family: inherit;
       pointer-events: none;
       display: none;
       z-index: 100;
-      min-width: 450px;
-      max-width: 520px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      width: 320px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(230, 234, 242, 0.1);
       backdrop-filter: blur(10px);
     `;
     waterlooLabel.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-        <div style="width: 56px; height: 56px; background: rgba(59, 130, 246, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgb(59, 130, 246)" stroke-width="2">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; background: rgba(232, 180, 79, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8b44f" stroke-width="2">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
         </div>
         <div>
-          <div style="font-size: 26px; font-weight: 700; margin-bottom: 4px;">Waterloo, Canada</div>
-          <div style="font-size: 14px; color: rgba(255, 255, 255, 0.6);">43.4643°N • -80.5204°W</div>
+          <div style="font-size: 16px; font-weight: 600;">Waterloo, Canada</div>
+          <div style="font-size: 12px; color: #8e9aae;">43.4643°N • 80.5204°W</div>
         </div>
       </div>
-      <div style="font-size: 15px; line-height: 1.7; color: rgba(255, 255, 255, 0.85); margin-top: 16px;">
-        Home to the University of Waterloo, one of Canada's leading tech universities. Known for its innovation ecosystem, startup culture, and producing top engineering talent. The birthplace of rainbolt.ai.
+      <div style="font-size: 13px; line-height: 1.6; color: #8e9aae; margin-top: 12px;">
+        Home to the University of Waterloo, known for its innovation ecosystem and startup culture. The birthplace of rainbolt.ai.
       </div>
-      <div style="margin-top: 20px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1);">
-        <img 
-          src="/uw-sign-dp-scaled.jpeg" 
-          alt="University of Waterloo" 
-          style="width: 100%; height: auto; display: block; object-fit: cover;"
+      <div style="margin-top: 14px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(230, 234, 242, 0.08);">
+        <img
+          src="/uw-sign-dp-scaled.jpeg"
+          alt="University of Waterloo"
+          style="width: 100%; height: 110px; display: block; object-fit: cover;"
         />
       </div>
     `;
@@ -342,8 +341,8 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
 float intensity = 1.0 - smoothstep(0.0, 1.0, 1.0-abs(alignment));
 intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
         
-        vec3 glowColor = vec3(1.0, 0.1, 0.1);
-        vec3 glow = glowColor * intensity * 3.0;
+        vec3 glowColor = vec3(0.35, 0.55, 0.78);
+        vec3 glow = glowColor * intensity * 1.4;
         
         gl_FragColor = vec4(glow, intensity * 0.5);
       }
@@ -477,7 +476,7 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
     if (vDist < thresh) {
       color = mix(color, other, (thresh - vDist) * 30.0);
     }
-    gl_FragColor = vec4(color, alpha);
+    gl_FragColor = vec4(color * 0.8, alpha);
   }
 `;
 
@@ -582,12 +581,15 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
 
         // Update Waterloo label position
         if (waterlooLabelRef.current) {
-          const isVisible = vector.z < 1; // Check if marker is in front of camera
+          // Only when the marker faces the camera and there's room for the card
+          const isVisible = vector.z < 1 && window.innerWidth >= 1024;
           if (isVisible) {
+            const labelWidth = 320;
+            const clampedX = Math.min(x + 80, window.innerWidth - labelWidth - 24);
+            const clampedY = Math.max(96, Math.min(y - 120, window.innerHeight - 360));
             waterlooLabelRef.current.style.display = 'block';
-            waterlooLabelRef.current.style.left = `${x + 100}px`; // Position to the right of marker
-            waterlooLabelRef.current.style.top = `${y - 150}px`; // Position above the marker with more offset
-            waterlooLabelRef.current.style.transform = 'translateX(0)'; // No horizontal centering
+            waterlooLabelRef.current.style.left = `${clampedX}px`;
+            waterlooLabelRef.current.style.top = `${clampedY}px`;
           } else {
             waterlooLabelRef.current.style.display = 'none';
           }

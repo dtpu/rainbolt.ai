@@ -1,54 +1,33 @@
 "use client";
 
-import { Avatar, Box, Flex, Text, DropdownMenu, Button } from "@radix-ui/themes";
+import { Avatar, DropdownMenu } from "@radix-ui/themes";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
 
 export default function LoginComponent() {
-    const { user, firebaseUserId, isLoading } = useAuth0Firebase();
+    const { user, isLoading } = useAuth0Firebase();
 
     if (isLoading) {
         return (
-            <Box maxWidth="240px" className="border-gray p-2 border-2 rounded-xl">
-                <Flex gap="3" align="center">
-                    <Avatar
-                        size="3"
-                        src=""
-                        radius="full"
-                        fallback="..."
-                    />
-                    <Box>
-                        <Text as="div" size="2" weight="bold" className="text-white">
-                            Loading...
-                        </Text>
-                    </Box>
-                </Flex>
-            </Box>
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <span className="text-sm text-fg-muted">Loading…</span>
+            </div>
         );
     }
 
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger>
-                <Button variant="ghost" className="cursor-pointer">
-                    <Box maxWidth="240px" className="border-gray p-2 border-2 rounded-xl hover:bg-white/5 transition-colors">
-                        <Flex gap="3" align="center">
-                            <Avatar
-                                size="3"
-                                src={user?.picture || ""}
-                                radius="full"
-                                fallback={user?.name?.[0]?.toUpperCase() || "G"}
-                            />
-                            <Box>
-                                <Text as="div" size="2" weight="bold" className="text-white">
-                                    {user?.name ? user.name.substring(0, 10) : "Guest"}
-                                </Text>
-                                <Text as="div" size="2" className="text-white/70">
-                                    {user?.email || "Click to login"}
-                                </Text>
-                            </Box>
-                        </Flex>
-                    </Box>
-                </Button>
+                <button className="flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-3 transition-colors hover:bg-white/10">
+                    <Avatar
+                        size="1"
+                        src={user?.picture || ""}
+                        radius="full"
+                        fallback={user?.name?.[0]?.toUpperCase() || "G"}
+                    />
+                    <span className="text-sm font-medium text-fg">
+                        {user?.name ? user.name.substring(0, 10) : "Sign in"}
+                    </span>
+                </button>
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Content className="min-w-[200px]">
