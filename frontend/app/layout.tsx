@@ -16,7 +16,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "rainbolt.ai",
-  description: "Transforming ideas into intelligent solutions through cutting-edge artificial intelligence and machine learning.",
+  description:
+    "AI geolocation. Upload any photo and rainbolt.ai pinpoints where it was taken — powered by hundreds of thousands of geotagged images and expert GeoGuessr-style reasoning.",
+  openGraph: {
+    title: "rainbolt.ai",
+    description:
+      "AI geolocation — upload any photo and find out where on Earth it was taken.",
+    siteName: "rainbolt.ai",
+    images: ["/rainbolt_ai_logo.png"],
+  },
 };
 
 export default function RootLayout({
@@ -25,13 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <title>rainbolt.ai</title>
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="antialiased">
         <ClientLayout>
           {children}
         </ClientLayout>
