@@ -1,0 +1,52 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: rainbolt-backend
+    # Docker Desktop's built-in DNS resolver gets flaky under sustained load and
+    # intermittently fails to resolve Pinecone's host ("Name or service not
+    # known"). Pin reliable public resolvers to bypass it.
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist uploaded images across restarts
+      - ./backend/uploads:/app/uploads
+      # Persist the Kaggle dataset cache so ingest re-runs don't re-download shards
+      - kaggle-cache:/root/.cache/kagglehub
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Public vars are baked into the bundle at build time
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8000}
+        NEXT_PUBLIC_BACKEND_WS: ${NEXT_PUBLIC_BACKEND_WS:-ws://localhost:8000}
+        NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+        NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+        NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+        NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
+        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
+    image: rainbolt-frontend
+    environment:
+      # Server-side Auth0 secrets — runtime env, never baked into the image
+      - AUTH0_SECRET=${AUTH0_SECRET}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
+      - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  kaggle-cache:
