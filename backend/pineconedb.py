@@ -11,22 +11,32 @@ load_dotenv()  # Load environment variables from .env file
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
-# env variables should be loaded in upstream code
-if not os.getenv("PINECONE_API_KEY"):
-    raise ValueError("PINECONE_API_KEY environment variable not set")
+# Index name is configurable so we can point at a freshly-rebuilt index.
+INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "htv2025")
 
-pinecone = Pinecone(
-    api_key=os.getenv("PINECONE_API_KEY"),
-)
+_index = None
 
-index_name = "htv2025"
-index = pinecone.Index(index_name)
+
+def get_index():
+    """
+    Lazily create the Pinecone client/index on first use. Doing this lazily (vs.
+    at import time) lets the backend boot — and serve health checks — even when
+    PINECONE_API_KEY is missing or the index doesn't exist yet.
+    """
+    global _index
+    if _index is None:
+        api_key = os.getenv("PINECONE_API_KEY")
+        if not api_key:
+            raise RuntimeError("PINECONE_API_KEY environment variable not set")
+        _index = Pinecone(api_key=api_key).Index(INDEX_NAME)
+    return _index
+
 
 def query_pinecone(vector, top_k=5, namespace=None, threshold=0) -> List[dict]:
     """
     Query Pinecone index with a vector and return top_k results
     """
-    response = index.query(vector=vector, top_k=top_k, include_metadata=True, namespace=namespace)
+    response = get_index().query(vector=vector, top_k=top_k, include_metadata=True, namespace=namespace)
     matches = response['matches']
     if threshold > 0:
         matches = [m for m in matches if m['score'] >= threshold]
