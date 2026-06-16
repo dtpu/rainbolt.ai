@@ -206,7 +206,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                     })
 
                     image_matches = query_pinecone_with_image(image, top_k=25, namespace="images", threshold=0.7)
-                    feature_matches = query_pinecone_with_image(image, top_k=10, namespace="features", threshold=0.6)
+                    feature_matches = query_pinecone_with_image(image, top_k=10, namespace="features", threshold=0.22)
 
                     # Build conversation context
                     conversation_context = "\n\nPrevious Conversation:\n"
@@ -309,7 +309,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                         "type": "status",
                         "message": "Detecting features..."
                     })
-                    feature_matches = query_pinecone_with_image(image, top_k=25, namespace="features", threshold=0.7)
+                    feature_matches = query_pinecone_with_image(image, top_k=25, namespace="features", threshold=0.22)
 
                     # Start reasoning process
                     await manager.send_message(session_id, {

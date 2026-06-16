@@ -13,7 +13,11 @@ os.environ["GRPC_TRACE"] = ""
 
 load_dotenv() 
 
-FEATURE_THRESHOLD = 0.6
+# The features namespace holds CLIP *text* embeddings of GeoGuessr clues, queried
+# with an image embedding. CLIP image<->text cosine scores are far lower than
+# image<->image (measured ~0.19-0.28 for top matches), so this threshold is tuned
+# to that range, not the ~0.7 used for image-to-image matches.
+FEATURE_THRESHOLD = 0.22
 
 if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY environment variable not set")
