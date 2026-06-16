@@ -1,0 +1,1212 @@
+[
+  {
+    "text": "Vehicles drive on the left side of the road in the United Kingdom, Ireland, Australia, New Zealand, Japan, South Africa, India, Thailand, Indonesia, Malaysia, Kenya, and most former British colonies and island nations.",
+    "category": "driving_side",
+    "region": "global"
+  },
+  {
+    "text": "Vehicles drive on the right side of the road across continental Europe, all of the Americas (including the USA, Canada, Mexico, and Brazil), Russia, China, and most of mainland Africa.",
+    "category": "driving_side",
+    "region": "global"
+  },
+  {
+    "text": "The Google Street View car is positioned on the left half of the road and the driver's seat of passing cars is on the right, indicating a left-hand-drive country like the UK, Japan, or Australia.",
+    "category": "driving_side",
+    "region": "global"
+  },
+  {
+    "text": "Iceland and the Philippines drive on the right despite being islands, breaking the usual island-nation left-driving pattern.",
+    "category": "driving_side",
+    "region": "global"
+  },
+  {
+    "text": "A tall, slim white plastic bollard with a flat black cap and a single red rectangular reflector on the side indicates France.",
+    "category": "bollards",
+    "region": "France"
+  },
+  {
+    "text": "A slim white plastic bollard with a black band near the top and two small round black reflectors indicates Germany.",
+    "category": "bollards",
+    "region": "Germany"
+  },
+  {
+    "text": "Short white plastic bollards with a single red reflector facing oncoming traffic, plus a white reflector on the reverse, indicate the United Kingdom.",
+    "category": "bollards",
+    "region": "United Kingdom"
+  },
+  {
+    "text": "A simple white bollard with a single red reflector, and small green-and-white striped posts at intersections, indicate the Netherlands.",
+    "category": "bollards",
+    "region": "Netherlands"
+  },
+  {
+    "text": "A bright white plastic bollard with a soft rounded top, a single black band, and a single white reflector indicates Czechia.",
+    "category": "bollards",
+    "region": "Czechia"
+  },
+  {
+    "text": "A white plastic bollard with a distinctive black sloped top indicates Slovakia, where the slope itself is the signature feature.",
+    "category": "bollards",
+    "region": "Slovakia"
+  },
+  {
+    "text": "A white plastic bollard with two small round reflectors stacked vertically near the top indicates Poland.",
+    "category": "bollards",
+    "region": "Poland"
+  },
+  {
+    "text": "A white plastic bollard with a black top that flares outward slightly, almost mushroom-shaped, indicates Hungary.",
+    "category": "bollards",
+    "region": "Hungary"
+  },
+  {
+    "text": "A square or rectangular concrete post painted white with a black diagonal stripe across the top indicates Italy, which favors concrete bollards over plastic ones.",
+    "category": "bollards",
+    "region": "Italy"
+  },
+  {
+    "text": "A very slim white plastic bollard with two small round reflectors arranged horizontally near the top indicates Spain.",
+    "category": "bollards",
+    "region": "Spain"
+  },
+  {
+    "text": "A white plastic bollard shaped like a thin obelisk, narrower at the top than at the base, indicates Portugal.",
+    "category": "bollards",
+    "region": "Portugal"
+  },
+  {
+    "text": "A short white plastic bollard with a single red dot near the top indicates Greece.",
+    "category": "bollards",
+    "region": "Greece"
+  },
+  {
+    "text": "A low, fat oval-shaped bollard close to the ground, painted white with a black stripe, indicates Sweden.",
+    "category": "bollards",
+    "region": "Sweden"
+  },
+  {
+    "text": "Slim white bollards with a black top and a single rectangular reflector, set in rocky terrain with frequent tunnels, indicate Norway.",
+    "category": "bollards",
+    "region": "Norway"
+  },
+  {
+    "text": "A slim white plastic bollard with a black top and a single reflector indicates Finland; the yellow center line nearby is often faded.",
+    "category": "bollards",
+    "region": "Finland"
+  },
+  {
+    "text": "Metal or thick concrete posts painted in a black-and-white barber-pole striped pattern indicate Russia, where modern reflector bollards are rare.",
+    "category": "bollards",
+    "region": "Russia"
+  },
+  {
+    "text": "Short, squat posts with a black-and-white barber-pole stripe pattern indicate Ukraine.",
+    "category": "bollards",
+    "region": "Ukraine"
+  },
+  {
+    "text": "A white plastic bollard with a rounded black sloped cap, similar to the Slovak design but more rounded, indicates Romania.",
+    "category": "bollards",
+    "region": "Romania"
+  },
+  {
+    "text": "Red-and-white striped bollards along the roadside are a strong indicator of Poland.",
+    "category": "bollards",
+    "region": "Poland"
+  },
+  {
+    "text": "Square bollards painted in alternating black-and-white bands indicate Thailand.",
+    "category": "bollards",
+    "region": "Thailand"
+  },
+  {
+    "text": "Bollards in mixed black, white, grey, and red colors and varied shapes indicate Malaysia.",
+    "category": "bollards",
+    "region": "Malaysia"
+  },
+  {
+    "text": "Red-and-white bollards, either striped or split into two color sections, indicate Cambodia.",
+    "category": "bollards",
+    "region": "Cambodia"
+  },
+  {
+    "text": "Small white-and-black stone bollards along the road indicate Sri Lanka.",
+    "category": "bollards",
+    "region": "Sri Lanka"
+  },
+  {
+    "text": "Yellow center road lines are common across North and South America, including the USA, Mexico, and most of Latin America.",
+    "category": "road_lines",
+    "region": "Americas"
+  },
+  {
+    "text": "White center road lines predominate throughout Europe and Australia.",
+    "category": "road_lines",
+    "region": "global"
+  },
+  {
+    "text": "Chile is an exception in South America, using mostly white road lines instead of the yellow center lines common elsewhere on the continent.",
+    "category": "road_lines",
+    "region": "Chile"
+  },
+  {
+    "text": "Faded or worn yellow center lines suggest Mexico or countries further south in Latin America.",
+    "category": "road_lines",
+    "region": "Latin America"
+  },
+  {
+    "text": "Yellow edge lines combined with a white center line indicate South Africa, Botswana, Eswatini, or Lesotho.",
+    "category": "road_lines",
+    "region": "Southern Africa"
+  },
+  {
+    "text": "Yellow center lines also appear in Japan and South Africa, unusual for their regions.",
+    "category": "road_lines",
+    "region": "Japan"
+  },
+  {
+    "text": "Yellow edge lines that can fade to a slightly orange tone indicate Sweden.",
+    "category": "road_lines",
+    "region": "Sweden"
+  },
+  {
+    "text": "A yellow center line paired with white edge lines, with the yellow often faded, indicates Finland.",
+    "category": "road_lines",
+    "region": "Finland"
+  },
+  {
+    "text": "Solid white edge lines with a broken white center line indicate Germany.",
+    "category": "road_lines",
+    "region": "Germany"
+  },
+  {
+    "text": "Rural roads frequently lacking any center line at all are common in Poland.",
+    "category": "road_lines",
+    "region": "Poland"
+  },
+  {
+    "text": "Noticeably thin road lines compared to most countries indicate Russia.",
+    "category": "road_lines",
+    "region": "Russia"
+  },
+  {
+    "text": "Unpainted rural roads with no edge lines are common in Russia and other Eastern European countries.",
+    "category": "road_lines",
+    "region": "Eastern Europe"
+  },
+  {
+    "text": "Concrete road slabs with regular expansion joints and a slightly orange tint indicate Belgium.",
+    "category": "road_lines",
+    "region": "Belgium"
+  },
+  {
+    "text": "White center dashes alongside a continuous solid yellow edge line are common on Argentinian roads.",
+    "category": "road_lines",
+    "region": "Argentina"
+  },
+  {
+    "text": "European license plates are long rectangles with a blue band on the left side bearing the EU stars and a country code.",
+    "category": "plates",
+    "region": "Europe"
+  },
+  {
+    "text": "Yellow rear license plates in Europe most often indicate the Netherlands or Luxembourg.",
+    "category": "plates",
+    "region": "Europe"
+  },
+  {
+    "text": "Yellow rear plates with white front plates indicate the UK, and outside Europe also Sri Lanka, Botswana, Rwanda, Kenya, or Uganda.",
+    "category": "plates",
+    "region": "global"
+  },
+  {
+    "text": "Fully white license plates with black text and no blue EU strip indicate Russia.",
+    "category": "plates",
+    "region": "Russia"
+  },
+  {
+    "text": "Yellow license plates in Asia and the Middle East indicate Japan, Oman, or Israel.",
+    "category": "plates",
+    "region": "global"
+  },
+  {
+    "text": "Short, near-square license plates indicate the USA, Canada, New Zealand, Australia, or South Africa rather than Europe.",
+    "category": "plates",
+    "region": "global"
+  },
+  {
+    "text": "Cars with no front license plate suggest the southeastern USA and several other states like Michigan and Arizona that require only a rear plate.",
+    "category": "plates",
+    "region": "United States"
+  },
+  {
+    "text": "Fully yellow license plates within the USA point to Delaware or New York.",
+    "category": "plates",
+    "region": "United States"
+  },
+  {
+    "text": "Fully green license plates in the USA indicate Vermont.",
+    "category": "plates",
+    "region": "United States"
+  },
+  {
+    "text": "A license plate with white on the left and green on the right indicates New Hampshire.",
+    "category": "plates",
+    "region": "United States"
+  },
+  {
+    "text": "License plates with a small light-green dot in the center, on white or blue backgrounds, indicate Oregon.",
+    "category": "plates",
+    "region": "United States"
+  },
+  {
+    "text": "Yellow commercial-vehicle license plates appear in Thailand, while Sri Lanka is the only South Asian country with yellow rear plates generally.",
+    "category": "plates",
+    "region": "Thailand"
+  },
+  {
+    "text": "License plates with a black background divided into two white sections indicate Malaysia, while three white sections indicate Indonesia.",
+    "category": "plates",
+    "region": "Southeast Asia"
+  },
+  {
+    "text": "Brazilian license plates are either fully white (older) or white with a blue strip across the top.",
+    "category": "plates",
+    "region": "Brazil"
+  },
+  {
+    "text": "Orange license plates on taxis and commercial vehicles indicate Chile.",
+    "category": "plates",
+    "region": "Chile"
+  },
+  {
+    "text": "Cyrillic script on signs indicates Russia or a former Soviet country such as Ukraine, Belarus, Kazakhstan, Bulgaria, or Serbia.",
+    "category": "language",
+    "region": "global"
+  },
+  {
+    "text": "Arabic script on signs indicates a Middle Eastern or North African country.",
+    "category": "language",
+    "region": "global"
+  },
+  {
+    "text": "Thai script, with its many small circles and loops, indicates Thailand.",
+    "category": "language",
+    "region": "Thailand"
+  },
+  {
+    "text": "Japanese signs mixing kanji, hiragana, and katakana indicate Japan.",
+    "category": "language",
+    "region": "Japan"
+  },
+  {
+    "text": "Korean Hangul, with its blocky circle-and-line characters, indicates South Korea.",
+    "category": "language",
+    "region": "South Korea"
+  },
+  {
+    "text": "Chinese characters without any kana indicate mainland China, Taiwan, or Chinese-speaking parts of Southeast Asia.",
+    "category": "language",
+    "region": "global"
+  },
+  {
+    "text": "The Greek alphabet on signs immediately indicates Greece or Cyprus.",
+    "category": "language",
+    "region": "Greece"
+  },
+  {
+    "text": "The letter n-with-tilde in Latin text points to Spanish-speaking countries, while u-with-umlaut points to German or Turkish.",
+    "category": "language",
+    "region": "global"
+  },
+  {
+    "text": "Street signs abbreviating street as 'Jl.' (for Jalan) indicate Indonesia.",
+    "category": "language",
+    "region": "Indonesia"
+  },
+  {
+    "text": "Company names beginning with the prefix 'PT' indicate Indonesia.",
+    "category": "language",
+    "region": "Indonesia"
+  },
+  {
+    "text": "Portuguese-language signage in the Americas indicates Brazil rather than Spanish-speaking Latin America.",
+    "category": "language",
+    "region": "Brazil"
+  },
+  {
+    "text": "US Interstate highway shields are red-and-blue; odd numbers run north-south and even numbers run east-west, with numbers increasing west to east.",
+    "category": "signs",
+    "region": "United States"
+  },
+  {
+    "text": "US Highway markers are black-and-white shields, and state highway shields often take the outline shape of the individual state, narrowing the location to one state.",
+    "category": "signs",
+    "region": "United States"
+  },
+  {
+    "text": "Stop signs reading 'ALTO' instead of 'STOP' indicate Mexico and parts of Central America.",
+    "category": "signs",
+    "region": "Mexico"
+  },
+  {
+    "text": "Green highway signs with a maple leaf indicate Canada's Trans-Canada highway system.",
+    "category": "signs",
+    "region": "Canada"
+  },
+  {
+    "text": "Mexican federal highway shields are black-and-white with curved sides and labeled 'Mexico'.",
+    "category": "signs",
+    "region": "Mexico"
+  },
+  {
+    "text": "Highway labels in the format BR-XXX indicate Brazilian federal highways, while a state abbreviation followed by a number indicates Brazilian regional roads.",
+    "category": "signs",
+    "region": "Brazil"
+  },
+  {
+    "text": "Small black-and-white milestone posts marked 'RN' (national) or 'RP' (provincial) indicate Argentinian roads.",
+    "category": "signs",
+    "region": "Argentina"
+  },
+  {
+    "text": "Green E-road signs with white lettering indicate Europe; numbers increase toward the southeast across the continent.",
+    "category": "signs",
+    "region": "Europe"
+  },
+  {
+    "text": "Yellow-on-black chevron signs on bends indicate Brazil.",
+    "category": "signs",
+    "region": "Brazil"
+  },
+  {
+    "text": "Red-on-white chevron signs on bends are characteristic of Argentina and unusual within South America.",
+    "category": "signs",
+    "region": "Argentina"
+  },
+  {
+    "text": "Chevrons with a red border, and signs whose backs have folded edges, indicate Lithuania.",
+    "category": "signs",
+    "region": "Lithuania"
+  },
+  {
+    "text": "Chevrons with a black background and a yellow arrow indicate Finland.",
+    "category": "signs",
+    "region": "Finland"
+  },
+  {
+    "text": "Blue-on-white village entry signs are a Hungary-specific signage clue.",
+    "category": "signs",
+    "region": "Hungary"
+  },
+  {
+    "text": "Guardrails with a clean, bright silver finish are typical of Scandinavian countries, while heavier rusted guardrails are typical of Balkan countries.",
+    "category": "signs",
+    "region": "Europe"
+  },
+  {
+    "text": "A special type-B guardrail that widens in the middle section indicates Slovakia.",
+    "category": "signs",
+    "region": "Slovakia"
+  },
+  {
+    "text": "Utility poles with a raised insulator on top are a good indicator of the USA or Canada.",
+    "category": "poles",
+    "region": "North America"
+  },
+  {
+    "text": "Utility poles with three yellow stripes near the base are common in California.",
+    "category": "poles",
+    "region": "United States"
+  },
+  {
+    "text": "Utility poles bearing a white metal plate with an orange rectangle and diamond indicate Wisconsin or Michigan's Upper Peninsula.",
+    "category": "poles",
+    "region": "United States"
+  },
+  {
+    "text": "Utility poles with vertical yellow-and-black stripes are common in Japan, especially the southern islands.",
+    "category": "poles",
+    "region": "Japan"
+  },
+  {
+    "text": "Ladder-like concrete utility poles with rectangular cutouts and small holes near the top indicate Brazil.",
+    "category": "poles",
+    "region": "Brazil"
+  },
+  {
+    "text": "Square concrete poles with indents on both sides and small pinholes near the top indicate Chile.",
+    "category": "poles",
+    "region": "Chile"
+  },
+  {
+    "text": "Octagonal utility poles are common in Mexico.",
+    "category": "poles",
+    "region": "Mexico"
+  },
+  {
+    "text": "Utility poles with small holes running vertically up the pole indicate Thailand.",
+    "category": "poles",
+    "region": "Thailand"
+  },
+  {
+    "text": "Utility poles with three upward-facing bulbs, often painted black with red-and-white flag colors, indicate Indonesia.",
+    "category": "poles",
+    "region": "Indonesia"
+  },
+  {
+    "text": "Type C two-round-pin sockets are used across continental Europe, the most common socket type worldwide.",
+    "category": "plugs",
+    "region": "Europe"
+  },
+  {
+    "text": "Type E and F round-pin grounded sockets (220-240V) indicate continental Europe, e.g. France, Germany, and Spain.",
+    "category": "plugs",
+    "region": "Europe"
+  },
+  {
+    "text": "Type G three-rectangular-pin sockets with a built-in fuse indicate the UK, Ireland, and Commonwealth countries like Malaysia and Singapore.",
+    "category": "plugs",
+    "region": "global"
+  },
+  {
+    "text": "Type A and B flat-pin sockets (110-120V) indicate the USA, Canada, Central America, and Japan.",
+    "category": "plugs",
+    "region": "global"
+  },
+  {
+    "text": "Type D sockets with three large round pins in a triangle indicate India or Nepal.",
+    "category": "plugs",
+    "region": "South Asia"
+  },
+  {
+    "text": "A black SUV with a large snorkel air-intake on the front-right fender is a strong confirmation of Kenya.",
+    "category": "streetview_meta",
+    "region": "Kenya"
+  },
+  {
+    "text": "A snorkel-equipped Street View car appears in only two countries: Kenya and Mongolia.",
+    "category": "streetview_meta",
+    "region": "global"
+  },
+  {
+    "text": "A black vehicle with a silver roof rack held together with black duct tape is a strong confirmation of Ghana.",
+    "category": "streetview_meta",
+    "region": "Ghana"
+  },
+  {
+    "text": "Roof-mounted camping and expedition gear on the Street View car indicates Mongolia.",
+    "category": "streetview_meta",
+    "region": "Mongolia"
+  },
+  {
+    "text": "A Street View car always accompanied by an escort or police follow-vehicle indicates Nigeria.",
+    "category": "streetview_meta",
+    "region": "Nigeria"
+  },
+  {
+    "text": "A unique antenna visible when panning down on the Street View car indicates Panama, where this antenna appears nowhere else.",
+    "category": "streetview_meta",
+    "region": "Panama"
+  },
+  {
+    "text": "A Street View car with a visible aerial and sections painted white, red, and blue indicates Iceland.",
+    "category": "streetview_meta",
+    "region": "Iceland"
+  },
+  {
+    "text": "A white car with a white roof rack, large side mirrors, and often dirty mirrors indicates Kyrgyzstan and Central Asia.",
+    "category": "streetview_meta",
+    "region": "Central Asia"
+  },
+  {
+    "text": "A low camera height making the car look larger with a wide circular blur indicates Sri Lanka's older coverage.",
+    "category": "streetview_meta",
+    "region": "Sri Lanka"
+  },
+  {
+    "text": "A blue-tinted car visible in window reflections indicates South Africa's coverage.",
+    "category": "streetview_meta",
+    "region": "South Africa"
+  },
+  {
+    "text": "A red or orange three-wheeled tuk-tuk carrying the camera indicates parts of Southeast Asia.",
+    "category": "streetview_meta",
+    "region": "Southeast Asia"
+  },
+  {
+    "text": "Very low-resolution, blocky, soft imagery from an old camera generation appears only in the USA, Australia, and New Zealand.",
+    "category": "streetview_meta",
+    "region": "global"
+  },
+  {
+    "text": "A bright halo or flare around the sun plus a purple or magenta blob at the bottom of the image indicates older camera coverage.",
+    "category": "streetview_meta",
+    "region": "global"
+  },
+  {
+    "text": "Extremely high-resolution, near-seamless imagery is concentrated in the USA, Europe, Japan, South Korea, and Brazil.",
+    "category": "streetview_meta",
+    "region": "global"
+  },
+  {
+    "text": "Very blurry, low-quality rural Street View imagery is most often the USA or Australia, where old camera coverage persists in remote areas.",
+    "category": "streetview_meta",
+    "region": "global"
+  },
+  {
+    "text": "If shadows point toward the north and the sun is in the south, you are likely in the Northern Hemisphere.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "If shadows point toward the south and the sun is in the north, you are likely in the Southern Hemisphere.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Satellite dishes tilted to point toward the southern sky indicate the Northern Hemisphere; dishes pointing north indicate the Southern Hemisphere.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Lush tropical vegetation with dense broadleaf forest suggests Southeast Asia, Brazil, or Central Africa.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Red or rust-colored soil alongside the road is characteristic of Brazil, parts of Australia, and central Africa.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Arid scrubland and red desert outback terrain suggest the Australian interior or the central and southwestern USA.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Eucalyptus trees and dry golden grass are strongly associated with Australia.",
+    "category": "vegetation",
+    "region": "Australia"
+  },
+  {
+    "text": "Rocky, fjord-cut landscapes with very frequent tunnels indicate Norway.",
+    "category": "vegetation",
+    "region": "Norway"
+  },
+  {
+    "text": "Flat farmland with concrete-edged road shoulders and almost no bollards indicates Denmark.",
+    "category": "vegetation",
+    "region": "Denmark"
+  },
+  {
+    "text": "Boreal pine and birch forest with frequent lakes suggests Finland, Sweden, or northern Russia.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Steep, sharply pitched roofs indicate Alpine or northern European regions with heavy snow.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Flat or shallow-pitched roofs suggest Mediterranean climates or North American suburban styles.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Narrow roads with buildings close to the roadway suggest Europe, contrasting with the wide roads of the USA and Canada.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Brick construction is common in Europe, wood and vinyl siding in North America, and bare concrete in Soviet-era regions.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Large black water tanks mounted on rooftops are characteristic of Mexican houses.",
+    "category": "architecture",
+    "region": "Mexico"
+  },
+  {
+    "text": "Brightly painted minibuses and pedicabs with side-cars are characteristic of the Philippines.",
+    "category": "architecture",
+    "region": "Philippines"
+  },
+  {
+    "text": "Pink taxis are a distinctive sight in Mexico, particularly Mexico City.",
+    "category": "other",
+    "region": "Mexico"
+  },
+  {
+    "text": "Domain endings like .ru on storefront signage indicate Russia, .br Brazil, .au Australia, .jp Japan, .za South Africa, and .nz New Zealand.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Phone numbers beginning with +7 indicate Russia or Kazakhstan, +55 Brazil, +52 Mexico, +61 Australia, +81 Japan, and +27 South Africa.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Poorly maintained, cracked, or unpaved roads tend to indicate Eastern Europe, developing Asia, or Africa rather than wealthy Western countries.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Unusually wide multi-lane roads in a non-American, right-driving country often indicate Turkey.",
+    "category": "other",
+    "region": "Turkey"
+  },
+  {
+    "text": "Horse-drawn carts on rural roads can indicate Romania or other parts of rural Eastern Europe.",
+    "category": "other",
+    "region": "Romania"
+  },
+  {
+    "text": "Stone roadside boundary blocks alongside bollards indicate Portugal.",
+    "category": "other",
+    "region": "Portugal"
+  },
+  {
+    "text": "A large pickup truck used as the Street View camera vehicle, with black-and-yellow striped warning bars visible on the cab or bed, indicates Nigeria.",
+    "category": "streetview_meta",
+    "region": "Nigeria"
+  },
+  {
+    "text": "A short, stubby yellow rear license plate paired with a long white front plate indicates Kenya.",
+    "category": "plates",
+    "region": "Kenya"
+  },
+  {
+    "text": "A solid or dashed yellow center divider line on a two-lane road in tropical East Africa indicates Kenya.",
+    "category": "road_lines",
+    "region": "Kenya"
+  },
+  {
+    "text": "A Google car roof rack with black tape wrapped around the right end of the front bar indicates Ghana.",
+    "category": "streetview_meta",
+    "region": "Ghana"
+  },
+  {
+    "text": "Bright yellow commercial-vehicle license plates on trucks and vans, alongside white private plates, indicate Ghana.",
+    "category": "plates",
+    "region": "Ghana"
+  },
+  {
+    "text": "Very red lateritic soil along roadsides with a visible armed security follow-car indicates Uganda.",
+    "category": "vegetation",
+    "region": "Uganda"
+  },
+  {
+    "text": "White front and yellow rear license plates on vehicles in tropical East Africa indicate Uganda.",
+    "category": "plates",
+    "region": "Uganda"
+  },
+  {
+    "text": "Faded, worn road lines with blue license plates and French-style infrastructure in West Africa indicate Senegal.",
+    "category": "plates",
+    "region": "Senegal"
+  },
+  {
+    "text": "Red-and-white striped chevron warning boards lining curves are very common in South Africa.",
+    "category": "signs",
+    "region": "South Africa"
+  },
+  {
+    "text": "Green directional highway signs with white lettering and yellow route numbers indicate South Africa.",
+    "category": "signs",
+    "region": "South Africa"
+  },
+  {
+    "text": "License plates with a faint green tint indicate the Free State province of South Africa, while a blue tint indicates KwaZulu-Natal.",
+    "category": "plates",
+    "region": "South Africa"
+  },
+  {
+    "text": "White front and yellow rear UK-style license plates in southern Africa indicate Botswana or Namibia.",
+    "category": "plates",
+    "region": "Botswana"
+  },
+  {
+    "text": "A long license plate with a green strip along the bottom indicates Eswatini.",
+    "category": "plates",
+    "region": "Eswatini"
+  },
+  {
+    "text": "An ever-present Google follow-car visible in the imagery across a North African Mediterranean country indicates Tunisia.",
+    "category": "streetview_meta",
+    "region": "Tunisia"
+  },
+  {
+    "text": "Yellow license plates with a blue vertical stripe on the left edge indicate Israel.",
+    "category": "plates",
+    "region": "Israel"
+  },
+  {
+    "text": "Blue directional signs with white lettering in Arabic, sometimes alongside English, plus green-and-yellow highway shields indicate Jordan.",
+    "category": "signs",
+    "region": "Jordan"
+  },
+  {
+    "text": "A clean white Street View car visible when panning down, in a Gulf desert setting with English-and-Arabic signage, indicates the United Arab Emirates.",
+    "category": "streetview_meta",
+    "region": "United Arab Emirates"
+  },
+  {
+    "text": "Black-and-white horizontally striped roadside poles in a Gulf desert indicate the United Arab Emirates (and more rarely Jordan).",
+    "category": "poles",
+    "region": "United Arab Emirates"
+  },
+  {
+    "text": "Red-and-white directional arrow signs marking road corners indicate Turkey.",
+    "category": "signs",
+    "region": "Turkey"
+  },
+  {
+    "text": "Flat-topped bollards resembling Australian or Dutch ones but with a fatter rectangular reflector panel indicate Turkey.",
+    "category": "bollards",
+    "region": "Turkey"
+  },
+  {
+    "text": "Plain white license plates with Arabic-and-English text and abundant English commercial signage indicate the United Arab Emirates.",
+    "category": "plates",
+    "region": "United Arab Emirates"
+  },
+  {
+    "text": "Hebrew script on signs and storefronts indicates Israel.",
+    "category": "language",
+    "region": "Israel"
+  },
+  {
+    "text": "Extremely flat steppe terrain with both Cyrillic and Latin Kazakh text on signs indicates Kazakhstan.",
+    "category": "language",
+    "region": "Kazakhstan"
+  },
+  {
+    "text": "License plates with a red vertical stripe on the left side, in a mountainous Central Asian setting, indicate Kyrgyzstan.",
+    "category": "plates",
+    "region": "Kyrgyzstan"
+  },
+  {
+    "text": "Visible camera-car side mirrors and roof bars in mountainous Central Asia indicate Kyrgyzstan.",
+    "category": "streetview_meta",
+    "region": "Kyrgyzstan"
+  },
+  {
+    "text": "The distinctive curved Georgian (Mkhedruli) script with rounded loops indicates Georgia in the Caucasus.",
+    "category": "language",
+    "region": "Georgia"
+  },
+  {
+    "text": "The angular Armenian alphabet with many vertical strokes and right-angle hooks indicates Armenia.",
+    "category": "language",
+    "region": "Armenia"
+  },
+  {
+    "text": "Low-quality, slightly foggy or hazy Street View imagery from a non-standard camera indicates India.",
+    "category": "streetview_meta",
+    "region": "India"
+  },
+  {
+    "text": "Elongated white private license plates, with green plates for electric vehicles and yellow plates for trucks and taxis, indicate India; the first two letters encode the state.",
+    "category": "plates",
+    "region": "India"
+  },
+  {
+    "text": "Bengali script, recognizable by a continuous horizontal line running across the top of the letters, indicates Bangladesh.",
+    "category": "language",
+    "region": "Bangladesh"
+  },
+  {
+    "text": "A Street View car with red side mirrors and a yellow-and-green door, with visible underframe bars, indicates Bangladesh.",
+    "category": "streetview_meta",
+    "region": "Bangladesh"
+  },
+  {
+    "text": "The rounded, curly Sinhala alphabet, often alongside Tamil, indicates Sri Lanka.",
+    "category": "language",
+    "region": "Sri Lanka"
+  },
+  {
+    "text": "Yellow rear license plates with white front plates, where the first two letters give the province (e.g. WP, SP, CP), indicate Sri Lanka.",
+    "category": "plates",
+    "region": "Sri Lanka"
+  },
+  {
+    "text": "Street View captured on foot, showing the faint outline of a backpack trekker rig when panning down, indicates Pakistan.",
+    "category": "streetview_meta",
+    "region": "Pakistan"
+  },
+  {
+    "text": "Utility poles with three upward-facing bulb insulators, tops sometimes even and sometimes uneven, indicate Indonesia.",
+    "category": "poles",
+    "region": "Indonesia"
+  },
+  {
+    "text": "Asymmetric utility poles with two 'pine cone' insulators on one side and one on the other indicate Laos.",
+    "category": "poles",
+    "region": "Laos"
+  },
+  {
+    "text": "Khmer script, identifiable by small hooks on top of most characters that point to the right, indicates Cambodia.",
+    "category": "language",
+    "region": "Cambodia"
+  },
+  {
+    "text": "Round poles with small side holes, or 'ladder' poles with regular indents, alongside Khmer script indicate Cambodia.",
+    "category": "poles",
+    "region": "Cambodia"
+  },
+  {
+    "text": "Brightly painted, ornate jeepney-style mini buses on the streets indicate the Philippines.",
+    "category": "other",
+    "region": "Philippines"
+  },
+  {
+    "text": "Yellow license plates with narrow white sign poles, often painted white with painted crosses on the backs of signs, indicate Colombia.",
+    "category": "plates",
+    "region": "Colombia"
+  },
+  {
+    "text": "Cigarette-shaped white bollards and black-and-white striped sign poles set in raised concrete blocks indicate Peru.",
+    "category": "bollards",
+    "region": "Peru"
+  },
+  {
+    "text": "Road signs mounted on thick, unpainted natural wooden posts indicate Bolivia.",
+    "category": "poles",
+    "region": "Bolivia"
+  },
+  {
+    "text": "Round bollards with two red stripes, or flat bollards with two red reflectors on a black background, indicate Ecuador.",
+    "category": "bollards",
+    "region": "Ecuador"
+  },
+  {
+    "text": "A 'ladder' utility pole with many small ladder-step indents up its length indicates Ecuador within Latin America.",
+    "category": "poles",
+    "region": "Ecuador"
+  },
+  {
+    "text": "Triple road lines, a double yellow center with white dashes running between them, indicate Uruguay.",
+    "category": "road_lines",
+    "region": "Uruguay"
+  },
+  {
+    "text": "Thick, white-painted wooden sign posts indicate Uruguay.",
+    "category": "poles",
+    "region": "Uruguay"
+  },
+  {
+    "text": "Green street name signs with a white border and white lettering indicate the Dominican Republic.",
+    "category": "signs",
+    "region": "Dominican Republic"
+  },
+  {
+    "text": "White cigarette-shaped bollards with a black band near the base and a yellow section on the back indicate Mexico.",
+    "category": "bollards",
+    "region": "Mexico"
+  },
+  {
+    "text": "Concrete kilometer milestone markers beside the road, alongside chevron signs, indicate Argentina.",
+    "category": "signs",
+    "region": "Argentina"
+  },
+  {
+    "text": "Speed limit signs reading 'MAXIMUM' rather than 'SPEED LIMIT' indicate Canada.",
+    "category": "signs",
+    "region": "Canada"
+  },
+  {
+    "text": "Long thin white poles with a red or green reflector, always attached to a guardrail, indicate Quebec, Canada.",
+    "category": "bollards",
+    "region": "Canada"
+  },
+  {
+    "text": "A yellow fire-hydrant marker mounted atop a signpost, sometimes with a blue rectangle, indicates Quebec, Canada.",
+    "category": "other",
+    "region": "Canada"
+  },
+  {
+    "text": "Speed limit signs shown as a circular cut-out (a number in a red ring) indicate New Zealand, versus the white rectangle used in Australia.",
+    "category": "signs",
+    "region": "New Zealand"
+  },
+  {
+    "text": "'GIVE WAY' written in red text indicates New Zealand, while black 'GIVE WAY' text indicates Australia.",
+    "category": "signs",
+    "region": "Australia"
+  },
+  {
+    "text": "Bollards with a small red reflective panel on only one side indicate Australia.",
+    "category": "bollards",
+    "region": "Australia"
+  },
+  {
+    "text": "Overhead metal mast-arms carrying traffic lights plus attached green street-name signs at large intersections indicate the USA or Canada.",
+    "category": "signs",
+    "region": "global"
+  },
+  {
+    "text": "Square guardrails with a long top bar resting on several square legs are common in New York and Wyoming.",
+    "category": "other",
+    "region": "United States"
+  },
+  {
+    "text": "Square steel guardrails with circular red reflectors indicate Poland.",
+    "category": "other",
+    "region": "Poland"
+  },
+  {
+    "text": "Black-and-white striped guardrails, curbs, and bridge barriers indicate Russia.",
+    "category": "other",
+    "region": "Russia"
+  },
+  {
+    "text": "Extra-wide 'type B' guardrails indicate Czechia or Slovakia.",
+    "category": "other",
+    "region": "Czechia"
+  },
+  {
+    "text": "Neatly tiled sidewalks in grey or light-red interlocking blocks with varied patterns indicate Poland.",
+    "category": "other",
+    "region": "Poland"
+  },
+  {
+    "text": "Roofs covered in diamond-shaped tiles indicate Czechia, Slovakia, or Hungary.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Tidy orange, red, brown, or black roof tiles with an almost plastic-like sheen indicate Poland.",
+    "category": "architecture",
+    "region": "Poland"
+  },
+  {
+    "text": "Sparse acacia trees scattered over dry golden grassland (tropical savanna) indicate sub-Saharan regions such as Kenya, Tanzania, or Botswana.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Bare rocky or sandy terrain with almost no vegetation under intense sun (hot desert biome) indicates the Sahara, Arabian, or Australian interior deserts.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Cold, treeless steppe grassland stretching flat to the horizon (cold semi-arid biome) indicates Kazakhstan or the Mongolian steppe.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Dry scrubby hills with olive groves, cypress, and low evergreen shrubs (Mediterranean biome) indicate the Mediterranean basin, coastal California, or central Chile.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Dense humid broadleaf rainforest with banana and palm understory (tropical rainforest biome) indicates equatorial regions like the Amazon, Congo, or Indonesia.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Snowy birch and conifer forest with cold continental conditions (humid continental biome) indicates Russia, the Baltics, Canada, or the northern USA.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "License plates with a small black silhouette map of the country in the center indicate Mexico's older plate style.",
+    "category": "plates",
+    "region": "Mexico"
+  },
+  {
+    "text": "Distinctive red-and-white candy-striped sign poles on a flat tropical island indicate Sri Lanka.",
+    "category": "poles",
+    "region": "Sri Lanka"
+  },
+  {
+    "text": "Bilingual French-and-English signage with French listed first indicates Quebec, Canada.",
+    "category": "language",
+    "region": "Canada"
+  },
+  {
+    "text": "Yellow diamond warning signs with kangaroo or wombat silhouettes indicate Australia.",
+    "category": "signs",
+    "region": "Australia"
+  },
+  {
+    "text": "Yellow diamond warning signs with kiwi-bird or sheep silhouettes indicate New Zealand.",
+    "category": "signs",
+    "region": "New Zealand"
+  },
+  {
+    "text": "Devanagari script with the characteristic top horizontal bar, on signs in a Himalayan setting, indicates Nepal or northern India.",
+    "category": "language",
+    "region": "global"
+  },
+  {
+    "text": "Ornate timber houses with elaborately painted window frames and steep shingled roofs indicate Bhutan.",
+    "category": "architecture",
+    "region": "Bhutan"
+  },
+  {
+    "text": "Drive-on-the-left cycle-rickshaws and auto-rickshaws crowding the road indicate Bangladesh or eastern India.",
+    "category": "driving_side",
+    "region": "global"
+  },
+  {
+    "text": "Plain white license plates with black Arabic numerals and no flag or country code indicate Jordan.",
+    "category": "plates",
+    "region": "Jordan"
+  },
+  {
+    "text": "Bright blue painted lower walls and doorways on whitewashed buildings indicate Tunisia or coastal North Africa.",
+    "category": "architecture",
+    "region": "Tunisia"
+  },
+  {
+    "text": "Minarets and domed mosques dominating a desert town skyline indicate the Middle East or North Africa.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Corrugated-metal roofed single-story buildings along dusty red roads indicate sub-Saharan Africa such as Nigeria, Uganda, or Kenya.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Stilted wooden houses raised above ground over rice paddies indicate Southeast Asia such as Cambodia, Laos, or rural Thailand.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Spirit houses (small ornate shrines on a pedestal) outside homes and shops indicate Thailand.",
+    "category": "other",
+    "region": "Thailand"
+  },
+  {
+    "text": "Black-and-white striped sign poles at the base, on flat agricultural terrain in Latin America, indicate Peru or Bolivia.",
+    "category": "poles",
+    "region": "global"
+  },
+  {
+    "text": "Tall thin concrete utility poles painted white halfway up indicate Colombia.",
+    "category": "poles",
+    "region": "Colombia"
+  },
+  {
+    "text": "Crosses or X-shaped braces visible on the backs of road signs indicate Colombia.",
+    "category": "signs",
+    "region": "Colombia"
+  },
+  {
+    "text": "License plates with a blue Mercosur strip across the top and a small country flag indicate Argentina, Brazil, Uruguay, or Paraguay.",
+    "category": "plates",
+    "region": "global"
+  },
+  {
+    "text": "Hangul-free CJK characters in Traditional form (more complex than Simplified) indicate Taiwan or Hong Kong rather than mainland China.",
+    "category": "language",
+    "region": "Taiwan"
+  },
+  {
+    "text": "Blue license plates on private cars with white characters indicate older mainland China plates; yellow plates indicate large or commercial vehicles in China.",
+    "category": "plates",
+    "region": "China"
+  },
+  {
+    "text": "Vietnamese Latin text loaded with diacritics and tone marks (multiple accents stacked on vowels) indicates Vietnam.",
+    "category": "language",
+    "region": "Vietnam"
+  },
+  {
+    "text": "Conical leaf hats worn by people and dense scooter traffic indicate Vietnam.",
+    "category": "other",
+    "region": "Vietnam"
+  },
+  {
+    "text": "Yellow rectangular license plates with black text on cars indicate Vietnam's newer plate format.",
+    "category": "plates",
+    "region": "Vietnam"
+  },
+  {
+    "text": "Black-and-white striped kerbs and tree trunks painted white at the base along avenues indicate India or South Asia.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Snow-capped Andes towering behind arid foothills and adobe buildings indicate Peru, Bolivia, or northern Chile.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "High-altitude treeless Altiplano grassland with llamas or alpacas indicates Bolivia or southern Peru.",
+    "category": "vegetation",
+    "region": "global"
+  },
+  {
+    "text": "Whitewashed flat-roofed cubic houses cascading down hillsides indicate Greek islands or coastal North Africa.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Steeply pitched corrugated-iron roofs on weatherboard houses indicate New Zealand or rural Australia.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Red British-style pillar post boxes in a tropical setting indicate former British colonies such as Sri Lanka, Kenya, or Malta.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "A red octagonal stop sign reading 'STOP' in Latin script in a non-English-speaking country indicates much of Latin America, the Middle East, or Africa.",
+    "category": "signs",
+    "region": "global"
+  },
+  {
+    "text": "Wide unpaved red-dirt roads with no markings and roadside market stalls indicate rural sub-Saharan Africa.",
+    "category": "road_lines",
+    "region": "global"
+  },
+  {
+    "text": "Concrete electricity poles with a distinctive cylindrical or hexagonal cross-section and stacked insulators indicate Brazil.",
+    "category": "poles",
+    "region": "Brazil"
+  },
+  {
+    "text": "Numbered blue-and-white reflective house-number plaques mounted on building corners indicate Czechia, Slovakia, or Central Europe.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Fire hydrants painted bright yellow at the top, set low to the ground, indicate Japan or parts of East Asia, versus the tall red US hydrant.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Bus stops marked by a simple painted pole with a flag-style sign and no shelter, beside dusty roads, indicate sub-Saharan Africa or South Asia.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Curbs painted in alternating red-and-white bands along city streets indicate Indonesia, Thailand, or parts of Southeast Asia.",
+    "category": "other",
+    "region": "global"
+  },
+  {
+    "text": "Satellite dishes densely clustered on rooftops pointing in a uniform direction indicate the Middle East or North Africa.",
+    "category": "architecture",
+    "region": "global"
+  },
+  {
+    "text": "Plain green or blue rectangular highway shields with a number, lacking the US-style interstate shield, indicate Jordan or other Middle Eastern countries.",
+    "category": "signs",
+    "region": "global"
+  },
+  {
+    "text": "Yellow taxis and densely packed colorful low-rise buildings on hills indicate the Dominican Republic or Caribbean cities.",
+    "category": "architecture",
+    "region": "global"
+  }
+]

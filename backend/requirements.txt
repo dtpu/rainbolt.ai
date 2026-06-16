@@ -8,3 +8,6 @@ pinecone
 torch
 git+https://github.com/openai/CLIP.git
 python-multipart
+# used by ingest.py to rebuild the Pinecone index from the Kaggle dataset
+kagglehub
+msgpack
