@@ -24,7 +24,7 @@ Usage (from repo root, inside the backend image so deps are present):
 Flags:
   --limit N       max images to ingest this run (default: all)
   --shards N      max shards to try; stops early when the dataset runs out
-  --namespace S   target namespace (default: "images" — what the backend queries)
+  --namespace S   target namespace (default: "images" - what the backend queries)
   --batch-size N  vectors per Pinecone upsert
   --embed-batch N images per CLIP forward pass
   --reset         ignore the checkpoint and re-ingest from shard 0
@@ -81,7 +81,7 @@ def ensure_index(pc, name):
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
     else:
-        print(f"Index '{name}' already exists — upserting into it.")
+        print(f"Index '{name}' already exists - upserting into it.")
     return pc.Index(name)
 
 
@@ -94,12 +94,12 @@ def iter_records(shards, completed):
 
     for s in range(shards):
         if s in completed:
-            print(f"shard_{s}.msg already done — skipping")
+            print(f"shard_{s}.msg already done - skipping")
             continue
         name = f"shard_{s}.msg"
         print(f"Downloading {name} ...")
         # Only a "not found" means the dataset is exhausted; anything else
-        # (IncompleteRead, connection reset, timeout) is transient — retry.
+        # (IncompleteRead, connection reset, timeout) is transient - retry.
         path = None
         for attempt in range(6):
             try:
@@ -111,10 +111,10 @@ def iter_records(shards, completed):
                     print(f"No more shards (stopped at {name}): {e}")
                     return
                 wait = min(120, 10 * 2 ** attempt)
-                print(f"download error for {name} (attempt {attempt + 1}/6): {e} — retrying in {wait}s", flush=True)
+                print(f"download error for {name} (attempt {attempt + 1}/6): {e} - retrying in {wait}s", flush=True)
                 time.sleep(wait)
         if path is None:
-            print(f"Giving up on {name} after repeated download failures — stopping.", flush=True)
+            print(f"Giving up on {name} after repeated download failures - stopping.", flush=True)
             return
         with open(path, "rb") as f:
             for record in msgpack.Unpacker(f, raw=False):
@@ -137,7 +137,7 @@ def main():
     index_name = os.getenv("PINECONE_INDEX_NAME", "htv2025")
     completed = set() if args.reset else load_checkpoint()
     if completed:
-        print(f"Resuming — already-completed shards: {sorted(completed)}")
+        print(f"Resuming - already-completed shards: {sorted(completed)}")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Loading CLIP ViT-B/32 on {device} ...")
@@ -151,7 +151,7 @@ def main():
     total = 0
     stopped = False
 
-    # Quota/billing errors mean "stop, the free tier is full" — not worth retrying.
+    # Quota/billing errors mean "stop, the free tier is full" - not worth retrying.
     # Everything else (DNS, connection reset, timeout, 429/500/503) is transient and
     # gets retried with exponential backoff so a network blip can't kill a long run.
     NON_RETRYABLE = ("quota", "exceed", "storage", "402", "payment", "forbidden")
@@ -167,12 +167,12 @@ def main():
             except Exception as e:
                 msg = str(e).lower()
                 if any(k in msg for k in NON_RETRYABLE):
-                    print(f"\nPinecone limit reached at ~{total} vectors — stopping cleanly. ({e})", flush=True)
+                    print(f"\nPinecone limit reached at ~{total} vectors - stopping cleanly. ({e})", flush=True)
                     return False
                 wait = min(60, 2 ** attempt)
-                print(f"upsert error (attempt {attempt + 1}/{retries}): {e} — retrying in {wait}s", flush=True)
+                print(f"upsert error (attempt {attempt + 1}/{retries}): {e} - retrying in {wait}s", flush=True)
                 time.sleep(wait)
-        print(f"\nGave up after {retries} failed upsert attempts at ~{total} vectors — stopping.", flush=True)
+        print(f"\nGave up after {retries} failed upsert attempts at ~{total} vectors - stopping.", flush=True)
         return False
 
     def embed_pending():

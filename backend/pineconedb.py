@@ -20,7 +20,7 @@ _index = None
 def get_index():
     """
     Lazily create the Pinecone client/index on first use. Doing this lazily (vs.
-    at import time) lets the backend boot — and serve health checks — even when
+    at import time) lets the backend boot, and serve health checks, even when
     PINECONE_API_KEY is missing or the index doesn't exist yet.
     """
     global _index
