@@ -41,7 +41,7 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
 
   // Add Waterloo as a default marker
   const defaultMarkers = [
-    { lat: 43.4643, long: -80.5204, label: "Waterloo, Canada" },
+    { lat: 43.4643, long: -80.5204, label: "Waterloo, Ontario" },
   ];
 
   useEffect(() => {
@@ -70,7 +70,10 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    // Cap pixel ratio: on retina/HiDPI screens an uncapped ratio (2+) renders the
+    // full-screen globe at 4x+ the pixels, which is the main source of lag. 1.5 is
+    // visually near-identical but far cheaper.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     rendererRef.current = renderer;
 
     if (mountRef.current) {
@@ -97,6 +100,12 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     // Mouse tracking for emoji lookAt calculations
     const emojiRaycaster = new THREE.Raycaster();
     const targetPoint = new THREE.Vector3();
+
+    // Reused temps for the per-frame streak-particle animation, so the render
+    // loop doesn't allocate a new Vector3 for every streak + tail segment each
+    // frame (pure GC optimization; positions are identical).
+    const streakBasePos = new THREE.Vector3();
+    const streakTrailPos = new THREE.Vector3();
 
     // Store reference to emoji for mouse following
     let emojiModel: THREE.Group | null = null;
@@ -136,14 +145,11 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     const globe = new THREE.Mesh(geo, mat);
     globeGroup.add(globe);
 
-    console.log('Globe created and added to globeGroup at position:', globeGroup.position);
-
     // Load and add emoji 3D model in the center of the sphere
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
       '/rainbolt.glb', // Your GLB file
       (gltf) => {
-        console.log('GLB model loaded successfully:', gltf);
         emojiModel = gltf.scene; // Store reference globally
 
         // Position the emoji at the WORLD center, same as globe center
@@ -161,9 +167,7 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
 
         // Preserve original Blender materials - don't override them
         emojiModel.traverse((child) => {
-          console.log('Traversing child:', child.name, child.type);
           if (child instanceof THREE.Mesh) {
-            console.log('Found mesh child:', child.name, child);
             if (child.material) {
               // Keep original material properties from Blender
               child.material.transparent = false;
@@ -178,17 +182,13 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
           if (child.name.toLowerCase().includes('head') ||
             child.name.toLowerCase().includes('face') ||
             child.name.toLowerCase().includes('skull')) {
-            console.log('Found potential head object:', child.name);
             emojiHead = child;
           }
         });
 
         // If no specific head found, use the whole model
         if (!emojiHead) {
-          console.log('No specific head found, using whole model');
           emojiHead = emojiModel;
-        } else {
-          console.log('Using head object:', emojiHead);
         }
 
         // Add bright point lights specifically for the emoji
@@ -206,14 +206,9 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
         );
         scene.add(emojiFillLight);
 
-        console.log('Adding emoji model to SCENE at position:', emojiModel.position);
-        console.log('GlobeGroup position:', globeGroup.position);
-        console.log('Emoji model scale:', emojiModel.scale);
         scene.add(emojiModel); // Add to scene, NOT globeGroup
       },
-      (progress) => {
-        console.log('Loading progress:', progress);
-      },
+      undefined,
       (error) => {
         console.error('Error loading GLB model:', error);
       }
@@ -277,7 +272,7 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     waterlooLabel.className = 'waterloo-label';
     waterlooLabel.style.cssText = `
       position: fixed;
-      background: rgba(11, 17, 32, 0.9);
+      background: rgba(11, 17, 32, 0.75);
       color: #e6eaf2;
       padding: 20px;
       border-radius: 12px;
@@ -287,30 +282,30 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
       z-index: 100;
       width: 320px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(230, 234, 242, 0.1);
-      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     `;
     waterlooLabel.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 40px; height: 40px; background: rgba(232, 180, 79, 0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8b44f" stroke-width="2">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-            <circle cx="12" cy="10" r="3"></circle>
-          </svg>
-        </div>
+        <img
+          src="/uwaterloo-seal.svg"
+          alt="University of Waterloo"
+          style="width: 40px; height: 40px; display: block; flex-shrink: 0;"
+        />
         <div>
-          <div style="font-size: 16px; font-weight: 600;">Waterloo, Canada</div>
-          <div style="font-size: 12px; color: #8e9aae;">43.4643°N • 80.5204°W</div>
+          <div style="font-size: 15px; font-weight: 600; color: #e6eaf2; letter-spacing: -0.01em;">Waterloo, Ontario</div>
+          <div style="font-size: 12px; color: #8e9aae; margin-top: 3px; font-variant-numeric: tabular-nums;">43.4643&deg;N &bull; 80.5204&deg;W</div>
         </div>
       </div>
       <div style="font-size: 13px; line-height: 1.6; color: #8e9aae; margin-top: 12px;">
         Home to the University of Waterloo, known for its innovation ecosystem and startup culture. The birthplace of rainbolt.ai.
       </div>
-      <div style="margin-top: 14px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(230, 234, 242, 0.08);">
+      <div style="margin-top: 16px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08);">
         <img
           src="/uw-sign-dp-scaled.jpeg"
-          alt="University of Waterloo"
-          style="width: 100%; height: 110px; display: block; object-fit: cover;"
+          alt="University of Waterloo campus"
+          style="width: 100%; height: 120px; display: block; object-fit: cover;"
         />
       </div>
     `;
@@ -622,29 +617,29 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
         // Update angle
         streak.angle += streak.speed;
 
-        // Calculate new position around the orbit
-        const basePos = new THREE.Vector3(
+        // Calculate new position around the orbit (reuses a hoisted temp)
+        streakBasePos.set(
           Math.cos(streak.angle) * streak.radius,
           0,
           Math.sin(streak.angle) * streak.radius
         );
 
         // Apply axis rotation for different orbital planes
-        basePos.applyAxisAngle(streak.axis, streak.angle * 0.5);
+        streakBasePos.applyAxisAngle(streak.axis, streak.angle * 0.5);
 
         // Position head
-        streak.head.position.copy(basePos);
+        streak.head.position.copy(streakBasePos);
 
         // Position tail segments (follow behind head)
         streak.tail.forEach((tailSegment, i) => {
           const trailAngle = streak.angle - (i + 1) * 0.02; // Much closer spacing
-          const trailPos = new THREE.Vector3(
+          streakTrailPos.set(
             Math.cos(trailAngle) * streak.radius,
             0,
             Math.sin(trailAngle) * streak.radius
           );
-          trailPos.applyAxisAngle(streak.axis, trailAngle * 0.5);
-          tailSegment.position.copy(trailPos);
+          streakTrailPos.applyAxisAngle(streak.axis, trailAngle * 0.5);
+          tailSegment.position.copy(streakTrailPos);
         });
       });
 

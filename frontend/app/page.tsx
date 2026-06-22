@@ -1,43 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { ArrowRight, Play } from "lucide-react";
 import { Navbar } from "@/components/ui/Navbar";
-import { Button } from "@/components/ui/Button";
 import EarthScene from "@/components/ui/Globe";
 
 import "./glow.css";
-
-const FEATURES = [
-  {
-    title: "Comprehensive Reasoning",
-    body: "AI-powered analysis of visual markers, architecture, and environmental clues to determine precise locations with expert-level reasoning.",
-    img: "/img1.jpg",
-  },
-  {
-    title: "Precise Geolocation",
-    body: "Upload any image and receive exact coordinates with confidence scores in seconds, backed by hundreds of thousands of reference images.",
-    img: "/img2.png",
-  },
-  {
-    title: "Learning Mode",
-    body: "Master geographic patterns through AI-guided training. Explore cultures and fun facts while sharpening your geography skills.",
-    img: "/img3.png",
-  },
-];
-
-const STACK = [
-  { category: "Frontend", items: ["Next.js", "React", "Tailwind CSS", "Radix UI", "Three.js"] },
-  { category: "AI Pipeline", items: ["OpenAI CLIP", "LangChain", "Gemini", "FastAPI"] },
-  { category: "Data", items: ["Pinecone", "Firebase", "Mapillary", "Geotagged image dataset"] },
-  { category: "Infrastructure", items: ["Auth0", "Google Cloud", "Docker"] },
-];
-
-const TEAM = [
-  { name: "Daniel Pu", program: "UW CS", img: "/IMG_0628.jpg" },
-  { name: "Evan Yang", program: "UW SYDE", img: "/IMG_0623.jpg" },
-  { name: "Daniel Liu", program: "UW CFM", img: "/IMG_0627.jpg" },
-  { name: "Justin Wang", program: "UW MGTE", img: "/IMG_0625.jpg" },
-];
 
 export default function Home() {
   const [currentSection, setCurrentSection] = useState(0);
@@ -48,9 +16,10 @@ export default function Home() {
   const handleIntersection = (entries: IntersectionObserverEntry[]) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        const sectionId = parseInt(entry.target.getAttribute("data-section-id") || "0");
+        const sectionId = parseInt(entry.target.getAttribute('data-section-id') || '0');
         setCurrentSection(sectionId);
 
+        // Trigger counting animation when hero section is in view
         if (sectionId === 0 && !hasAnimated) {
           setHasAnimated(true);
           animateCount();
@@ -62,35 +31,40 @@ export default function Home() {
   // Detect initial section on mount/remount
   useEffect(() => {
     const detectCurrentSection = () => {
-      const sections = document.querySelectorAll("section[data-section-id]");
+      const sections = document.querySelectorAll('section[data-section-id]');
       const windowHeight = window.innerHeight;
 
       sections.forEach((section) => {
         const rect = section.getBoundingClientRect();
         const sectionMiddle = rect.top + rect.height / 2;
 
+        // Check if section middle is in viewport center area
         if (sectionMiddle >= 0 && sectionMiddle <= windowHeight) {
-          const sectionId = parseInt(section.getAttribute("data-section-id") || "0");
+          const sectionId = parseInt(section.getAttribute('data-section-id') || '0');
           setCurrentSection(sectionId);
         }
       });
     };
 
+    // Run detection after a short delay to ensure DOM is ready
     const timer = setTimeout(detectCurrentSection, 100);
+
     return () => clearTimeout(timer);
-  }, []);
+  }, []); // Only run on mount
 
   const animateCount = () => {
-    // Matches the rebuilt Pinecone index (~400k vectors and climbing).
-    const targetNumber = 400000;
-    const duration = 2000;
+    const targetNumber = 955199;
+    const duration = 2000; // 2 seconds
     const steps = 60;
     const increment = targetNumber / steps;
+    let currentCount = 0;
     let step = 0;
 
     const timer = setInterval(() => {
       step++;
-      setPhotoCount(Math.min(Math.floor(increment * step), targetNumber));
+      currentCount = Math.min(Math.floor(increment * step), targetNumber);
+      setPhotoCount(currentCount);
+
       if (step >= steps) {
         clearInterval(timer);
         setPhotoCount(targetNumber);
@@ -98,217 +72,302 @@ export default function Home() {
     }, duration / steps);
   };
 
-  const formatNumber = (num: number) => num.toLocaleString();
+  const formatNumber = (num: number) => {
+    return num.toLocaleString();
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(handleIntersection, {
-      threshold: 0.3,
-      rootMargin: "-80px 0px",
+      threshold: 0.3, // Trigger when section is 30% visible
+      rootMargin: '-80px 0px' // Adjust for navbar height
     });
 
-    document.querySelectorAll("section[data-section-id]").forEach((section) => {
+    // Observe all sections
+    document.querySelectorAll('section[data-section-id]').forEach((section) => {
       observer.observe(section);
     });
 
     return () => observer.disconnect();
-  }, [hasAnimated]);
+  }, [hasAnimated]); // Include hasAnimated to prevent stale closure
 
   return (
-    <div className="relative h-screen snap-y snap-proximity overflow-y-auto scroll-smooth md:snap-mandatory">
-      {/* Background */}
+    <div className="relative h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
+      {/* Background Elements */}
       <div className="fixed inset-0 z-0">
-        <EarthScene markers={[]} currentSection={currentSection} />
-        {/* Dim the globe once the reader moves past the hero so content stays legible */}
-        <div
-          className={`absolute inset-0 bg-space-950 transition-opacity duration-700 ${
-            currentSection === 0 ? "opacity-0" : "opacity-70"
-          }`}
+        <EarthScene
+          markers={[]}
+          currentSection={currentSection}
         />
+        {/* Vignette Effect */}
         <div className="vignette" />
       </div>
 
+      {/* Navigation */}
       <Navbar currentSection={currentSection} />
 
-      {/* Hero */}
-      <section
-        ref={heroSectionRef}
-        data-section-id="0"
-        className="relative flex min-h-screen snap-start items-center"
-      >
-        <div className="container relative z-[60] mx-auto px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold leading-tight tracking-tight text-fg sm:text-5xl lg:text-6xl">
-              Bolt around the world with <span className="text-star-300">rainbolt.ai</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-fg-muted sm:text-xl">
-              Powered by{" "}
-              <span className="font-semibold text-fg">{formatNumber(photoCount)}+</span> geotagged
-              photos and expert geolocation strategies, we turn visual curiosity into global
-              understanding.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Button size="lg" asChild>
-                <a href="/learning">Try Rainbolt AI</a>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/15 bg-transparent text-fg hover:bg-white/10"
-                asChild
-              >
-                <a href="https://devpost.com/software/rainbolt-ai?ref_content=my-projects-tab&ref_feature=my_projects">
+      {/* Hero Section with Earth */}
+      <section ref={heroSectionRef} data-section-id="0" className="relative h-screen snap-start">
+        <div className="absolute inset-0 pointer-events-none" />
+        <div className="absolute inset-0 flex items-center z-[60]">
+          <div className="container mx-auto">
+            <div className="max-w-3xl px-4">
+              <h1 className="text-6xl md:text-7xl font-bold mb-8 leading-[1.05] tracking-tight text-left text-white">
+                Bolt around the world with{" "}
+                <span className="bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 bg-clip-text text-transparent">
+                  rainbolt.ai
+                </span>
+              </h1>
+              <p className="text-[1.4rem] text-white/80 text-left max-w-xl">
+                Powered by <span className="text-[1.6rem] font-bold text-white">{formatNumber(photoCount)}</span> geotagged photos and expert geolocation strategies, we turn visual curiosity into global understanding.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                {/* Primary: glassy pill with a blue glow that echoes the hero text */}
+                <a
+                  href="/learning"
+                  className="group relative inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/10 px-7 py-3 text-base font-semibold text-white backdrop-blur-md shadow-[0_0_18px_-6px_rgba(56,189,248,0.55)] transition-all duration-300 hover:border-sky-300/70 hover:bg-sky-500/20 hover:shadow-[0_0_30px_-4px_rgba(56,189,248,0.8)]"
+                >
+                  Try Rainbolt AI
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </a>
+                {/* Secondary: quiet ghost so the hierarchy reads clearly */}
+                <a
+                  href="https://devpost.com/software/rainbolt-ai?ref_content=my-projects-tab&ref_feature=my_projects"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="group inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-base font-medium text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:text-white"
+                >
+                  <Play className="h-3.5 w-3.5 fill-current" />
                   Watch Demo
                 </a>
-              </Button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" data-section-id="1" className="relative flex min-h-screen snap-start items-center">
-        <div className="container mx-auto px-6 py-24 lg:px-8">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-fg sm:text-4xl">
-            Features
-          </h2>
-          <div className="mx-auto mt-14 grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-3">
-            {FEATURES.map((feature) => (
-              <div
-                key={feature.title}
-                className="flex flex-col rounded-xl border border-white/10 bg-space-900/70 p-7 backdrop-blur-md transition-colors hover:border-white/20"
-              >
-                <h3 className="text-lg font-semibold text-fg">{feature.title}</h3>
-                <p className="mt-3 mb-6 text-sm leading-relaxed text-fg-muted">{feature.body}</p>
-                <div className="mt-auto aspect-[4/3] w-full overflow-hidden rounded-lg border border-white/5">
-                  <img src={feature.img} alt={feature.title} className="h-full w-full object-cover" />
+      {/* Features Section */}
+      <section id="features" data-section-id="1" className="relative h-screen snap-start">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="container mx-auto px-4">
+            <h2 className="text-4xl font-bold text-white mb-16 text-center [text-shadow:0_0_5px_rgba(255,255,255,0.3)]">
+              Features
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {/* Comprehensive Reasoning */}
+              <div className="flex flex-col bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all p-8">
+                <h3 className="text-2xl font-bold mb-4 text-white text-center">Comprehensive Reasoning</h3>
+                <p className="text-base text-white/80 leading-relaxed text-center mb-6">
+                  We provide AI-powered analysis of visual markers, architecture, and environmental clues to determine precise locations with expert-level reasoning thanks to our unique approach to training.
+                </p>
+                <div className="w-full flex items-center justify-center mt-auto">
+                  <div className="w-full aspect-[4/3] overflow-hidden rounded-lg">
+                    <img src="/img1.jpg" alt="Comprehensive Reasoning" className="w-full h-full object-cover" />
+                  </div>
                 </div>
               </div>
-            ))}
+
+              {/* Precise Geolocation */}
+              <div className="flex flex-col bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all p-8">
+                <h3 className="text-2xl font-bold mb-4 text-white text-center">Precise Geolocation</h3>
+                <p className="text-base text-white/80 leading-relaxed text-center mb-6">
+                  Upload any image and receive exact coordinates with up to 95%+ confidence scores in seconds. Our images are backed by countless references thanks to our queries using expansive databases.
+                </p>
+                <div className="w-full flex items-center justify-center mt-auto">
+                  <div className="w-full aspect-[4/3] overflow-hidden rounded-lg">
+                    <img src="/img2.png" alt="Precise Geolocation" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Learning Mode */}
+              <div className="flex flex-col bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all p-8">
+                <h3 className="text-2xl font-bold mb-4 text-white text-center">Learning Mode</h3>
+                <p className="text-base text-white/80 leading-relaxed text-center mb-6">
+                  Master geographic patterns through AI-guided training. Learn about the world while improving your geographical skills, but most importantly, explore cultures and fun facts along the way!
+                </p>
+                <div className="w-full flex items-center justify-center mt-auto">
+                  <div className="w-full aspect-[4/3] overflow-hidden rounded-lg">
+                    <img src="/img3.png" alt="Learning Mode" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* About */}
-      <section id="about" data-section-id="2" className="relative flex min-h-screen snap-start items-center">
-        <div className="container mx-auto px-6 py-24 lg:px-8">
-          <div className="mx-auto max-w-2xl rounded-xl border border-white/10 bg-space-900/70 p-8 backdrop-blur-md lg:ml-auto lg:mr-12">
-            <h2 className="text-2xl font-bold tracking-tight text-fg">
-              About <span className="text-star-300">rainbolt.ai</span>
+      {/* About Section */}
+      <section id="about" data-section-id="2" className="relative h-screen snap-start">
+        <div className="absolute inset-0 flex items-center justify-end pr-12">
+          <div className="max-w-2xl bg-white/10 backdrop-blur-md rounded-lg p-8 border border-white/20 space-y-4 overflow-y-auto max-h-[80vh]">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              About <span className="bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 bg-clip-text text-transparent">rainbolt.ai</span>
             </h2>
 
-            <div className="mt-6 space-y-6">
-              <div>
-                <h3 className="font-semibold text-fg">Geographic Illiteracy Crisis</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">
-                  Billions navigate our world yet remain geographically blind—recognizing brands and
-                  memes, but not the landscapes and cultures that define our planet.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-fg">Our Mission</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">
-                  We democratize geographic intelligence through AI that combines hundreds of
-                  thousands of geotagged images with expert geolocation strategies. Not just guessing
-                  locations, but understanding them.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-fg">Why It Matters</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">
-                  Transform passive image viewing into active discovery. We're building geographic
-                  literacy one image at a time for travelers, educators, researchers, and the
-                  curious.
-                </p>
-              </div>
+            {/* The Global Literacy Crisis */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-2">
+                Geographic Illiteracy Crisis
+              </h3>
+              <p className="text-sm text-white/80 leading-relaxed">
+                Billions navigate our world yet remain geographically blind, recognizing brands and memes, but not the landscapes and cultures that define our planet.
+              </p>
             </div>
 
-            <div className="mt-8 flex gap-4">
-              {[
-                { src: "/rainbolt_cool.webp", caption: "Trevor Rainbolt" },
-                { src: "/rainbolt_staring.webp", caption: "Rainbolt Focused" },
-              ].map((item) => (
-                <figure key={item.src} className="flex-1">
-                  <img
-                    src={item.src}
-                    alt={item.caption}
-                    className="h-32 w-full rounded-lg border border-white/5 object-cover"
-                  />
-                  <figcaption className="mt-2 text-center text-xs text-fg-muted">
-                    {item.caption}
-                  </figcaption>
-                </figure>
-              ))}
+            {/* Our Mission */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-2">
+                Our Mission
+              </h3>
+              <p className="text-sm text-white/80 leading-relaxed">
+                We democratize geographic intelligence through AI that combines millions of geotagged images with expert geolocation strategies. Not just guessing locations, but understanding them.
+              </p>
+            </div>
+
+            {/* Why It Matters */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-2">
+                Why It Matters
+              </h3>
+              <p className="text-sm text-white/80 leading-relaxed">
+                Transform passive image viewing into active discovery. We're building geographic literacy one image at a time for travelers, educators, researchers, and the curious.
+              </p>
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <div className="flex-1">
+                <img
+                  src="/rainbolt_cool.webp"
+                  alt="Rainbolt Cool"
+                  className="w-full h-32 object-cover rounded-lg bg-white/10"
+                />
+                <p className="text-white/60 text-sm mt-2 text-center">Trevor Rainbolt</p>
+              </div>
+              <div className="flex-1">
+                <img
+                  src="/rainbolt_staring.webp"
+                  alt="Rainbolt Staring"
+                  className="w-full h-32 object-cover rounded-lg bg-white/10"
+                />
+                <p className="text-white/60 text-sm mt-2 text-center">Rainbolt Focused</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Team */}
-      <section id="team" data-section-id="3" className="relative flex min-h-screen snap-start items-center">
-        <div className="container mx-auto px-6 py-24 lg:px-8">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-fg sm:text-4xl">
-            Meet Our Team
-          </h2>
-          <div className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-6 lg:max-w-5xl lg:grid-cols-4">
-            {TEAM.map((member) => (
-              <div
-                key={member.name}
-                className="rounded-xl border border-white/10 bg-space-900/70 p-6 text-center backdrop-blur-md"
-              >
-                <div className="mx-auto h-20 w-20 overflow-hidden rounded-full border border-white/10">
-                  <img src={member.img} alt={member.name} className="h-full w-full object-cover" />
+      {/* Team Section */}
+      <section id="team" data-section-id="3" className="relative h-screen snap-start">
+        <div className="absolute inset-0 flex items-center justify-start pl-16 w-full">
+          <div className="flex flex-col items-start w-full">
+            <h2 className="text-5xl font-bold text-white mb-12">
+              Meet Our Team
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center w-52">
+                <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
+                  <img src="/IMG_0628.jpg" alt="Daniel Pu" className="w-full h-full object-cover" />
                 </div>
-                <h3 className="mt-4 font-semibold text-fg">{member.name}</h3>
-                <p className="mt-1 text-sm text-fg-muted">{member.program}</p>
+                <h3 className="text-xl font-bold text-white mb-2">Daniel Pu</h3>
+                <p className="text-white/80">UW CS</p>
               </div>
-            ))}
+              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
+                <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
+                  <img src="/IMG_0623.jpg" alt="Evan Yang" className="w-full h-full object-cover" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Evan Yang</h3>
+                <p className="text-white/80">UW SYDE</p>
+              </div>
+              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
+                <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
+                  <img src="/IMG_0627.jpg" alt="Daniel Liu" className="w-full h-full object-cover" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Daniel Liu</h3>
+                <p className="text-white/80">UW CFM</p>
+              </div>
+              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
+                <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
+                  <img src="/IMG_0625.jpg" alt="Justin Wang" className="w-full h-full object-cover" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Justin Wang</h3>
+                <p className="text-white/80">UW MGTE</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Technology */}
-      <section id="contact" data-section-id="4" className="relative flex min-h-screen snap-start items-center">
-        <div className="container mx-auto px-6 py-24 lg:px-8">
-          <h2
-            className={`text-center text-3xl font-bold tracking-tight text-fg sm:text-4xl ${
-              currentSection === 4 ? "animate-slide-in" : "opacity-0"
-            }`}
-          >
-            Technology
+      {/* Contact Section */}
+      <section id="contact" data-section-id="4" className="relative h-screen snap-start">
+        {/* Star Constellations Background */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            {/* Constellation 1 - Top Left */}
+            <g opacity="0.6">
+              <line x1="10%" y1="15%" x2="15%" y2="20%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="15%" y1="20%" x2="12%" y2="25%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="12%" y1="25%" x2="18%" y2="28%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <circle cx="10%" cy="15%" r="2" fill="white" opacity="0.8" />
+              <circle cx="15%" cy="20%" r="2.5" fill="white" opacity="0.9" />
+              <circle cx="12%" cy="25%" r="2" fill="white" opacity="0.7" />
+              <circle cx="18%" cy="28%" r="2" fill="white" opacity="0.8" />
+            </g>
+
+            {/* Constellation 2 - Top Right */}
+            <g opacity="0.6">
+              <line x1="85%" y1="12%" x2="88%" y2="18%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="88%" y1="18%" x2="92%" y2="15%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="88%" y1="18%" x2="90%" y2="23%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <circle cx="85%" cy="12%" r="2" fill="white" opacity="0.8" />
+              <circle cx="88%" cy="18%" r="2.5" fill="white" opacity="0.9" />
+              <circle cx="92%" cy="15%" r="2" fill="white" opacity="0.7" />
+              <circle cx="90%" cy="23%" r="2" fill="white" opacity="0.8" />
+            </g>
+
+            {/* Constellation 3 - Bottom Left */}
+            <g opacity="0.6">
+              <line x1="8%" y1="75%" x2="13%" y2="78%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="13%" y1="78%" x2="16%" y2="82%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="16%" y1="82%" x2="12%" y2="85%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <circle cx="8%" cy="75%" r="2" fill="white" opacity="0.8" />
+              <circle cx="13%" cy="78%" r="2.5" fill="white" opacity="0.9" />
+              <circle cx="16%" cy="82%" r="2" fill="white" opacity="0.7" />
+              <circle cx="12%" cy="85%" r="2" fill="white" opacity="0.8" />
+            </g>
+
+            {/* Constellation 4 - Bottom Right */}
+            <g opacity="0.6">
+              <line x1="88%" y1="80%" x2="92%" y2="77%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="92%" y1="77%" x2="90%" y2="72%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line x1="88%" y1="80%" x2="85%" y2="83%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <circle cx="88%" cy="80%" r="2" fill="white" opacity="0.8" />
+              <circle cx="92%" cy="77%" r="2.5" fill="white" opacity="0.9" />
+              <circle cx="90%" cy="72%" r="2" fill="white" opacity="0.7" />
+              <circle cx="85%" cy="83%" r="2" fill="white" opacity="0.8" />
+            </g>
+
+            {/* Small accent stars */}
+            <circle cx="25%" cy="30%" r="1.5" fill="white" opacity="0.5" />
+            <circle cx="70%" cy="40%" r="1.5" fill="white" opacity="0.6" />
+            <circle cx="30%" cy="65%" r="1.5" fill="white" opacity="0.5" />
+            <circle cx="75%" cy="55%" r="1.5" fill="white" opacity="0.6" />
+          </svg>
+        </div>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10">
+          <h2 className={`text-5xl font-bold text-white [text-shadow:0_0_5px_rgba(255,255,255,0.3)] ${currentSection === 4 ? 'animate-slide-in' : 'opacity-0'}`}>
+            Tech Stack
           </h2>
-          <p
-            className={`mx-auto mt-4 max-w-xl text-center text-fg-muted ${
-              currentSection === 4 ? "animate-slide-in" : "opacity-0"
-            }`}
-          >
-            A retrieval-augmented pipeline: CLIP embeddings over a Pinecone index of geotagged
-            imagery, with LLM reasoning layered on top.
-          </p>
-          <div
-            className={`mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 ${
-              currentSection === 4 ? "animate-slide-in" : "opacity-0"
-            }`}
-          >
-            {STACK.map((group) => (
-              <div
-                key={group.category}
-                className="rounded-xl border border-white/10 bg-space-900/70 p-6 backdrop-blur-md"
-              >
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-star-300">
-                  {group.category}
-                </h3>
-                <ul className="mt-4 space-y-2">
-                  {group.items.map((item) => (
-                    <li key={item} className="text-sm text-fg-muted">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className={`max-w-7xl w-full px-4 ${currentSection === 4 ? 'animate-slide-in' : 'opacity-0'}`}>
+            <img
+              src="/Colorful Simple Modern Business Order Process Flowchart (1920 x 1080 px).png"
+              alt="Process Flowchart"
+              className="w-full h-auto"
+              style={{ maxHeight: '80vh', objectFit: 'contain' }}
+            />
           </div>
         </div>
       </section>
-    </div>
+    </div >
   );
 }

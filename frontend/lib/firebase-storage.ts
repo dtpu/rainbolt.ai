@@ -96,18 +96,14 @@ export function createFirebaseStorage(options: FirebaseStorageOptions): StateSto
                         await updateDoc(userDocRef, {
                             sessionIds: arrayUnion(sessionId)
                         });
-                        console.log('[Firebase Storage] Added sessionId to user:', sessionId);
                     } catch (error) {
                         console.error('[Firebase Storage] Error updating user sessionIds:', error);
                     }
                 }
-                
-                console.log('[Firebase Storage] Synced to globeSessions:', sessionId, Object.keys(updates));
             } else {
                 // Fallback to old behavior for other collections
                 const docRef = doc(db, collectionName, userId);
                 await setDoc(docRef, updates, { merge: true });
-                console.log('[Firebase Storage] Synced to Firebase:', Object.keys(updates));
             }
         } catch (error) {
             console.error('[Firebase Storage] Error syncing to Firebase:', error);
@@ -133,7 +129,6 @@ export function createFirebaseStorage(options: FirebaseStorageOptions): StateSto
                 try {
                     const localValue = localStorage.getItem(name);
                     if (localValue) {
-                        console.log('[Firebase Storage] Loaded from localStorage:', name);
                         return localValue;
                     }
                 } catch (e) {
@@ -157,7 +152,6 @@ export function createFirebaseStorage(options: FirebaseStorageOptions): StateSto
                             const value = dataMap[name];
                             
                             if (value) {
-                                console.log('[Firebase Storage] Loaded from globeSessions:', name);
                                 // Cache in localStorage for faster subsequent loads (browser only)
                                 if (typeof window !== 'undefined') {
                                     try {
@@ -179,7 +173,6 @@ export function createFirebaseStorage(options: FirebaseStorageOptions): StateSto
                             const value = data[name];
                             
                             if (value) {
-                                console.log('[Firebase Storage] Loaded from Firebase:', name);
                                 // Cache in localStorage for faster subsequent loads (browser only)
                                 if (typeof window !== 'undefined') {
                                     try {
@@ -248,12 +241,10 @@ export function createFirebaseStorage(options: FirebaseStorageOptions): StateSto
                             [`data.${name}`]: null,
                             updatedAt: serverTimestamp()
                         });
-                        console.log('[Firebase Storage] Removed from globeSessions:', name);
                     } else {
                         // Fallback to old behavior
                         const docRef = doc(db, collectionName, userId);
                         await setDoc(docRef, { [name]: null }, { merge: true });
-                        console.log('[Firebase Storage] Removed from Firebase:', name);
                     }
                 } catch (error) {
                     console.error('[Firebase Storage] Error removing from Firebase:', error);

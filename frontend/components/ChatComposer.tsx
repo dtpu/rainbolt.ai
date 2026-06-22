@@ -7,10 +7,12 @@ import { useChatStore } from './useChatStore';
 export function ChatComposer() {
     const [value, setValue] = useState('');
     const { send, sending } = useChatStore();
+    const sessionId = useChatStore((s) => s.sessionId);
+    const isDemo = sessionId?.startsWith('demo-') ?? false;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const handleSend = async () => {
-        if (!value.trim() || sending) return;
+        if (!value.trim() || sending || isDemo) return;
 
         const messageToSend = value;
         setValue('');
@@ -48,8 +50,8 @@ export function ChatComposer() {
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={sending ? "Sending..." : "Type a message..."}
-                        disabled={sending}
+                        placeholder={isDemo ? "Sign in to chat with Rainbolt AI" : sending ? "Sending..." : "Type a message..."}
+                        disabled={sending || isDemo}
                         rows={1}
                         className="w-full resize-none rounded-xl px-4 py-2.5 pr-10 bg-white/5 border border-white/10 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                         style={{ maxHeight: '120px', minHeight: '42px' }}
@@ -59,7 +61,7 @@ export function ChatComposer() {
 
                 <button
                     onClick={handleSend}
-                    disabled={!value.trim() || sending}
+                    disabled={!value.trim() || sending || isDemo}
                     className="flex-shrink-0 p-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     aria-label="Send message"
                 >
@@ -67,9 +69,15 @@ export function ChatComposer() {
                 </button>
             </div>
 
-            <p className="text-xs text-white/40 mt-2 px-1">
-                Press <kbd className="px-1 py-0.5 rounded bg-white/10">Enter</kbd> to send, <kbd className="px-1 py-0.5 rounded bg-white/10">Shift+Enter</kbd> for new line
-            </p>
+            {isDemo ? (
+                <p className="text-xs text-white/40 mt-2 px-1">
+                    This is a read-only example session. <a href="/login" className="text-sky-400 hover:text-sky-300">Sign in</a> to chat and create your own.
+                </p>
+            ) : (
+                <p className="text-xs text-white/40 mt-2 px-1">
+                    Press <kbd className="px-1 py-0.5 rounded bg-white/10">Enter</kbd> to send, <kbd className="px-1 py-0.5 rounded bg-white/10">Shift+Enter</kbd> for new line
+                </p>
+            )}
         </div>
     );
 }

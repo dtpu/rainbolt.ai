@@ -409,10 +409,8 @@ export default function SimpleGlobe({ markers = [], targetMarkerIndex = 0, isLoc
     function onMouseDown(evt: MouseEvent) {
       // Check if clicking on a marker
       if (hoveredMarker) {
-        const markerData = hoveredMarker.userData.markerData;
         const markerIndex = hoveredMarker.userData.markerIndex;
-        console.log('Marker clicked:', markerData);
-        
+
         // Lock to this marker and notify parent
         if (onLock) {
           onLock();

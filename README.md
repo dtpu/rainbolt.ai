@@ -1,161 +1,208 @@
-# rainbolt.ai  
-** Bolt across the world with AI-powered geolocation  
-** Hack the Valley X Winner - Best UI Hack  
+# rainbolt.ai
 
-![Hackathon Winner Badge](https://img.shields.io/badge/Hackathon-Winner%20Best%20UI%20Hack-brightgreen)  
-![License Badge](https://img.shields.io/badge/License-Proprietary-blue)  
+AI-powered geolocation: upload a photo and the system predicts where it was taken, streams its reasoning live, and verifies the guess against street-level imagery.
 
+![Hackathon Winner Badge](https://img.shields.io/badge/Hackathon-Winner%20Best%20UI%20Hack-brightgreen)
+![License Badge](https://img.shields.io/badge/License-Proprietary-blue)
 
-![Landing Page](images/landing.png)  
----
+![Landing Page](images/landing.png)
 
-Overview  
---------
+![Example reasoning](images/ex1.png)
 
-Ever see a photo and think, "This place looks incredible. Where is that?"  
-Traditional reverse image search tools rarely work well for geolocation.  
-That’s why we built rainbolt.ai: an AI-powered platform that teaches you how to identify real-world locations from any image, providing context, culture, and insight.
+This document is the developer and operator guide. For the original project story, see the [Devpost submission](https://devpost.com/software/rainbolt-ai).
 
-rainbolt.ai combines AI, reasoning models, and geographic data to pinpoint coordinates, display nearby street views, and explain its thought process — analyzing road signs, vegetation, architecture, and more.
+## Architecture
 
-This project is inspired by Trevor Rainbolt, the world’s most famous geoguesser.
+rainbolt.ai is a retrieval-augmented geolocation pipeline. A photo flows through embedding, vector retrieval, language-model reasoning, and street-view verification before reaching the UI.
 
-![About](images/about.png)
+1. Upload. The browser posts an image to the Next.js route `/api/upload`. That route is a server-side proxy: it forwards the image to the FastAPI backend's `/upload-image` endpoint with a shared internal key, so the backend is never called directly from the browser.
+2. CLIP embedding. The backend encodes the image with OpenAI CLIP (ViT-B/32) into a vector embedding.
+3. Pinecone retrieval. The embedding is queried against a Pinecone index that holds two namespaces:
+   - `images`: CLIP embeddings of geotagged reference images, each carrying `{latitude, longitude}` metadata. Nearest neighbors give candidate coordinates. Image-to-image similarity scores are high (~0.7).
+   - `features`: CLIP text embeddings of GeoGuessr-style clues (bollards, road-line styles, license plates, scripts, Street View car metadata, and so on), stored as `metadata['text']`. The image embedding is matched against these text vectors to surface human-readable evidence. Image-to-text scores are low (~0.19 to 0.28), so a lower threshold (~0.22) is used for this namespace.
+4. Gemini reasoning. The candidate coordinates and matched feature clues are handed to Gemini (via LangChain, `langchain_google_genai`). Gemini reasons over the evidence, narrows the location, and explains its thinking. The reasoning is streamed token by token to the client over a WebSocket so the UI can show the model working in real time.
+5. Mapillary verification. The predicted coordinates are checked against Mapillary street-level imagery to confirm and contextualize the guess.
+6. Presentation. The Next.js frontend renders the prediction on an interactive globe and constellation view, shows the streamed reasoning, and displays the street-view imagery.
 
----
+## Tech stack
 
-Example  
--------
+| Layer | Technologies |
+|-------|--------------|
+| Frontend framework | Next.js 15, React 19, TypeScript |
+| Styling and UI | Tailwind CSS v4, Radix UI, framer-motion |
+| 3D and visualization | Three.js |
+| Client state | Zustand |
+| Auth and identity | Auth0 (server-side sessions), Firebase (client) |
+| Backend framework | FastAPI, uvicorn |
+| Realtime transport | WebSockets |
+| Embeddings | OpenAI CLIP (ViT-B/32), Pillow for image handling |
+| Reasoning model | Google Gemini via LangChain (langchain_google_genai) |
+| Vector database | Pinecone (namespaces: images, features) |
+| Street view | Mapillary API |
+| Dataset (index rebuild) | Kaggle (public geotagged image dataset) |
+| Orchestration | Docker, Docker Compose |
+| Deploy targets | Vercel (frontend), container host such as Cloud Run (backend) |
 
-![ex1](images/ex1.png)
-![ex2](images/ex2.png)
-![canvas](images/canvas.png)
+## Prerequisites
 
+You can run the project either fully containerized or directly on your machine.
 
----
+- With containers: Docker and Docker Compose.
+- Without containers: Python 3.11 for the backend, and Node.js with bun for the frontend (the repo ships a `bun.lock`).
 
-Features  
---------
+Accounts and API keys you will need:
 
-Core Capabilities  
-- Image Geolocation: Upload any photo to get precise coordinates.  
-- AI Reasoning: Watch the system explain how it identified features.  
-- Street View Integration: Explore nearby Mapillary street views.  
-- Interactive Chat: Refine or regenerate predictions interactively.  
-- Cultural Insights: Learn about landmarks, culture, and geography.  
+- Google Gemini (the reasoning model) for `GOOGLE_API_KEY`.
+- Pinecone (the vector index) for `PINECONE_API_KEY`.
+- Mapillary (street-view imagery) for `MAPILLARY_API_KEY`. Optional: the app runs without it, just with no street view.
+- Auth0 (user authentication).
+- Firebase (client-side services).
+- Kaggle (only needed to rebuild the Pinecone index from the source dataset).
 
-Technical Features  
-- Real-time Streaming using WebSockets for live reasoning updates.  
-- Multi-modal Analysis combining visual, textual, and spatial data.  
-- Confidence Scoring with transparent accuracy metrics.  
-- Dynamic Visualization via interactive globe and constellation views.
+## Environment variables
 
-![Features](images/features.png)
+Configuration is split across three scopes. Each scope has its own example file. Copy each to its real filename and fill in the values.
 
----
+### Root / Compose (`.env` from `.env.example`)
 
-Architecture  
-------------
+Read by Docker Compose. Public `NEXT_PUBLIC_*` values are baked into the frontend bundle at build time; the Auth0 secrets are injected at runtime.
 
-rainbolt.ai connects multiple systems into a single retrieval-augmented pipeline:
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `NEXT_PUBLIC_BACKEND_URL` | HTTP URL the browser uses to reach the backend | Yes |
+| `NEXT_PUBLIC_BACKEND_WS` | WebSocket URL the browser uses for the reasoning stream | Yes |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase client config | Yes |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase client config | Yes |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase client config | Yes |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase client config | Yes |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase client config | Yes |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase client config | Yes |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Firebase client config | Optional |
+| `APP_BASE_URL` | Public base URL of the frontend, used by Auth0 | Yes |
+| `AUTH0_SECRET` | Cookie/session encryption secret for Auth0 | Yes |
+| `AUTH0_DOMAIN` | Auth0 tenant domain | Yes |
+| `AUTH0_CLIENT_ID` | Auth0 application client id | Yes |
+| `AUTH0_CLIENT_SECRET` | Auth0 application client secret | Yes |
+| `BACKEND_INTERNAL_KEY` | Shared secret the Next.js `/api/upload` proxy sends to the backend. Must match the backend value. | Yes |
 
-User Image → CLIP Encoding → Pinecone Vector Search → Gemini Reasoning → Mapillary Verification → Cultural Context  
+### Backend (`backend/.env` from `backend/.env.example`)
 
-(Add a system diagram here, e.g., docs/images/system-diagram.png)
+Read by the FastAPI service.
 
+| Variable | Purpose | Required |
+|----------|---------|----------|
+| `GOOGLE_API_KEY` | Gemini API key for reasoning | Yes |
+| `PINECONE_API_KEY` | Pinecone API key for vector search | Yes |
+| `PINECONE_INDEX_NAME` | Pinecone index name (default `htv2025`) | Yes |
+| `MAPILLARY_API_KEY` | Mapillary key for street-view lookups | Optional |
+| `ALLOWED_ORIGINS` | Comma-separated allowlist of browser origins permitted to open the WebSocket and call the Mapillary endpoint | Yes |
+| `BACKEND_INTERNAL_KEY` | Shared secret checked on `/upload-image`. Must match the root value. | Yes |
+| `ENABLE_DOCS` | Set to `1` to expose Swagger / OpenAPI docs. Leave off in production. | Optional |
+| `KAGGLE_API_TOKEN` | New-style Kaggle token (`KGAT_...`), only for rebuilding the index | Optional |
+| `KAGGLE_USERNAME` / `KAGGLE_KEY` | Legacy Kaggle credential pair, alternative to the token | Optional |
 
----
+### Frontend (consumed via Compose, or a local `.env.local` for non-Docker dev)
 
-Tech Stack  
------------
+The frontend reads the `NEXT_PUBLIC_*` and Auth0 variables listed in the root scope above. When running the frontend outside Docker, place those values in `frontend/.env.local`.
 
-| Category | Technologies |
-|-----------|---------------|
-| AI & ML | Gemini API, OpenAI CLIP, LangChain, Pillow |
-| Backend | FastAPI, Python, WebSockets |
-| Frontend | Next.js, React, TypeScript, Tailwind CSS |
-| Database | Pinecone (Vector DB), Firebase (Realtime) |
-| Infrastructure | Google Cloud, Auth0, Mapillary API |
-| State Management | Zustand, Radix UI |
+## Quick start with Docker Compose
 
-![Tech Stack](images/techstack.png)
+```bash
+# 1. Configure environment
+cp .env.example .env
+cp backend/.env.example backend/.env
+# edit both files and fill in your keys
 
----
+# 2. Build images
+docker compose build
 
-How It Works  
-------------
+# 3. Start the stack
+docker compose up -d
+```
 
-1. Image Processing – CLIP encodes visual features into vector embeddings.  
-2. Vector Search – Pinecone retrieves similar geographic embeddings.  
-3. AI Reasoning – Gemini analyzes matches and approximates coordinates.  
-4. Verification – Mapillary street views validate and refine predictions.  
-5. Presentation – Frontend displays cultural insights and dynamic visualizations.  
+Health checks:
 
----
+- Backend: http://localhost:8000/
+- Frontend: http://localhost:3000
 
-Data Sources  
-------------
+The backend listens on port 8000 and the frontend on port 3000. Uploaded images persist to `backend/uploads` via a bind mount; the Kaggle dataset cache persists in a named volume.
 
-- YFCC100M dataset for embeddings  
-- Geoguessr community guides for geographic hints  
-- Mapillary API for street-level imagery  
-- Global geographic and cultural datasets for context  
+## Local dev without Docker
 
----
+Run the two services in separate terminals.
 
-Hackathon Achievements  
-----------------------
+Backend (Python 3.11):
 
-- Hack the Valley X (2025)  
-- Winner: Best UI Hack (Sponsored by Conrad Mo)  
-- Built in 36 hours by a 4-person team
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+# create backend/.env from backend/.env.example first
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
----
+Frontend (Node + bun):
 
-Challenges Overcome  
--------------------
+```bash
+cd frontend
+bun install
+# create frontend/.env.local with the NEXT_PUBLIC_* and Auth0 values
+bun dev
+```
 
-- Integrated Three.js for smooth globe animation and camera rotation.  
-- Deployed the complete AI pipeline on Google Cloud.  
-- Implemented real-time street-level vision via Mapillary API.  
-- Tuned Gemini reasoning prompts for consistent accuracy.
+The frontend serves on http://localhost:3000 and the backend on http://localhost:8000.
 
----
+## Rebuilding the Pinecone index
 
-Future Roadmap  
---------------
+The `htv2025` index is built from CLIP embeddings of a public Kaggle dataset and can be regenerated from scratch with `ingest.py` (images) and `ingest_features.py` (text clues). This needs a Kaggle credential. See [backend/REBUILD.md](backend/REBUILD.md) for the full procedure, flags, and resumable-ingest notes.
 
-- Video Analysis: Extend CLIP to analyze video frames sequentially.  
-- Real-time Tracking: Monitor geographic changes over time.  
-- 3D Spatial Mapping: Generate depth maps and 3D reconstructions.  
-- Cultural Enrichment: Add deeper historical and sociological insights.  
-- Mobile App: Native app experience for on-the-go geolocation.
+## Security model
 
----
+The backend is not meant to be hit directly from the public internet. Three gates protect it:
 
-Team  
-----
+- Origin allowlist. `ALLOWED_ORIGINS` is a comma-separated list of permitted browser origins. The backend checks the request origin on the WebSocket connection and on the Mapillary endpoint, and rejects anything not on the list.
+- Internal-key proxy gate. The browser never calls the backend's `/upload-image` directly. It posts to the Next.js `/api/upload` route, which runs server-side, attaches the shared secret `BACKEND_INTERNAL_KEY`, and forwards the request. The backend's `require_internal_key` check rejects any `/upload-image` request without the matching key. Keep the root `.env` and `backend/.env` values identical.
+- Docs toggle. The Swagger / OpenAPI docs are off by default. Set `ENABLE_DOCS=1` only when you want them exposed (for example in local development), and leave it off in production.
+
+## Deployment
+
+- Frontend: deploy to Vercel. Set the `NEXT_PUBLIC_*` build variables and the Auth0 runtime variables in the Vercel project settings. Point `NEXT_PUBLIC_BACKEND_URL` and `NEXT_PUBLIC_BACKEND_WS` at the deployed backend.
+- Backend: build the container in `backend/` and run it on a container host such as Google Cloud Run. Provide all `backend/.env` variables as service environment variables, and set `ALLOWED_ORIGINS` to the deployed frontend origin.
+- Billing backstop. A GCP budget -> Pub/Sub -> Cloud Function kill switch disables billing project-wide if spend crosses a threshold, so a runaway service cannot quietly run up a bill. See [infra/billing-killswitch/README.md](infra/billing-killswitch/README.md).
+
+## Repo layout
+
+```
+.
+├── backend/                 FastAPI service: CLIP, Pinecone, Gemini, Mapillary
+│   ├── main.py              API, WebSocket, upload + origin/key gates
+│   ├── reasoning.py         Gemini reasoning over retrieved evidence
+│   ├── pineconedb.py        Pinecone client and queries
+│   ├── mapillary.py         Street-view lookups
+│   ├── ingest.py            Image-namespace index build
+│   ├── ingest_features.py   Feature-namespace (text clues) build
+│   ├── data/                Source data (GeoGuessr feature clues)
+│   └── REBUILD.md           Index rebuild guide
+├── frontend/                Next.js 15 / React 19 app (bun)
+│   ├── app/                 Routes, including /api/upload proxy
+│   ├── components/          UI components
+│   └── ...
+├── infra/billing-killswitch GCP budget kill switch (Cloud Function)
+├── images/                  Screenshots used in this README
+├── docker-compose.yml       Two-service stack (backend, frontend)
+└── .env.example             Root / compose environment template
+```
+
+## Team
 
 | Member |
-|---------|
+|--------|
 | Daniel Pu |
 | Daniel Liu |
 | Evan |
 | Justin Wang |
 
-![Team](images/team.png)
-
----
-
-Links  
------
-
-- Devpost Submission: https://devpost.com/software/rainbolt-ai  
-
----
-
-License  
--------
+## License
 
 Proprietary. Built for Hack the Valley X 2025.
-

@@ -6,10 +6,6 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const sessionId = formData.get('session_id') as string;
 
-    console.log('=== UPLOAD API ROUTE ===');
-    console.log('Received file:', file?.name);
-    console.log('Received session_id:', sessionId);
-
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
@@ -31,12 +27,15 @@ export async function POST(request: NextRequest) {
     // Send to FastAPI backend with session_id as PATH parameter
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
     const uploadUrl = `${backendUrl}/upload-image/${encodeURIComponent(sessionId)}`;
-    
-    console.log('Sending to backend URL:', uploadUrl);
-    
+
+    // Server-to-server shared secret so random clients can't hit the backend's
+    // upload endpoint directly. Set BACKEND_INTERNAL_KEY (server-only, NOT
+    // NEXT_PUBLIC) to the same value here and in the backend's secrets.
+    const internalKey = process.env.BACKEND_INTERNAL_KEY;
     const backendResponse = await fetch(uploadUrl, {
       method: 'POST',
       body: backendFormData,
+      headers: internalKey ? { 'x-internal-key': internalKey } : {},
     });
 
     if (!backendResponse.ok) {

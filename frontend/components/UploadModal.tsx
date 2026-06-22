@@ -92,7 +92,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose, onCre
     try {
       // --- Call external session creation first and get the session ID ---
       const firebaseSessionId = await onCreateSession(sessionTitle);
-      console.log('Created Firebase session with ID:', firebaseSessionId);
 
       if (!firebaseSessionId) {
         throw new Error('Failed to create session - no session ID returned');

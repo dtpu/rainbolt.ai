@@ -17,7 +17,9 @@ export default function StarryNightBackground({ numStars = 4500 }: { numStars?: 
     camera.lookAt(new THREE.Vector3(-7.7, 0, 0));
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    // Cap pixel ratio (see Globe.tsx); avoids rendering the full-screen starfield
+    // at 4x+ pixels on retina displays.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0';

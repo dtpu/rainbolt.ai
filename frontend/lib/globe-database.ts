@@ -431,23 +431,18 @@ export const createSessionLink = async (
 // Get all links for a user
 export const getUserSessionLinks = async (userId: string): Promise<SessionLink[]> => {
   try {
-    console.log('getUserSessionLinks called with userId:', userId);
     const linksQuery = query(
       collection(db, 'sessionLinks'),
       where('userId', '==', userId)
     );
-    
-    console.log('Executing Firestore query...');
+
     const linksSnapshot = await getDocs(linksQuery);
-    console.log('Firestore query result:', linksSnapshot.size, 'documents');
-    
+
     const links = linksSnapshot.docs.map(doc => {
       const data = doc.data() as SessionLink;
-      console.log('Link document:', doc.id, data);
       return data;
     });
-    
-    console.log('Returning links:', links);
+
     return links;
   } catch (error) {
     console.error('Error fetching user session links:', error);

@@ -17,13 +17,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "rainbolt.ai",
   description:
-    "AI geolocation. Upload any photo and rainbolt.ai pinpoints where it was taken — powered by hundreds of thousands of geotagged images and expert GeoGuessr-style reasoning.",
+    "AI geolocation. Upload any photo and rainbolt.ai pinpoints where it was taken, powered by hundreds of thousands of geotagged images and expert GeoGuessr-style reasoning.",
   openGraph: {
     title: "rainbolt.ai",
     description:
-      "AI geolocation — upload any photo and find out where on Earth it was taken.",
+      "AI geolocation: upload any photo and find out where on Earth it was taken.",
     siteName: "rainbolt.ai",
-    images: ["/rainbolt_ai_logo.png"],
+    images: ["/rainbolt-face.png"],
   },
 };
 

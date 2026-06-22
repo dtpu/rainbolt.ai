@@ -15,17 +15,14 @@ export const useSessionLinks = () => {
   // Load links from database
   const loadLinks = async () => {
     if (!firebaseUserId) {
-      console.log('No firebaseUserId, setting empty links');
       setLinks([]);
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Loading links for user:', firebaseUserId);
       setLoading(true);
       const userLinks = await getUserSessionLinks(firebaseUserId);
-      console.log('Loaded links:', userLinks);
       setLinks(userLinks);
     } catch (error) {
       console.error('Error loading session links:', error);
@@ -140,17 +137,14 @@ export const useSessionLinks = () => {
     }
 
     try {
-      console.log('Clearing all links for user:', firebaseUserId);
       const userLinks = await getUserSessionLinks(firebaseUserId);
-      console.log('Found links to delete:', userLinks.length);
-      
+
       const deletePromises = userLinks.map(link => deleteSessionLink(link.id));
       await Promise.all(deletePromises);
-      
+
       // Clear local state
       setLinks([]);
-      console.log('All links cleared');
-      
+
       return { success: true };
     } catch (error) {
       console.error('Error clearing links:', error);

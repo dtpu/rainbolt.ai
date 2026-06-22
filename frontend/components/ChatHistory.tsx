@@ -13,15 +13,6 @@ export function ChatHistory() {
     const [showScrollButton, setShowScrollButton] = useState(false);
     const [isAtBottom, setIsAtBottom] = useState(true);
 
-    // Debug logging
-    useEffect(() => {
-        console.log('ChatHistory state:', { 
-            messagesCount: messages.length, 
-            sending, 
-            thinking
-        });
-    }, [messages.length, sending, thinking]);
-
     // Auto-scroll to bottom on new messages (only if user is already at bottom)
     useEffect(() => {
         if (isAtBottom && scrollViewportRef.current) {

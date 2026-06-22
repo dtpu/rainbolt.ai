@@ -36,7 +36,7 @@ services:
         NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
     image: rainbolt-frontend
     environment:
-      # Server-side Auth0 secrets — runtime env, never baked into the image
+      # Server-side Auth0 secrets (runtime env, never baked into the image)
       - AUTH0_SECRET=${AUTH0_SECRET}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
