@@ -133,10 +133,9 @@ export default function LoginPage() {
       <header className="relative z-10 px-6 py-6 sm:px-10">
         <Link href="/" className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-white transition-opacity hover:opacity-80">
           <img
-            src="/rainbolt-face.png"
+            src="/rainbolt_logo.png"
             alt=""
-            className="h-8 w-8 rounded-full object-cover ring-1 ring-white/15"
-            style={{ objectPosition: "center 28%" }}
+            className="h-12 w-auto object-contain"
           />
           rainbolt.ai
         </Link>

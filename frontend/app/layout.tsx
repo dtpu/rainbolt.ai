@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     description:
       "AI geolocation: upload any photo and find out where on Earth it was taken.",
     siteName: "rainbolt.ai",
-    images: ["/rainbolt-face.png"],
+    images: ["/rainbolt_logo.png"],
   },
 };
 

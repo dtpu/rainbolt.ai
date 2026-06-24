@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import LoginComponent from "./LoginComponent";
 
 interface NavbarProps {
-  currentSection: number;
+  currentSection?: number;
   variant?: "default" | "learning";
 }
 
@@ -16,43 +16,26 @@ const LINKS = [
   { href: "/learning", label: "Learning" },
 ];
 
-export function Navbar({ currentSection, variant = "default" }: NavbarProps) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [prevSection, setPrevSection] = useState(currentSection);
+export function Navbar({ variant = "default" }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (currentSection === 0) {
-      setIsVisible(true);
-    } else if (currentSection !== prevSection) {
-      const isScrollingDown = currentSection > prevSection;
-      setIsVisible(!isScrollingDown);
-    }
-    setPrevSection(currentSection);
-  }, [currentSection, prevSection]);
-
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-200 ease-out ${
-        isVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
-      }`}
-    >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+    <nav className="fixed top-0 left-0 right-0 z-[100]">
+      <div className="container mx-auto grid grid-cols-3 items-center px-4 py-6">
         <Link
           href="/"
-          className="flex items-center gap-2.5 text-white transition-opacity hover:opacity-80"
+          className="col-start-1 flex items-center gap-2.5 justify-self-start text-white transition-opacity hover:opacity-80"
         >
           <img
-            src="/rainbolt-face.png"
+            src="/rainbolt_logo.png"
             alt="rainbolt.ai"
-            className="h-9 w-9 rounded-full object-cover ring-1 ring-white/15"
-            style={{ objectPosition: "center 28%" }}
+            className="h-14 w-auto object-contain"
           />
           <span className="text-3xl font-bold tracking-tight">rainbolt.ai</span>
         </Link>
 
         {variant !== "learning" && (
-          <div className="hidden items-center gap-10 md:flex">
+          <div className="col-start-2 hidden items-center justify-self-center gap-10 md:flex">
             {LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -65,7 +48,7 @@ export function Navbar({ currentSection, variant = "default" }: NavbarProps) {
           </div>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="col-start-3 flex items-center justify-self-end gap-3">
           <LoginComponent />
           {variant !== "learning" && (
             <button
