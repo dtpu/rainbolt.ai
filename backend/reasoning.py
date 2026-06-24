@@ -11,17 +11,12 @@ from PIL import Image
 
 # Importing config runs load_dotenv() once for the whole app.
 import config  # noqa: F401
+from config import FEATURE_MATCH_THRESHOLD
 
 os.environ["GRPC_VERBOSITY"] = "ERROR"
 os.environ["GRPC_TRACE"] = ""
 
 logger = config.logger
-
-# The features namespace holds CLIP *text* embeddings of GeoGuessr clues, queried
-# with an image embedding. CLIP image<->text cosine scores are far lower than
-# image<->image (measured ~0.19-0.28 for top matches), so this threshold is tuned
-# to that range, not the ~0.7 used for image-to-image matches.
-FEATURE_THRESHOLD = 0.22
 
 if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY environment variable not set")
@@ -30,40 +25,38 @@ model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", thinking_budget=0)
 
 THINK_PROMPT = """You are a geography expert analyzing an image to find coordinates based on visual features and similar location matches.
 
-            GIVEN INFORMATION:
-            Closest Visual Matches, images closest to the input image from a database of geotagged images:
-            {visual_match}
+GIVEN INFORMATION:
+Closest Visual Matches, images closest to the input image from a database of geotagged images:
+{visual_match}
 
-            Features Detected in Image:
-            {features_match}
+Features Detected in Image:
+{features_match}
 
-            Throughout your response, ensure that you convey your though process clearly and in an instructional + educational manner. Do not use stats, and instead give logical reasonings.
+Throughout your response, ensure that you convey your thought process clearly and in an instructional, educational manner. Do not use stats, and instead give logical reasonings.
 
-            Be VERY concise in your answers. Do not write long paragraphs more than 3 sentences long.
+Be VERY concise in your answers. Do not write long paragraphs more than 3 sentences long.
 
-            Identify key features/landmarks from the data provided and what you see in the image. Explain their significance and why they point to a specific location
-            Clearly and concisely state the specific location of the image. State estimated accuracy (always be more pessimistic than optimistic).
+Identify key features/landmarks from the data provided and what you see in the image. Explain their significance and why they point to a specific location
+Clearly and concisely state the specific location of the image. State estimated accuracy (always be more pessimistic than optimistic).
 
-            Write your response in a digestible format, using bullet points or numbered lists where appropriate. Do not use markdown formatting. Be concise as possible while ensuring clarity and completeness in your reasoning.
+Write your response in a digestible format, using bullet points or numbered lists where appropriate. Do not use markdown formatting. Be concise as possible while ensuring clarity and completeness in your reasoning.
 """
 
-ESTIMATE_PROMPT = """
-            You are a geolocation expert tasked with analyzing and determining the exact location of an image based on the following context.
-            CONTEXT: {reasoning}
+ESTIMATE_PROMPT = """You are a geolocation expert tasked with analyzing and determining the exact location of an image based on the following context.
+CONTEXT: {reasoning}
 
-            You have 4 deliverables to provide in a JSON array format with 4 fields:
-            1. "latitude": the latitude of the approximated location of the image
-            2. "longitude": the longitude of the approximated location of the image
-            3. "name": the name of the location (e.g. estimated city, landmark, or region)
-            3. "accuracy": a float between 0 and 100 representing the percentage confidence that the coordinates are correct
-            4. "facts": a list of 3 concise fun facts about the location as text (include historical, cultural, geographical, or interesting facts that the place and its people are known for)
+You have 4 deliverables to provide in a JSON array format with 4 fields:
+1. "latitude": the latitude of the approximated location of the image
+2. "longitude": the longitude of the approximated location of the image
+3. "name": the name of the location (e.g. estimated city, landmark, or region)
+4. "accuracy": a float between 0 and 100 representing the percentage confidence that the coordinates are correct
+5. "facts": a list of 3 concise fun facts about the location as text (include historical, cultural, geographical, or interesting facts that the place and its people are known for)
 
-            Repeat this 3 times for the top 3 possible coordinate locations, each with a different set of coordinates.
+Repeat this 3 times for the top 3 possible coordinate locations, each with a different set of coordinates.
 
-            The output should be in the following JSON array format with 3 objects (each with 5 attributes):
-            [{{'latitude': float, 'longitude': float, 'name': str, 'accuracy': float, 'facts': str}}]
-
-            """
+The output should be in the following JSON array format with 3 objects (each with 5 attributes):
+[{{'latitude': float, 'longitude': float, 'name': str, 'accuracy': float, 'facts': str}}]
+"""
 
 CHAT_PROMPT = """You are a geography expert helping analyze this image to determine its location.
 
@@ -101,7 +94,7 @@ def _format_matches(image_matches: Dict, features: Dict):
 
     features_match = ""
     for match in features:
-        if match['score'] < FEATURE_THRESHOLD:
+        if match['score'] < FEATURE_MATCH_THRESHOLD:
             continue
         text = match['metadata']['text']
         score = match['score']

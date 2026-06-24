@@ -1,11 +1,13 @@
-from typing import List
-from pinecone import Pinecone
 import os
+from typing import List
+
 import clip
 import torch
-from PIL import Image
 from dotenv import load_dotenv
-load_dotenv()  # Load environment variables from .env file
+from PIL import Image
+from pinecone import Pinecone
+
+load_dotenv()
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -33,28 +35,24 @@ def get_index():
 
 
 def query_pinecone(vector, top_k=5, namespace=None, threshold=0) -> List[dict]:
-    """
-    Query Pinecone index with a vector and return top_k results
-    """
+    """Query the index with a vector, optionally dropping matches below threshold."""
     response = get_index().query(vector=vector, top_k=top_k, include_metadata=True, namespace=namespace)
     matches = response['matches']
     if threshold > 0:
         matches = [m for m in matches if m['score'] >= threshold]
     return matches
 
+
 def query_pinecone_with_image(image: Image.Image, top_k=5, namespace=None, threshold=0) -> List[dict]:
-    """
-    Embed image and query Pinecone index
-    """
+    """Embed an image with CLIP, then query the index with that vector."""
     image_input = preprocess(image).unsqueeze(0).to(device)
     with torch.no_grad():
         vector = model.encode_image(image_input).tolist()
     return query_pinecone(vector, top_k=top_k, namespace=namespace, threshold=threshold)
 
+
 def query_pinecone_with_text(text: str, top_k=5, namespace=None) -> List[dict]:
-    """
-    Embed text and query Pinecone index
-    """
+    """Embed text with CLIP, then query the index with that vector."""
     text_input = clip.tokenize([text]).to(device)
     with torch.no_grad():
         vector = model.encode_text(text_input).tolist()

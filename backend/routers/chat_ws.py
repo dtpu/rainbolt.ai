@@ -4,11 +4,16 @@ from urllib.parse import unquote
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from PIL import Image
 
-from config import logger
+from config import (
+    FEATURE_MATCH_THRESHOLD,
+    IMAGE_MATCH_THRESHOLD,
+    MATCH_TOP_K,
+    logger,
+)
 from pineconedb import query_pinecone_with_image
 from reasoning import chat_with_context, estimate_coordinates, think
 from routers.upload import UPLOAD_DIR
-from security import _origin_allowed, safe_session_id
+from security import origin_allowed, safe_session_id
 from ws_manager import manager
 
 router = APIRouter()
@@ -48,8 +53,8 @@ async def handle_chat_message(session_id: str, message_data: dict):
             "message": "Analyzing your question..."
         })
 
-        image_matches = query_pinecone_with_image(image, top_k=25, namespace="images", threshold=0.7)
-        feature_matches = query_pinecone_with_image(image, top_k=10, namespace="features", threshold=0.22)
+        image_matches = query_pinecone_with_image(image, top_k=MATCH_TOP_K, namespace="images", threshold=IMAGE_MATCH_THRESHOLD)
+        feature_matches = query_pinecone_with_image(image, top_k=10, namespace="features", threshold=FEATURE_MATCH_THRESHOLD)
 
         # Build conversation context
         conversation_context = "\n\nPrevious Conversation:\n"
@@ -129,7 +134,7 @@ async def handle_process_image(session_id: str, message_data: dict):
 
     try:
         image = Image.open(file_path)
-        image_matches = query_pinecone_with_image(image, top_k=25, namespace="images", threshold=0.7)
+        image_matches = query_pinecone_with_image(image, top_k=MATCH_TOP_K, namespace="images", threshold=IMAGE_MATCH_THRESHOLD)
 
         await manager.send_message(session_id, {
             "type": "status",
@@ -141,7 +146,7 @@ async def handle_process_image(session_id: str, message_data: dict):
             "type": "status",
             "message": "Detecting features..."
         })
-        feature_matches = query_pinecone_with_image(image, top_k=25, namespace="features", threshold=0.22)
+        feature_matches = query_pinecone_with_image(image, top_k=MATCH_TOP_K, namespace="features", threshold=FEATURE_MATCH_THRESHOLD)
 
         # Start reasoning process
         await manager.send_message(session_id, {
@@ -192,7 +197,7 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
     # WebSockets bypass CORS entirely, so check the Origin header ourselves
     # before accepting, to keep random clients off the paid inference path.
     origin = websocket.headers.get("origin")
-    if not _origin_allowed(origin):
+    if not origin_allowed(origin):
         logger.warning(f"Rejected WebSocket from disallowed origin: {origin!r}")
         await websocket.close(code=1008)  # policy violation
         return
@@ -216,6 +221,6 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected: {session_id}")
         manager.disconnect(session_id)
-    except Exception as e:
-        logger.exception(f"WebSocket error for {session_id}: {e}")
+    except Exception:
+        logger.exception(f"WebSocket error for {session_id}")
         manager.disconnect(session_id)

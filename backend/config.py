@@ -33,3 +33,12 @@ INTERNAL_KEY = os.getenv("BACKEND_INTERNAL_KEY", "")
 
 # Index name is configurable so we can point at a freshly-rebuilt index.
 PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "htv2025")
+
+# Similarity thresholds and result counts used when querying Pinecone.
+# Image-to-image cosine scores run high, so IMAGE_MATCH_THRESHOLD is set near 0.7.
+# The features namespace holds CLIP *text* embeddings queried with an image
+# embedding; those cross-modal scores are much lower (~0.19-0.28 for top matches),
+# so FEATURE_MATCH_THRESHOLD is tuned to that range.
+IMAGE_MATCH_THRESHOLD = 0.7
+FEATURE_MATCH_THRESHOLD = 0.22
+MATCH_TOP_K = 25
