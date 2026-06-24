@@ -16,7 +16,9 @@ export default function Home() {
   const handleIntersection = (entries: IntersectionObserverEntry[]) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        const sectionId = parseInt(entry.target.getAttribute('data-section-id') || '0');
+        const sectionId = parseInt(
+          entry.target.getAttribute("data-section-id") || "0",
+        );
         setCurrentSection(sectionId);
 
         // Trigger counting animation when hero section is in view
@@ -31,7 +33,7 @@ export default function Home() {
   // Detect initial section on mount/remount
   useEffect(() => {
     const detectCurrentSection = () => {
-      const sections = document.querySelectorAll('section[data-section-id]');
+      const sections = document.querySelectorAll("section[data-section-id]");
       const windowHeight = window.innerHeight;
 
       sections.forEach((section) => {
@@ -40,7 +42,9 @@ export default function Home() {
 
         // Check if section middle is in viewport center area
         if (sectionMiddle >= 0 && sectionMiddle <= windowHeight) {
-          const sectionId = parseInt(section.getAttribute('data-section-id') || '0');
+          const sectionId = parseInt(
+            section.getAttribute("data-section-id") || "0",
+          );
           setCurrentSection(sectionId);
         }
       });
@@ -79,11 +83,11 @@ export default function Home() {
   useEffect(() => {
     const observer = new IntersectionObserver(handleIntersection, {
       threshold: 0.3, // Trigger when section is 30% visible
-      rootMargin: '-80px 0px' // Adjust for navbar height
+      rootMargin: "-80px 0px", // Adjust for navbar height
     });
 
     // Observe all sections
-    document.querySelectorAll('section[data-section-id]').forEach((section) => {
+    document.querySelectorAll("section[data-section-id]").forEach((section) => {
       observer.observe(section);
     });
 
@@ -94,10 +98,7 @@ export default function Home() {
     <div className="relative h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
       {/* Background Elements */}
       <div className="fixed inset-0 z-0">
-        <EarthScene
-          markers={[]}
-          currentSection={currentSection}
-        />
+        <EarthScene markers={[]} currentSection={currentSection} />
         {/* Vignette Effect */}
         <div className="vignette" />
       </div>
@@ -106,7 +107,11 @@ export default function Home() {
       <Navbar currentSection={currentSection} />
 
       {/* Hero Section with Earth */}
-      <section ref={heroSectionRef} data-section-id="0" className="relative h-screen snap-start">
+      <section
+        ref={heroSectionRef}
+        data-section-id="0"
+        className="relative h-screen snap-start"
+      >
         <div className="absolute inset-0 pointer-events-none" />
         <div className="absolute inset-0 flex items-center z-[60]">
           <div className="container mx-auto">
@@ -118,7 +123,12 @@ export default function Home() {
                 </span>
               </h1>
               <p className="text-[1.4rem] text-white/80 text-left max-w-xl">
-                Powered by <span className="text-[1.6rem] font-bold text-white">{formatNumber(photoCount)}</span> geotagged photos and expert geolocation strategies, we turn visual curiosity into global understanding.
+                Powered by{" "}
+                <span className="text-[1.6rem] font-bold text-white">
+                  {formatNumber(photoCount)}
+                </span>{" "}
+                geotagged photos and expert geolocation strategies, we turn
+                visual curiosity into global understanding.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 {/* Primary: glassy pill with a blue glow that echoes the hero text */}
@@ -146,7 +156,11 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" data-section-id="1" className="relative h-screen snap-start">
+      <section
+        id="features"
+        data-section-id="1"
+        className="relative h-screen snap-start"
+      >
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="container mx-auto px-4">
             <h2 className="text-4xl font-bold text-white mb-16 text-center [text-shadow:0_0_5px_rgba(255,255,255,0.3)]">
@@ -155,39 +169,66 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {/* Comprehensive Reasoning */}
               <div className="flex flex-col bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all p-8">
-                <h3 className="text-2xl font-bold mb-4 text-white text-center">Comprehensive Reasoning</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white text-center">
+                  Comprehensive Reasoning
+                </h3>
                 <p className="text-base text-white/80 leading-relaxed text-center mb-6">
-                  We provide AI-powered analysis of visual markers, architecture, and environmental clues to determine precise locations with expert-level reasoning thanks to our unique approach to training.
+                  We provide AI-powered analysis of visual markers,
+                  architecture, and environmental clues to determine precise
+                  locations with expert-level reasoning thanks to our unique
+                  approach to training.
                 </p>
                 <div className="w-full flex items-center justify-center mt-auto">
                   <div className="w-full aspect-[4/3] overflow-hidden rounded-lg">
-                    <img src="/img1.jpg" alt="Comprehensive Reasoning" className="w-full h-full object-cover" />
+                    <img
+                      src="/img1.jpg"
+                      alt="Comprehensive Reasoning"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Precise Geolocation */}
               <div className="flex flex-col bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all p-8">
-                <h3 className="text-2xl font-bold mb-4 text-white text-center">Precise Geolocation</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white text-center">
+                  Precise Geolocation
+                </h3>
                 <p className="text-base text-white/80 leading-relaxed text-center mb-6">
-                  Upload any image and receive exact coordinates with up to 95%+ confidence scores in seconds. Our images are backed by countless references thanks to our queries using expansive databases.
+                  Upload any image and receive exact coordinates with up to 95%+
+                  confidence scores in seconds. Our images are backed by
+                  countless references thanks to our queries using expansive
+                  databases.
                 </p>
                 <div className="w-full flex items-center justify-center mt-auto">
                   <div className="w-full aspect-[4/3] overflow-hidden rounded-lg">
-                    <img src="/img2.png" alt="Precise Geolocation" className="w-full h-full object-cover" />
+                    <img
+                      src="/img2.png"
+                      alt="Precise Geolocation"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Learning Mode */}
               <div className="flex flex-col bg-white/5 rounded-lg backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all p-8">
-                <h3 className="text-2xl font-bold mb-4 text-white text-center">Learning Mode</h3>
+                <h3 className="text-2xl font-bold mb-4 text-white text-center">
+                  Learning Mode
+                </h3>
                 <p className="text-base text-white/80 leading-relaxed text-center mb-6">
-                  Master geographic patterns through AI-guided training. Learn about the world while improving your geographical skills, but most importantly, explore cultures and fun facts along the way!
+                  Master geographic patterns through AI-guided training. Learn
+                  about the world while improving your geographical skills, but
+                  most importantly, explore cultures and fun facts along the
+                  way!
                 </p>
                 <div className="w-full flex items-center justify-center mt-auto">
                   <div className="w-full aspect-[4/3] overflow-hidden rounded-lg">
-                    <img src="/img3.png" alt="Learning Mode" className="w-full h-full object-cover" />
+                    <img
+                      src="/img3.png"
+                      alt="Learning Mode"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
               </div>
@@ -197,11 +238,18 @@ export default function Home() {
       </section>
 
       {/* About Section */}
-      <section id="about" data-section-id="2" className="relative h-screen snap-start">
+      <section
+        id="about"
+        data-section-id="2"
+        className="relative h-screen snap-start"
+      >
         <div className="absolute inset-0 flex items-center justify-end pr-12">
           <div className="max-w-2xl bg-white/10 backdrop-blur-md rounded-lg p-8 border border-white/20 space-y-4 overflow-y-auto max-h-[80vh]">
             <h2 className="text-2xl font-bold text-white mb-4">
-              About <span className="bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 bg-clip-text text-transparent">rainbolt.ai</span>
+              About{" "}
+              <span className="bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 bg-clip-text text-transparent">
+                rainbolt.ai
+              </span>
             </h2>
 
             {/* The Global Literacy Crisis */}
@@ -210,17 +258,19 @@ export default function Home() {
                 Geographic Illiteracy Crisis
               </h3>
               <p className="text-sm text-white/80 leading-relaxed">
-                Billions navigate our world yet remain geographically blind, recognizing brands and memes, but not the landscapes and cultures that define our planet.
+                Billions navigate our world yet remain geographically blind,
+                recognizing brands and memes, but not the landscapes and
+                cultures that define our planet.
               </p>
             </div>
 
             {/* Our Mission */}
             <div>
-              <h3 className="text-lg font-bold text-white mb-2">
-                Our Mission
-              </h3>
+              <h3 className="text-lg font-bold text-white mb-2">Our Mission</h3>
               <p className="text-sm text-white/80 leading-relaxed">
-                We democratize geographic intelligence through AI that combines millions of geotagged images with expert geolocation strategies. Not just guessing locations, but understanding them.
+                We democratize geographic intelligence through AI that combines
+                millions of geotagged images with expert geolocation strategies.
+                Not just guessing locations, but understanding them.
               </p>
             </div>
 
@@ -230,7 +280,9 @@ export default function Home() {
                 Why It Matters
               </h3>
               <p className="text-sm text-white/80 leading-relaxed">
-                Transform passive image viewing into active discovery. We're building geographic literacy one image at a time for travelers, educators, researchers, and the curious.
+                Transform passive image viewing into active discovery. We're
+                building geographic literacy one image at a time for travelers,
+                educators, researchers, and the curious.
               </p>
             </div>
 
@@ -241,7 +293,9 @@ export default function Home() {
                   alt="Rainbolt Cool"
                   className="w-full h-32 object-cover rounded-lg bg-white/10"
                 />
-                <p className="text-white/60 text-sm mt-2 text-center">Trevor Rainbolt</p>
+                <p className="text-white/60 text-sm mt-2 text-center">
+                  Trevor Rainbolt
+                </p>
               </div>
               <div className="flex-1">
                 <img
@@ -249,7 +303,9 @@ export default function Home() {
                   alt="Rainbolt Staring"
                   className="w-full h-32 object-cover rounded-lg bg-white/10"
                 />
-                <p className="text-white/60 text-sm mt-2 text-center">Rainbolt Focused</p>
+                <p className="text-white/60 text-sm mt-2 text-center">
+                  Rainbolt Focused
+                </p>
               </div>
             </div>
           </div>
@@ -257,7 +313,11 @@ export default function Home() {
       </section>
 
       {/* Team Section */}
-      <section id="team" data-section-id="3" className="relative h-screen snap-start">
+      <section
+        id="team"
+        data-section-id="3"
+        className="relative h-screen snap-start"
+      >
         <div className="absolute inset-0 flex items-center justify-start pl-16 w-full">
           <div className="flex flex-col items-start w-full">
             <h2 className="text-5xl font-bold text-white mb-12">
@@ -266,30 +326,50 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center w-52">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
-                  <img src="/IMG_0628.jpg" alt="Daniel Pu" className="w-full h-full object-cover" />
+                  <img
+                    src="/IMG_0628.jpg"
+                    alt="Daniel Pu"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Daniel Pu</h3>
                 <p className="text-white/80">UW CS</p>
               </div>
               <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
-                  <img src="/IMG_0623.jpg" alt="Evan Yang" className="w-full h-full object-cover" />
+                  <img
+                    src="/IMG_0623.jpg"
+                    alt="Evan Yang"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Evan Yang</h3>
                 <p className="text-white/80">UW SYDE</p>
               </div>
               <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
-                  <img src="/IMG_0627.jpg" alt="Daniel Liu" className="w-full h-full object-cover" />
+                  <img
+                    src="/IMG_0627.jpg"
+                    alt="Daniel Liu"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Daniel Liu</h3>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Daniel Liu
+                </h3>
                 <p className="text-white/80">UW CFM</p>
               </div>
               <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
-                  <img src="/IMG_0625.jpg" alt="Justin Wang" className="w-full h-full object-cover" />
+                  <img
+                    src="/IMG_0625.jpg"
+                    alt="Justin Wang"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Justin Wang</h3>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Justin Wang
+                </h3>
                 <p className="text-white/80">UW MGTE</p>
               </div>
             </div>
@@ -298,15 +378,40 @@ export default function Home() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" data-section-id="4" className="relative h-screen snap-start">
+      <section
+        id="contact"
+        data-section-id="4"
+        className="relative h-screen snap-start"
+      >
         {/* Star Constellations Background */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             {/* Constellation 1 - Top Left */}
             <g opacity="0.6">
-              <line x1="10%" y1="15%" x2="15%" y2="20%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="15%" y1="20%" x2="12%" y2="25%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="12%" y1="25%" x2="18%" y2="28%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line
+                x1="10%"
+                y1="15%"
+                x2="15%"
+                y2="20%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="15%"
+                y1="20%"
+                x2="12%"
+                y2="25%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="12%"
+                y1="25%"
+                x2="18%"
+                y2="28%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
               <circle cx="10%" cy="15%" r="2" fill="white" opacity="0.8" />
               <circle cx="15%" cy="20%" r="2.5" fill="white" opacity="0.9" />
               <circle cx="12%" cy="25%" r="2" fill="white" opacity="0.7" />
@@ -315,9 +420,30 @@ export default function Home() {
 
             {/* Constellation 2 - Top Right */}
             <g opacity="0.6">
-              <line x1="85%" y1="12%" x2="88%" y2="18%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="88%" y1="18%" x2="92%" y2="15%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="88%" y1="18%" x2="90%" y2="23%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line
+                x1="85%"
+                y1="12%"
+                x2="88%"
+                y2="18%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="88%"
+                y1="18%"
+                x2="92%"
+                y2="15%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="88%"
+                y1="18%"
+                x2="90%"
+                y2="23%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
               <circle cx="85%" cy="12%" r="2" fill="white" opacity="0.8" />
               <circle cx="88%" cy="18%" r="2.5" fill="white" opacity="0.9" />
               <circle cx="92%" cy="15%" r="2" fill="white" opacity="0.7" />
@@ -326,9 +452,30 @@ export default function Home() {
 
             {/* Constellation 3 - Bottom Left */}
             <g opacity="0.6">
-              <line x1="8%" y1="75%" x2="13%" y2="78%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="13%" y1="78%" x2="16%" y2="82%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="16%" y1="82%" x2="12%" y2="85%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line
+                x1="8%"
+                y1="75%"
+                x2="13%"
+                y2="78%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="13%"
+                y1="78%"
+                x2="16%"
+                y2="82%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="16%"
+                y1="82%"
+                x2="12%"
+                y2="85%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
               <circle cx="8%" cy="75%" r="2" fill="white" opacity="0.8" />
               <circle cx="13%" cy="78%" r="2.5" fill="white" opacity="0.9" />
               <circle cx="16%" cy="82%" r="2" fill="white" opacity="0.7" />
@@ -337,9 +484,30 @@ export default function Home() {
 
             {/* Constellation 4 - Bottom Right */}
             <g opacity="0.6">
-              <line x1="88%" y1="80%" x2="92%" y2="77%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="92%" y1="77%" x2="90%" y2="72%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-              <line x1="88%" y1="80%" x2="85%" y2="83%" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+              <line
+                x1="88%"
+                y1="80%"
+                x2="92%"
+                y2="77%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="92%"
+                y1="77%"
+                x2="90%"
+                y2="72%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
+              <line
+                x1="88%"
+                y1="80%"
+                x2="85%"
+                y2="83%"
+                stroke="rgba(255,255,255,0.3)"
+                strokeWidth="1"
+              />
               <circle cx="88%" cy="80%" r="2" fill="white" opacity="0.8" />
               <circle cx="92%" cy="77%" r="2.5" fill="white" opacity="0.9" />
               <circle cx="90%" cy="72%" r="2" fill="white" opacity="0.7" />
@@ -355,19 +523,23 @@ export default function Home() {
         </div>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10">
-          <h2 className={`text-5xl font-bold text-white [text-shadow:0_0_5px_rgba(255,255,255,0.3)] ${currentSection === 4 ? 'animate-slide-in' : 'opacity-0'}`}>
+          <h2
+            className={`text-5xl font-bold text-white [text-shadow:0_0_5px_rgba(255,255,255,0.3)] ${currentSection === 4 ? "animate-slide-in" : "opacity-0"}`}
+          >
             Tech Stack
           </h2>
-          <div className={`max-w-7xl w-full px-4 ${currentSection === 4 ? 'animate-slide-in' : 'opacity-0'}`}>
+          <div
+            className={`max-w-7xl w-full px-4 ${currentSection === 4 ? "animate-slide-in" : "opacity-0"}`}
+          >
             <img
               src="/Colorful Simple Modern Business Order Process Flowchart (1920 x 1080 px).png"
               alt="Process Flowchart"
               className="w-full h-auto"
-              style={{ maxHeight: '80vh', objectFit: 'contain' }}
+              style={{ maxHeight: "80vh", objectFit: "contain" }}
             />
           </div>
         </div>
       </section>
-    </div >
+    </div>
   );
 }

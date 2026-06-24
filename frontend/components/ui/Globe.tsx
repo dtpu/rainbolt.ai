@@ -20,7 +20,11 @@ interface EarthSceneProps {
   onWaterlooScreenPosition?: (position: { x: number; y: number }) => void;
 }
 
-export default function EarthScene({ markers = [], currentSection = 0, onWaterlooScreenPosition }: EarthSceneProps) {
+export default function EarthScene({
+  markers = [],
+  currentSection = 0,
+  onWaterlooScreenPosition,
+}: EarthSceneProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const targetPosition = useRef(new THREE.Vector3(7, 0, 4));
@@ -38,14 +42,11 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
   const sceneRef = useRef<THREE.Scene | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-
-  // Add Waterloo as a default marker
   const defaultMarkers = [
     { lat: 43.4643, long: -80.5204, label: "Waterloo, Ontario" },
   ];
 
   useEffect(() => {
-    // Cleanup any existing renderer before initializing
     if (rendererRef.current) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -63,9 +64,9 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
       45,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1000,
     );
-    camera.position.set(7, 0, 4); // Position camera to view globe
+    camera.position.set(7, 0, 4);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -77,8 +78,7 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     rendererRef.current = renderer;
 
     if (mountRef.current) {
-      // Clear any existing canvas elements first
-      const existingCanvas = mountRef.current.querySelector('canvas');
+      const existingCanvas = mountRef.current.querySelector("canvas");
       if (existingCanvas) {
         mountRef.current.removeChild(existingCanvas);
       }
@@ -89,15 +89,14 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     orbitCtrl.enableDamping = true;
     orbitCtrl.target.set(-7.7, 0, 0);
 
-    orbitCtrl.enableZoom = false; // Disable zooming
-    orbitCtrl.minDistance = 4; // Set minimum distance
-    orbitCtrl.maxDistance = 4; // Set maximum distance to same as minimum to prevent zoom
+    orbitCtrl.enableZoom = false;
+    orbitCtrl.minDistance = 4;
+    orbitCtrl.maxDistance = 4;
 
     const raycaster = new THREE.Raycaster();
     const pointerPos = new THREE.Vector2();
     const globeUV = new THREE.Vector2();
 
-    // Mouse tracking for emoji lookAt calculations
     const emojiRaycaster = new THREE.Raycaster();
     const targetPoint = new THREE.Vector3();
 
@@ -107,11 +106,9 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     const streakBasePos = new THREE.Vector3();
     const streakTrailPos = new THREE.Vector3();
 
-    // Store reference to emoji for mouse following
     let emojiModel: THREE.Group | null = null;
     let emojiHead: THREE.Object3D | null = null;
 
-    // Mouse tracking variables for proper raycasting (like the working example)
     const intersectionPoint = new THREE.Vector3();
     const planeNormal = new THREE.Vector3();
     const plane = new THREE.Plane();
@@ -138,90 +135,77 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
       displacementMap: elevMap,
       displacementScale: 0.05,
       transparent: true,
-      opacity: 0.8, // Increased from 0.4 to make it more visible
+      opacity: 0.8,
       metalness: 0.3,
       roughness: 0.7,
     });
     const globe = new THREE.Mesh(geo, mat);
     globeGroup.add(globe);
 
-    // Load and add emoji 3D model in the center of the sphere
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
-      '/rainbolt.glb', // Your GLB file
+      "/rainbolt.glb",
       (gltf) => {
-        emojiModel = gltf.scene; // Store reference globally
+        emojiModel = gltf.scene;
 
-        // Position the emoji at the WORLD center, same as globe center
-        // Globe is at globeGroup position (-6, 0, -0.5), so put emoji there too
         emojiModel.position.set(-5.8, 0, -0.5);
-
-        // Make it MUCH bigger so we can definitely see it
         emojiModel.scale.set(0.3, 0.3, 0.3);
 
-        // Store the original rotation to account for model facing -Y in Blender
-        // Don't apply fixed rotation - let lookAt() handle full orientation
+        // Model faces -Y in Blender; leave rotation at zero and let lookAt()
+        // handle the full orientation each frame.
         emojiModel.rotation.set(0, 0, 0);
 
-        // Enable rotation animation
-
-        // Preserve original Blender materials - don't override them
         emojiModel.traverse((child) => {
           if (child instanceof THREE.Mesh) {
             if (child.material) {
-              // Keep original material properties from Blender
               child.material.transparent = false;
               child.material.opacity = 1.0;
               child.castShadow = true;
               child.receiveShadow = true;
-              // DON'T override color or emissive - keep Blender materials!
             }
           }
 
-          // Try to find head bone/object for mouse following
-          if (child.name.toLowerCase().includes('head') ||
-            child.name.toLowerCase().includes('face') ||
-            child.name.toLowerCase().includes('skull')) {
+          if (
+            child.name.toLowerCase().includes("head") ||
+            child.name.toLowerCase().includes("face") ||
+            child.name.toLowerCase().includes("skull")
+          ) {
             emojiHead = child;
           }
         });
 
-        // If no specific head found, use the whole model
         if (!emojiHead) {
           emojiHead = emojiModel;
         }
 
-        // Add bright point lights specifically for the emoji
-        const emojiLight = new THREE.PointLight(0xffffff, 1, 100); // Increased intensity and range
+        const emojiLight = new THREE.PointLight(0xffffff, 1, 100);
         emojiLight.position.copy(emojiModel.position);
-        emojiLight.position.y += 1; // Move light slightly above emoji
+        emojiLight.position.y += 1;
         scene.add(emojiLight);
 
-        // Add a second fill light from the front
         const emojiFillLight = new THREE.PointLight(0xffffff, 15, 100);
         emojiFillLight.position.set(
-          emojiModel.position.x + 2, // In front of emoji
+          emojiModel.position.x + 2,
           emojiModel.position.y,
-          emojiModel.position.z + 2
+          emojiModel.position.z + 2,
         );
         scene.add(emojiFillLight);
 
-        scene.add(emojiModel); // Add to scene, NOT globeGroup
+        scene.add(emojiModel);
       },
       undefined,
       (error) => {
-        console.error('Error loading GLB model:', error);
-      }
+        console.error("Error loading GLB model:", error);
+      },
     );
 
-    // Add markers
     const markerGroup = new THREE.Group();
     defaultMarkers.forEach((marker) => {
-      const [x, y, z] = latLongToVector3(marker.lat, marker.long, 1.02); // Slightly larger radius to place markers above surface
+      const [x, y, z] = latLongToVector3(marker.lat, marker.long, 1.02);
 
       const markerGeometry = new THREE.SphereGeometry(0.02, 16, 16);
       const markerMaterial = new THREE.MeshBasicMaterial({
-        color: '#ff0000',
+        color: "#ff0000",
         transparent: true,
         opacity: 0.8,
       });
@@ -229,10 +213,9 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
       const markerMesh = new THREE.Mesh(markerGeometry, markerMaterial);
       markerMesh.position.set(x, y, z);
 
-      // Add glow effect to marker
       const markerGlowGeometry = new THREE.SphereGeometry(0.03, 16, 16);
       const markerGlowMaterial = new THREE.MeshBasicMaterial({
-        color: '#ff0000',
+        color: "#ff0000",
         transparent: true,
         opacity: 0.3,
       });
@@ -243,15 +226,18 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
     });
     globeGroup.add(markerGroup);
 
-    // Create connection line from Waterloo marker to UI badge (only visible in Team section)
-    const [waterlooX, waterlooY, waterlooZ] = latLongToVector3(43.4643, -80.5204, 1.02);
+    // Connection line from the Waterloo marker to the UI badge (Team section only).
+    const [waterlooX, waterlooY, waterlooZ] = latLongToVector3(
+      43.4643,
+      -80.5204,
+      1.02,
+    );
     const waterlooWorldPos = new THREE.Vector3(waterlooX, waterlooY, waterlooZ);
 
-    // Create line geometry - starts at Waterloo, extends toward screen right
     const lineGeometry = new THREE.BufferGeometry();
     const linePoints = [
       waterlooWorldPos,
-      new THREE.Vector3(waterlooX + 2, waterlooY + 0.5, waterlooZ + 1) // Extend toward UI badge area
+      new THREE.Vector3(waterlooX + 2, waterlooY + 0.5, waterlooZ + 1),
     ];
     lineGeometry.setFromPoints(linePoints);
 
@@ -259,17 +245,16 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
       color: 0xffffff,
       transparent: true,
       opacity: 0.6,
-      linewidth: 2
+      linewidth: 2,
     });
 
     const connectionLine = new THREE.Line(lineGeometry, lineMaterial);
-    connectionLine.visible = false; // Initially hidden
+    connectionLine.visible = false;
     connectionLineRef.current = connectionLine;
     globeGroup.add(connectionLine);
 
-    // Create Waterloo text label (visible on Team section)
-    const waterlooLabel = document.createElement('div');
-    waterlooLabel.className = 'waterloo-label';
+    const waterlooLabel = document.createElement("div");
+    waterlooLabel.className = "waterloo-label";
     waterlooLabel.style.cssText = `
       position: fixed;
       background: rgba(11, 17, 32, 0.75);
@@ -314,7 +299,6 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
       mountRef.current.appendChild(waterlooLabel);
     }
 
-    // Add glow effect
     const glowVertexShader = `
       varying vec3 vNormal;
       varying vec3 vPositionNormal;
@@ -334,7 +318,7 @@ export default function EarthScene({ markers = [], currentSection = 0, onWaterlo
         float alignment = dot(vNormal, vPositionNormal);
 // Flip it so edges are bright, center is dim
 float intensity = 1.0 - smoothstep(0.0, 1.0, 1.0-abs(alignment));
-intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
+intensity = pow(intensity, 1.5);
         
         vec3 glowColor = vec3(0.35, 0.55, 0.78);
         vec3 glow = glowColor * intensity * 1.4;
@@ -350,16 +334,15 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
       transparent: true,
-      depthWrite: false // Ensure proper transparency
+      depthWrite: false,
     });
 
     const glowMesh = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(1.08, 32), // Reduced size to be closer to globe
-      glowMaterial
+      new THREE.IcosahedronGeometry(1.08, 32),
+      glowMaterial,
     );
     globeGroup.add(glowMesh);
 
-    // Add flying streak particles (head/tail only, not full orbits)
     const streakParticles: Array<{
       head: THREE.Mesh;
       tail: THREE.Mesh[];
@@ -369,9 +352,13 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
       axis: THREE.Vector3;
     }> = [];
 
-    function createStreakParticle(radius: number, color: number, speed: number, axis: THREE.Vector3) {
-      // Head particle (bright)
-      const headGeometry = new THREE.SphereGeometry(0.015, 8, 8); // Reduced from 0.02 to match tail size
+    function createStreakParticle(
+      radius: number,
+      color: number,
+      speed: number,
+      axis: THREE.Vector3,
+    ) {
+      const headGeometry = new THREE.SphereGeometry(0.015, 8, 8);
       const headMaterial = new THREE.MeshBasicMaterial({
         color,
         transparent: true,
@@ -379,13 +366,12 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
       });
       const head = new THREE.Mesh(headGeometry, headMaterial);
 
-      // Tail particles (fading)
       const tail: THREE.Mesh[] = [];
-      const tailLength = 15; // Increased from 8 to make longerhead streaks
+      const tailLength = 15;
 
       for (let i = 0; i < tailLength; i++) {
-        const tailGeometry = new THREE.SphereGeometry(0.015 - (i * 0.0003), 6, 6); // Smaller size reduction
-        const opacity = 1.0 - (i / tailLength) * 0.9; // Fade from 1.0 to 0.1
+        const tailGeometry = new THREE.SphereGeometry(0.015 - i * 0.0003, 6, 6);
+        const opacity = 1.0 - (i / tailLength) * 0.9;
         const tailMaterial = new THREE.MeshBasicMaterial({
           color,
           transparent: true,
@@ -408,17 +394,31 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
       };
     }
 
-    // Create multiple streak particles
     streakParticles.push(
-      createStreakParticle(1.3, 0xffffff, 0.02, new THREE.Vector3(0, 1, 0)), // Horizontal white
-      createStreakParticle(1.4, 0xccddff, 0.015, new THREE.Vector3(1, 0.5, 0).normalize()), // Tilted blue
-      createStreakParticle(1.5, 0xffccdd, 0.018, new THREE.Vector3(0.5, 0, 1).normalize()), // Tilted pink
-      createStreakParticle(1.35, 0xddffcc, 0.012, new THREE.Vector3(1, 1, 0).normalize()), // Green (now positive speed)
+      createStreakParticle(1.3, 0xffffff, 0.02, new THREE.Vector3(0, 1, 0)),
+      createStreakParticle(
+        1.4,
+        0xccddff,
+        0.015,
+        new THREE.Vector3(1, 0.5, 0).normalize(),
+      ),
+      createStreakParticle(
+        1.5,
+        0xffccdd,
+        0.018,
+        new THREE.Vector3(0.5, 0, 1).normalize(),
+      ),
+      createStreakParticle(
+        1.35,
+        0xddffcc,
+        0.012,
+        new THREE.Vector3(1, 1, 0).normalize(),
+      ),
     );
 
-    // Create a second layer for interactive points
     const detail = 120;
-    const pointsGeo = new THREE.IcosahedronGeometry(1.01, detail); // Slightly larger radius to avoid z-fighting
+    // Slightly larger radius than the globe to avoid z-fighting.
+    const pointsGeo = new THREE.IcosahedronGeometry(1.01, detail);
 
     // Shaders
     const vertexShader = `
@@ -496,26 +496,22 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
     const points = new THREE.Points(pointsGeo, pointsMat);
     globeGroup.add(points);
 
-    // Enhanced lighting setup for better visibility
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x080820, 4);
     globeGroup.add(hemiLight);
 
-    // Add a directional light to simulate sunlight
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
     directionalLight.position.set(5, 3, 5);
     globeGroup.add(directionalLight);
 
-    // Add ambient light for overall brightness
     const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
     globeGroup.add(ambientLight);
 
-    // Add a point light for additional illumination
     const pointLight = new THREE.PointLight(0xffffff, 1, 10);
     pointLight.position.set(2, 2, 2);
     globeGroup.add(pointLight);
 
     const stars = getStarfield({ numStars: 4500, sprite: starSprite });
-    scene.add(stars); // Stars stay in main scene
+    scene.add(stars);
 
     function handleRaycast() {
       raycaster.setFromCamera(pointerPos, camera);
@@ -527,116 +523,112 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
     }
 
     function animate() {
-      // Store animation frame ID for cleanup
       animationFrameRef.current = requestAnimationFrame(animate);
 
-      // Smooth camera movement (synchronized slow transitions)
       if (cameraRef.current) {
         cameraRef.current.position.lerp(targetPosition.current, 0.009);
-
-        // Smooth orbit controls target (same rate for consistency)
         orbitCtrl.target.lerp(targetLookAt.current, 0.009);
       }
 
-      // Update emoji tracking continuously (even when mouse not moving)
+      // Make the emoji track the cursor every frame, even when the mouse is idle.
       if (emojiModel) {
-        // Cast ray from camera through mouse position
         emojiRaycaster.setFromCamera(mouseRef.current, camera);
 
-        // Get cursor point in 3D space at distance 1 from camera
         const cursorPoint = new THREE.Vector3();
-        emojiRaycaster.ray.at(1, cursorPoint); // 1 unit out from camera
+        emojiRaycaster.ray.at(1, cursorPoint);
 
-        // Calculate direction from emoji to cursor point
-        const direction = cursorPoint.clone().sub(emojiModel.position).normalize();
-
-        // Create target point by moving from emoji position in direction of cursor
+        const direction = cursorPoint
+          .clone()
+          .sub(emojiModel.position)
+          .normalize();
         const targetPoint = emojiModel.position.clone().add(direction);
 
-        // Make emoji look at the target point (toward cursor)
         emojiModel.lookAt(targetPoint);
       }
 
-      // Calculate screen coordinates for Waterloo marker (for Team section connection line)
       if (currentSectionRef.current === 3) {
-        const [waterlooX, waterlooY, waterlooZ] = latLongToVector3(43.4643, -80.5204, 1.02);
-        const waterlooWorldPos = new THREE.Vector3(waterlooX, waterlooY, waterlooZ);
+        const [waterlooX, waterlooY, waterlooZ] = latLongToVector3(
+          43.4643,
+          -80.5204,
+          1.02,
+        );
+        const waterlooWorldPos = new THREE.Vector3(
+          waterlooX,
+          waterlooY,
+          waterlooZ,
+        );
 
-        // Apply globe group transformations
         waterlooWorldPos.applyMatrix4(globeGroup.matrixWorld);
 
-        // Project to screen coordinates
         const vector = waterlooWorldPos.clone().project(camera);
 
-        // Convert to screen pixels
         const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
         const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
 
         waterlooScreenPos.current = { x, y };
 
-        // Update Waterloo label position
         if (waterlooLabelRef.current) {
-          // Only when the marker faces the camera and there's room for the card
+          // Only when the marker faces the camera and there's room for the card.
           const isVisible = vector.z < 1 && window.innerWidth >= 1024;
           if (isVisible) {
             const labelWidth = 320;
-            const clampedX = Math.min(x + 80, window.innerWidth - labelWidth - 24);
-            const clampedY = Math.max(96, Math.min(y - 120, window.innerHeight - 360));
-            waterlooLabelRef.current.style.display = 'block';
+            const clampedX = Math.min(
+              x + 80,
+              window.innerWidth - labelWidth - 24,
+            );
+            const clampedY = Math.max(
+              96,
+              Math.min(y - 120, window.innerHeight - 360),
+            );
+            waterlooLabelRef.current.style.display = "block";
             waterlooLabelRef.current.style.left = `${clampedX}px`;
             waterlooLabelRef.current.style.top = `${clampedY}px`;
           } else {
-            waterlooLabelRef.current.style.display = 'none';
+            waterlooLabelRef.current.style.display = "none";
           }
         }
       } else {
-        // Hide label on other sections
         if (waterlooLabelRef.current) {
-          waterlooLabelRef.current.style.display = 'none';
+          waterlooLabelRef.current.style.display = "none";
         }
       }
 
       renderer.render(scene, camera);
 
-      // Handle rotation: either animate to target rotation (Team section) or continue normal rotation
       if (currentSectionRef.current === 3) {
-        // Fast rotate to bring Waterloo to the front and tilt downwards
-        globeGroup.rotation.y += (targetRotationY.current - globeGroup.rotation.y) * 0.09;
-        globeGroup.rotation.x += (targetRotationX.current - globeGroup.rotation.x) * 0.09;
-        globeGroup.rotation.z += (targetRotationZ.current - globeGroup.rotation.z) * 0.09;
+        // Rotate to bring Waterloo to the front and tilt downwards.
+        globeGroup.rotation.y +=
+          (targetRotationY.current - globeGroup.rotation.y) * 0.09;
+        globeGroup.rotation.x +=
+          (targetRotationX.current - globeGroup.rotation.x) * 0.09;
+        globeGroup.rotation.z +=
+          (targetRotationZ.current - globeGroup.rotation.z) * 0.09;
       } else {
-        // Normal continuous rotation for other sections
         globeGroup.rotation.y += 0.001;
-        // Reset X and Z rotation for other sections
         globeGroup.rotation.x += (0 - globeGroup.rotation.x) * 0.03;
         globeGroup.rotation.z += (0 - globeGroup.rotation.z) * 0.03;
       }
 
-      // Animate streak particles (head and tail movement)
       streakParticles.forEach((streak) => {
-        // Update angle
         streak.angle += streak.speed;
 
-        // Calculate new position around the orbit (reuses a hoisted temp)
+        // Reuses a hoisted temp to avoid per-frame allocations.
         streakBasePos.set(
           Math.cos(streak.angle) * streak.radius,
           0,
-          Math.sin(streak.angle) * streak.radius
+          Math.sin(streak.angle) * streak.radius,
         );
 
-        // Apply axis rotation for different orbital planes
         streakBasePos.applyAxisAngle(streak.axis, streak.angle * 0.5);
 
-        // Position head
         streak.head.position.copy(streakBasePos);
 
-        // Position tail segments (follow behind head)
         streak.tail.forEach((tailSegment, i) => {
-          const trailAngle = streak.angle - (i + 1) * 0.02; // Much closer spacing
+          const trailAngle = streak.angle - (i + 1) * 0.02;
           streakTrailPos.set(
             Math.cos(trailAngle) * streak.radius,
             0,
-            Math.sin(trailAngle) * streak.radius
+            Math.sin(trailAngle) * streak.radius,
           );
           streakTrailPos.applyAxisAngle(streak.axis, trailAngle * 0.5);
           tailSegment.position.copy(streakTrailPos);
@@ -651,10 +643,9 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
     function onMouseMove(evt: MouseEvent) {
       pointerPos.set(
         (evt.clientX / window.innerWidth) * 2 - 1,
-        -(evt.clientY / window.innerHeight) * 2 + 1
+        -(evt.clientY / window.innerHeight) * 2 + 1,
       );
 
-      // Update mouse coordinates for emoji tracking
       mouseRef.current.x = (evt.clientX / window.innerWidth) * 2 - 1;
       mouseRef.current.y = -(evt.clientY / window.innerHeight) * 2 + 1;
     }
@@ -669,7 +660,6 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
     window.addEventListener("resize", onResize);
 
     return () => {
-      // Cancel animation frame
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -677,17 +667,21 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
 
-      // Cleanup DOM elements
       if (mountRef.current) {
-        if (renderer.domElement && mountRef.current.contains(renderer.domElement)) {
+        if (
+          renderer.domElement &&
+          mountRef.current.contains(renderer.domElement)
+        ) {
           mountRef.current.removeChild(renderer.domElement);
         }
-        if (waterlooLabelRef.current && mountRef.current.contains(waterlooLabelRef.current)) {
+        if (
+          waterlooLabelRef.current &&
+          mountRef.current.contains(waterlooLabelRef.current)
+        ) {
           mountRef.current.removeChild(waterlooLabelRef.current);
         }
       }
 
-      // Dispose Three.js resources
       renderer.dispose();
       rendererRef.current = null;
       sceneRef.current = null;
@@ -697,41 +691,42 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
 
   // Update camera position when section changes
   useEffect(() => {
-    // Don't update if scene isn't initialized yet
     if (!cameraRef.current) return;
 
-    // Define camera positions for each section
-    const positions: Record<number, { position: [number, number, number]; lookAt: [number, number, number] }> = {
-      0: { position: [7, 0, 4], lookAt: [-7.7, 0, 0] },        // Hero - default view
-      1: { position: [6, -4, 2], lookAt: [-7.7, 1, -0.85] },      // Features - globe at bottom, camera lower
-      2: { position: [12, 0, -24], lookAt: [-7.7, 0, 0] },       // About - globe on left, camera further away
-      3: { position: [10, -3, 1], lookAt: [-7.7, 0, 10] },       // Team - camera lower to show Waterloo higher, zoom on Waterloo
-      4: { position: [20, 15, 20], lookAt: [30, 20, 30] },       // Contact - moderate zoom showing stars with earth smaller
+    const positions: Record<
+      number,
+      { position: [number, number, number]; lookAt: [number, number, number] }
+    > = {
+      0: { position: [7, 0, 4], lookAt: [-7.7, 0, 0] }, // Hero - default view
+      1: { position: [6, -4, 2], lookAt: [-7.7, 1, -0.85] }, // Features - globe at bottom, camera lower
+      2: { position: [12, 0, -24], lookAt: [-7.7, 0, 0] }, // About - globe on left, camera further away
+      3: { position: [10, -3, 1], lookAt: [-7.7, 0, 10] }, // Team - camera lower to show Waterloo higher, zoom on Waterloo
+      4: { position: [20, 15, 20], lookAt: [30, 20, 30] }, // Contact - moderate zoom showing stars with earth smaller
     };
 
     const config = positions[currentSection] || positions[0];
 
-    // Special handling for Team section (3) - calculate Waterloo position for lookAt
+    // Team section (3): rotate the globe so Waterloo faces the camera.
     if (currentSection === 3) {
-      // Calculate Waterloo's position on the globe (lat: 43.4643, long: -80.5204)
-      const [waterlooX, waterlooY, waterlooZ] = latLongToVector3(43.4643, -80.5204, 1);
-      // Offset from globe center (-7.7, 0, 0)
+      const [waterlooX, waterlooY, waterlooZ] = latLongToVector3(
+        43.4643,
+        -80.5204,
+        1,
+      );
+      // Offset from globe center (-7.7, 0, 0).
       const waterlooWorldX = waterlooX - 7.7;
       const waterlooWorldY = waterlooY;
       const waterlooWorldZ = waterlooZ;
 
-      // Calculate rotation needed to bring Waterloo to the front
-      // Waterloo longitude is -80.5204°, we need to rotate the globe to bring this longitude to the front
-      // Adding extra rotation to account for globe's initial orientation
+      // Extra rotation accounts for the globe's initial orientation.
       const waterlooRotationY = (80.5204 + 160) * (Math.PI / 180);
-      const waterlooRotationX = (90) * (Math.PI / 180); // Slight upward tilt (80 degrees)
-      const waterlooRotationZ = (90) * (Math.PI / 180); // Slight Z-axis rotation (-20 degrees)
+      const waterlooRotationX = 90 * (Math.PI / 180);
+      const waterlooRotationZ = 90 * (Math.PI / 180);
 
       targetRotationY.current = waterlooRotationY;
       targetRotationX.current = waterlooRotationX;
       targetRotationZ.current = waterlooRotationZ;
 
-      // Show connection line for Team section
       if (connectionLineRef.current) {
         connectionLineRef.current.visible = true;
       }
@@ -739,12 +734,10 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
       targetPosition.current.set(...config.position);
       targetLookAt.current.set(waterlooWorldX, waterlooWorldY, waterlooWorldZ);
     } else {
-      // Reset rotation for other sections
       targetRotationY.current = 0;
       targetRotationX.current = 0;
       targetRotationZ.current = 0;
 
-      // Hide connection line for other sections
       if (connectionLineRef.current) {
         connectionLineRef.current.visible = false;
       }
@@ -759,7 +752,6 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
     currentSectionRef.current = currentSection;
   }, [currentSection]);
 
-  // Separate effect for mouse tracking to ensure it persists
   useEffect(() => {
     function handleMouseMove(evt: MouseEvent) {
       mouseRef.current.x = (evt.clientX / window.innerWidth) * 2 - 1;
@@ -771,7 +763,13 @@ intensity = pow(intensity, 1.5); // Reduced exponent for larger middle gradient
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, []); // Empty dependency array ensures this runs once and persists
+  }, []);
 
-  return <div ref={mountRef} style={{ width: "100%", height: "100%" }} className="absolute inset-0" />;
+  return (
+    <div
+      ref={mountRef}
+      style={{ width: "100%", height: "100%" }}
+      className="absolute inset-0"
+    />
+  );
 }

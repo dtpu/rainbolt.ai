@@ -6,9 +6,9 @@
 let currentSessionId: string | null = null;
 
 export const setCurrentSessionId = (sessionId: string | null) => {
-    currentSessionId = sessionId;
+  currentSessionId = sessionId;
 };
 
 export const getCurrentSessionId = (): string | null => {
-    return currentSessionId;
+  return currentSessionId;
 };

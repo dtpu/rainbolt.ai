@@ -6,7 +6,8 @@ export function DesktopOnlyNotice() {
       <div className="text-center">
         <h2 className="text-white text-2xl font-bold mb-4">Desktop Only</h2>
         <p className="text-white/70">
-          The chat interface is optimized for desktop viewing. Please visit this page on a larger screen.
+          The chat interface is optimized for desktop viewing. Please visit this
+          page on a larger screen.
         </p>
       </div>
     </div>

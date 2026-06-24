@@ -47,12 +47,25 @@ function ConstellationMotif() {
     { x: 70, y: 92, r: 1.6, glow: 7 },
   ];
   const links = [
-    [0, 1], [1, 2], [2, 3], [2, 4], [4, 5], [5, 6], [6, 0], [5, 2],
+    [0, 1],
+    [1, 2],
+    [2, 3],
+    [2, 4],
+    [4, 5],
+    [5, 6],
+    [6, 0],
+    [5, 2],
   ];
   // A scatter of faint background stars for depth.
   const dust = [
-    { x: 24, y: 22 }, { x: 232, y: 70 }, { x: 60, y: 124 }, { x: 178, y: 18 },
-    { x: 110, y: 70 }, { x: 244, y: 120 }, { x: 14, y: 86 }, { x: 156, y: 128 },
+    { x: 24, y: 22 },
+    { x: 232, y: 70 },
+    { x: 60, y: 124 },
+    { x: 178, y: 18 },
+    { x: 110, y: 70 },
+    { x: 244, y: 120 },
+    { x: 14, y: 86 },
+    { x: 156, y: 128 },
   ];
   const twinkle = [1, 4, 6]; // which stars pulse
 
@@ -73,18 +86,37 @@ function ConstellationMotif() {
       {/* connecting lines */}
       <g stroke="url(#cm-line)" strokeWidth="1" strokeLinecap="round">
         {links.map(([a, b], i) => (
-          <line key={i} x1={stars[a].x} y1={stars[a].y} x2={stars[b].x} y2={stars[b].y} />
+          <line
+            key={i}
+            x1={stars[a].x}
+            y1={stars[a].y}
+            x2={stars[b].x}
+            y2={stars[b].y}
+          />
         ))}
       </g>
 
       {/* background dust */}
       {dust.map((d, i) => (
-        <circle key={`d-${i}`} cx={d.x} cy={d.y} r="0.9" fill="#ffffff" fillOpacity="0.35" />
+        <circle
+          key={`d-${i}`}
+          cx={d.x}
+          cy={d.y}
+          r="0.9"
+          fill="#ffffff"
+          fillOpacity="0.35"
+        />
       ))}
 
       {/* soft glows */}
       {stars.map((s, i) => (
-        <circle key={`g-${i}`} cx={s.x} cy={s.y} r={s.glow} fill="url(#cm-glow)" />
+        <circle
+          key={`g-${i}`}
+          cx={s.x}
+          cy={s.y}
+          r={s.glow}
+          fill="url(#cm-glow)"
+        />
       ))}
 
       {/* star cores */}
@@ -119,7 +151,9 @@ export default function LoginPage() {
   // navigation (not the client router) and forward the typed email as a hint.
   const continueWithEmail = (e: React.FormEvent) => {
     e.preventDefault();
-    const hint = email.trim() ? `?login_hint=${encodeURIComponent(email.trim())}` : "";
+    const hint = email.trim()
+      ? `?login_hint=${encodeURIComponent(email.trim())}`
+      : "";
     window.location.href = `/auth/login${hint}`;
   };
 
@@ -131,7 +165,10 @@ export default function LoginPage() {
 
       {/* Brand */}
       <header className="relative z-10 px-6 py-6 sm:px-10">
-        <Link href="/" className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-white transition-opacity hover:opacity-80">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-white transition-opacity hover:opacity-80"
+        >
           <img
             src="/rainbolt_logo.png"
             alt=""
@@ -154,10 +191,15 @@ export default function LoginPage() {
             {/* LEFT: Sign in */}
             <section className="flex flex-col gap-5 p-8 sm:p-10">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">Sign in</p>
-                <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">Welcome back</h1>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                  Sign in
+                </p>
+                <h1 className="mt-2 text-2xl font-bold tracking-tight text-white">
+                  Welcome back
+                </h1>
                 <p className="mt-1.5 text-sm text-fg-muted">
-                  Pick up where you left off and keep mapping your constellation.
+                  Pick up where you left off and keep mapping your
+                  constellation.
                 </p>
               </div>
 
@@ -180,13 +222,20 @@ export default function LoginPage() {
 
               <div className="flex items-center gap-3">
                 <span className="h-px flex-1 bg-white/10" />
-                <span className="text-[11px] uppercase tracking-wider text-white/40">or with email</span>
+                <span className="text-[11px] uppercase tracking-wider text-white/40">
+                  or with email
+                </span>
                 <span className="h-px flex-1 bg-white/10" />
               </div>
 
-              <form onSubmit={continueWithEmail} className="flex flex-col gap-3">
+              <form
+                onSubmit={continueWithEmail}
+                className="flex flex-col gap-3"
+              >
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-medium text-fg-muted">Email</span>
+                  <span className="text-xs font-medium text-fg-muted">
+                    Email
+                  </span>
                   <input
                     type="email"
                     required
@@ -207,18 +256,24 @@ export default function LoginPage() {
               </form>
 
               <p className="text-xs text-fg-muted/80">
-                New here? Your account is created automatically the first time you sign in.
+                New here? Your account is created automatically the first time
+                you sign in.
               </p>
             </section>
 
             {/* RIGHT: Guest mode */}
             <section className="flex flex-col gap-5 border-t border-white/10 p-8 sm:p-10 md:border-l md:border-t-0">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">No account needed</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">Just exploring?</h2>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+                  No account needed
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">
+                  Just exploring?
+                </h2>
                 <p className="mt-1.5 text-sm text-fg-muted">
-                  Jump straight into a live demo constellation. Drag sessions around, trace the links between
-                  them, and see how it all connects. No sign-up, no email.
+                  Jump straight into a live demo constellation. Drag sessions
+                  around, trace the links between them, and see how it all
+                  connects. No sign-up, no email.
                 </p>
               </div>
 
@@ -236,7 +291,8 @@ export default function LoginPage() {
               </button>
 
               <p className="text-xs text-fg-muted/80">
-                Guest sessions are a read-only preview. Sign in to create and save your own.
+                Guest sessions are a read-only preview. Sign in to create and
+                save your own.
               </p>
             </section>
           </div>

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Home, ArrowLeft } from 'lucide-react';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Home, ArrowLeft } from "lucide-react";
 
 export default function ChatLayout({
   children,
@@ -16,7 +16,7 @@ export default function ChatLayout({
       {/* Slim Sidebar */}
       <aside className="z-[9999] h-full w-16 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center py-4 gap-4">
         {/* Home Icon */}
-        <Link 
+        <Link
           href="/"
           className="p-3 rounded-lg hover:bg-zinc-800 transition-colors group relative"
           title="Home"
@@ -41,9 +41,7 @@ export default function ChatLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-hidden">
-        {children}
-      </main>
+      <main className="flex-1 overflow-hidden">{children}</main>
     </div>
   );
 }

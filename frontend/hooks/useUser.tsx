@@ -1,20 +1,28 @@
-'use client';
+"use client";
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { 
-  UserSession, 
-  getUserSession, 
-  createUserSession, 
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  ReactNode,
+} from "react";
+import {
+  UserSession,
+  getUserSession,
+  createUserSession,
   updateUserLastActive,
   getUserByAuth0Id,
-  getUserSessionIds as getSessionIdsFromDb
-} from '@/lib/globe-database';
+  getUserSessionIds as getSessionIdsFromDb,
+} from "@/lib/globe-database";
 
 interface UserContextType {
   user: UserSession | null;
   loading: boolean;
   error: string | null;
-  createUser: (userData: Omit<UserSession, 'id' | 'createdAt' | 'lastActive'>) => Promise<boolean>;
+  createUser: (
+    userData: Omit<UserSession, "id" | "createdAt" | "lastActive">,
+  ) => Promise<boolean>;
   updateLastActive: () => Promise<void>;
   refreshUser: () => Promise<void>;
   getUserSessionIds: () => Promise<string[]>;
@@ -25,14 +33,20 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 };
 
 interface UserProviderProps {
   children: ReactNode;
-  auth0User?: any; // Auth0 user object from your friend's implementation
+  auth0User?: Record<string, unknown> & {
+    sub: string;
+    email?: string;
+    name?: string;
+    nickname?: string;
+    picture?: string;
+  };
 }
 
 export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
@@ -60,8 +74,8 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
           const newUserData = {
             userId: auth0User.sub, // Use Auth0 sub as user ID
             auth0Id: auth0User.sub,
-            email: auth0User.email || '',
-            displayName: auth0User.name || auth0User.nickname || 'Anonymous',
+            email: auth0User.email || "",
+            displayName: auth0User.name || auth0User.nickname || "Anonymous",
             profilePicture: auth0User.picture,
           };
 
@@ -69,7 +83,7 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
           if (result.success) {
             existingUser = await getUserSession(auth0User.sub);
           } else {
-            throw new Error('Failed to create user session');
+            throw new Error("Failed to create user session");
           }
         } else {
           // Update last active for existing user
@@ -78,8 +92,8 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
 
         setUser(existingUser);
       } catch (err) {
-        console.error('Error initializing user:', err);
-        setError('Failed to initialize user session');
+        console.error("Error initializing user:", err);
+        setError("Failed to initialize user session");
       } finally {
         setLoading(false);
       }
@@ -88,7 +102,9 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
     initializeUser();
   }, [auth0User]);
 
-  const createUser = async (userData: Omit<UserSession, 'id' | 'createdAt' | 'lastActive'>): Promise<boolean> => {
+  const createUser = async (
+    userData: Omit<UserSession, "id" | "createdAt" | "lastActive">,
+  ): Promise<boolean> => {
     try {
       setError(null);
       const result = await createUserSession(userData);
@@ -99,45 +115,45 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
       }
       return false;
     } catch (err) {
-      console.error('Error creating user:', err);
-      setError('Failed to create user');
+      console.error("Error creating user:", err);
+      setError("Failed to create user");
       return false;
     }
   };
 
   const updateLastActive = async () => {
     if (!user) return;
-    
+
     try {
       await updateUserLastActive(user.id);
     } catch (err) {
-      console.error('Error updating last active:', err);
+      console.error("Error updating last active:", err);
     }
   };
 
   const refreshUser = async () => {
     if (!user) return;
-    
+
     try {
       const updatedUser = await getUserSession(user.id);
       setUser(updatedUser);
     } catch (err) {
-      console.error('Error refreshing user:', err);
-      setError('Failed to refresh user data');
+      console.error("Error refreshing user:", err);
+      setError("Failed to refresh user data");
     }
   };
 
   const getUserSessionIds = async (): Promise<string[]> => {
     if (!user) {
-      console.warn('No user available to fetch session IDs');
+      console.warn("No user available to fetch session IDs");
       return [];
     }
-    
+
     try {
       const sessionIds = await getSessionIdsFromDb(user.userId);
       return sessionIds;
     } catch (err) {
-      console.error('Error fetching user session IDs:', err);
+      console.error("Error fetching user session IDs:", err);
       return [];
     }
   };
@@ -146,9 +162,12 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
   useEffect(() => {
     if (!user) return;
 
-    const interval = setInterval(() => {
-      updateLastActive();
-    }, 5 * 60 * 1000); // 5 minutes
+    const interval = setInterval(
+      () => {
+        updateLastActive();
+      },
+      5 * 60 * 1000,
+    ); // 5 minutes
 
     return () => clearInterval(interval);
   }, [user]);
@@ -163,17 +182,13 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
     getUserSessionIds,
   };
 
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 
 // Example hook for game session management
 export const useGameSession = () => {
   const { user } = useUser();
-  
+
   const [currentGame, setCurrentGame] = useState<any>(null);
   const [gameHistory, setGameHistory] = useState<any[]>([]);
 

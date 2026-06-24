@@ -19,8 +19,14 @@ export function spiralPosition(index: number, width: number, height: number) {
   const angle = index * 2.4;
   const radius = 150 + 85 * Math.sqrt(index);
   return {
-    x: Math.max(16, Math.min(cx + radius * Math.cos(angle), width - NODE_W - 16)),
-    y: Math.max(96, Math.min(cy + radius * Math.sin(angle) * 0.75, height - NODE_H - 16)),
+    x: Math.max(
+      16,
+      Math.min(cx + radius * Math.cos(angle), width - NODE_W - 16),
+    ),
+    y: Math.max(
+      96,
+      Math.min(cy + radius * Math.sin(angle) * 0.75, height - NODE_H - 16),
+    ),
   };
 }
 

@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ConstellationNode, NODE_W, NODE_H } from "@/components/constellation/types";
+import {
+  ConstellationNode,
+  NODE_W,
+  NODE_H,
+} from "@/components/constellation/types";
 
 interface UseConstellationDragArgs {
   canvasRef: React.RefObject<HTMLDivElement | null>;
@@ -48,9 +52,11 @@ export function useConstellationDrag({
       setDraggingNodeId(nodeId);
       dragMovedRef.current = false;
 
-      setNodes((prev) => prev.map((n) => (n.id === nodeId ? { ...n, isDragging: true } : n)));
+      setNodes((prev) =>
+        prev.map((n) => (n.id === nodeId ? { ...n, isDragging: true } : n)),
+      );
     },
-    [canvasRef, onCloseSettings]
+    [canvasRef, onCloseSettings],
   );
 
   const handleMouseMove = useCallback(
@@ -73,18 +79,22 @@ export function useConstellationDrag({
 
       setNodes((prev) =>
         prev.map((n) =>
-          n.id === draggingNodeId ? { ...n, position: { x: constrainedX, y: constrainedY } } : n
-        )
+          n.id === draggingNodeId
+            ? { ...n, position: { x: constrainedX, y: constrainedY } }
+            : n,
+        ),
       );
     },
-    [canvasRef, isLinking, setLinkingMousePosition, draggingNodeId, dragOffset]
+    [canvasRef, isLinking, setLinkingMousePosition, draggingNodeId, dragOffset],
   );
 
   const handleMouseUp = useCallback(() => {
     if (!draggingNodeId) return;
     const nodeId = draggingNodeId;
 
-    setNodes((prev) => prev.map((n) => (n.id === nodeId ? { ...n, isDragging: false } : n)));
+    setNodes((prev) =>
+      prev.map((n) => (n.id === nodeId ? { ...n, isDragging: false } : n)),
+    );
     setDraggingNodeId(null);
 
     // A press without movement is a click: open the session (or complete a link)

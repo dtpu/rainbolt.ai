@@ -1,20 +1,35 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
 import { useGlobeSessions } from "@/hooks/useGlobeSessions";
 import { useSessionLinks } from "@/hooks/useSessionLinks";
 import { useConstellationDrag } from "@/hooks/useConstellationDrag";
 import { useSessionLinking } from "@/hooks/useSessionLinking";
-import { useOverscrollPrevention, useGlobalCanvasClick } from "@/hooks/useCanvasGestures";
+import {
+  useOverscrollPrevention,
+  useGlobalCanvasClick,
+} from "@/hooks/useCanvasGestures";
 import { Navbar } from "@/components/ui/Navbar";
 import StarryNightBackground from "@/components/ui/starry-night-background";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ConstellationNodeCard } from "@/components/constellation/ConstellationNodeCard";
 import { CenteredState } from "@/components/constellation/CenteredState";
-import { ConstellationLines, LinkingThread } from "@/components/constellation/ConstellationLinks";
-import { ConstellationNode, spiralPosition } from "@/components/constellation/types";
+import {
+  ConstellationLines,
+  LinkingThread,
+} from "@/components/constellation/ConstellationLinks";
+import {
+  ConstellationNode,
+  spiralPosition,
+} from "@/components/constellation/types";
 import { deleteSessionLinks } from "@/lib/globe-database";
 import { DEMO_SESSIONS, DEMO_LINKS } from "@/lib/demo-constellation";
 import { UploadModal } from "@/components/UploadModal";
@@ -25,7 +40,12 @@ import { Plus, Star } from "lucide-react";
 export default function LearningPage() {
   const router = useRouter();
   const { user, firebaseUserId, isLoading } = useAuth0Firebase();
-  const { sessions, loading: sessionsLoading, createNewSession: createSession, deleteSession } = useGlobeSessions();
+  const {
+    sessions,
+    loading: sessionsLoading,
+    createNewSession: createSession,
+    deleteSession,
+  } = useGlobeSessions();
   const { links, createLink, removeLink, reloadLinks } = useSessionLinks();
 
   // Guest demo mode: once auth has resolved and there's no signed-in user, show
@@ -39,16 +59,18 @@ export default function LearningPage() {
   // (which depends on displaySessions) loops infinitely.
   const displaySessions = useMemo(
     () => (isGuest ? [...DEMO_SESSIONS, ...sessions] : sessions),
-    [isGuest, sessions]
+    [isGuest, sessions],
   );
   const displayLinks = useMemo(
     () => (isGuest ? [...DEMO_LINKS, ...links] : links),
-    [isGuest, links]
+    [isGuest, links],
   );
 
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [settingsOpenNodeId, setSettingsOpenNodeId] = useState<string | null>(null);
+  const [settingsOpenNodeId, setSettingsOpenNodeId] = useState<string | null>(
+    null,
+  );
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     sessionId: string;
@@ -69,7 +91,10 @@ export default function LearningPage() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const nodesRef = useRef<ConstellationNode[]>([]);
 
-  const getNode = useCallback((sessionId: string) => nodesRef.current.find((n) => n.id === sessionId), []);
+  const getNode = useCallback(
+    (sessionId: string) => nodesRef.current.find((n) => n.id === sessionId),
+    [],
+  );
 
   const {
     isLinking,
@@ -92,18 +117,19 @@ export default function LearningPage() {
       useChatStore.getState().clear();
       router.push(`/chat/${nodeId}`);
     },
-    [router]
+    [router],
   );
 
-  const { nodes, setNodes, handleMouseDown, handleMouseMove, handleMouseUp } = useConstellationDrag({
-    canvasRef,
-    isLinking,
-    linkingFromNodeId,
-    setLinkingMousePosition: setMousePosition,
-    completeLink,
-    onCloseSettings: () => setSettingsOpenNodeId(null),
-    onOpenNode: openNode,
-  });
+  const { nodes, setNodes, handleMouseDown, handleMouseMove, handleMouseUp } =
+    useConstellationDrag({
+      canvasRef,
+      isLinking,
+      linkingFromNodeId,
+      setLinkingMousePosition: setMousePosition,
+      completeLink,
+      onCloseSettings: () => setSettingsOpenNodeId(null),
+      onOpenNode: openNode,
+    });
 
   useEffect(() => {
     nodesRef.current = nodes;
@@ -139,7 +165,7 @@ export default function LearningPage() {
             session,
             position: spiralPosition(index, width, height),
             isDragging: false,
-          }))
+          })),
         );
 
         // Reload links once nodes exist so the lines can resolve endpoints
@@ -191,14 +217,23 @@ export default function LearningPage() {
     } catch (error) {
       console.error("Failed to delete link:", error);
     }
-    setLinkDeleteConfirmation({ isOpen: false, linkId: "", fromSessionTitle: "", toSessionTitle: "" });
+    setLinkDeleteConfirmation({
+      isOpen: false,
+      linkId: "",
+      fromSessionTitle: "",
+      toSessionTitle: "",
+    });
   };
 
   const handleDeleteSession = (sessionId: string) => {
     if (sessionId.startsWith("demo-")) return; // demo examples are read-only
     const session = sessions.find((s) => s.id === sessionId);
     if (session) {
-      setDeleteConfirmation({ isOpen: true, sessionId, sessionTitle: session.title });
+      setDeleteConfirmation({
+        isOpen: true,
+        sessionId,
+        sessionTitle: session.title,
+      });
     }
   };
 
@@ -208,7 +243,9 @@ export default function LearningPage() {
         deleteSession(deleteConfirmation.sessionId),
         deleteSessionLinks(deleteConfirmation.sessionId),
       ]);
-      setNodes((prev) => prev.filter((node) => node.id !== deleteConfirmation.sessionId));
+      setNodes((prev) =>
+        prev.filter((node) => node.id !== deleteConfirmation.sessionId),
+      );
       setSettingsOpenNodeId(null);
       setDeleteConfirmation({ isOpen: false, sessionId: "", sessionTitle: "" });
     } catch (error) {
@@ -226,7 +263,12 @@ export default function LearningPage() {
       if (e.key !== "Escape") return;
       if (deleteConfirmation.isOpen) cancelDeleteSession();
       else if (linkDeleteConfirmation.isOpen) {
-        setLinkDeleteConfirmation({ isOpen: false, linkId: "", fromSessionTitle: "", toSessionTitle: "" });
+        setLinkDeleteConfirmation({
+          isOpen: false,
+          linkId: "",
+          fromSessionTitle: "",
+          toSessionTitle: "",
+        });
       }
     };
 
@@ -240,8 +282,12 @@ export default function LearningPage() {
     return (
       <CenteredState>
         <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-sky-400/20 border-t-sky-400" />
-        <h1 className="mt-5 text-2xl font-bold text-fg">Loading your constellation…</h1>
-        <p className="mt-2 text-sm text-fg-muted">Gathering your globe sessions from the stars.</p>
+        <h1 className="mt-5 text-2xl font-bold text-fg">
+          Loading your constellation…
+        </h1>
+        <p className="mt-2 text-sm text-fg-muted">
+          Gathering your globe sessions from the stars.
+        </p>
       </CenteredState>
     );
   }
@@ -328,7 +374,9 @@ export default function LearningPage() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="max-w-md rounded-xl border border-white/10 bg-space-900/75 p-10 text-center backdrop-blur-md">
               <Star className="mx-auto h-10 w-10 text-white drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]" />
-              <h2 className="mt-5 text-xl font-bold text-fg">Your constellation awaits</h2>
+              <h2 className="mt-5 text-xl font-bold text-fg">
+                Your constellation awaits
+              </h2>
               <p className="mt-2 text-sm text-fg-muted">
                 Create your first globe session to begin exploring the world.
               </p>
@@ -364,7 +412,12 @@ export default function LearningPage() {
       </div>
 
       {/* Linking thread */}
-      {isLinking && <LinkingThread fromPosition={linkingFromPosition} mousePosition={mousePosition} />}
+      {isLinking && (
+        <LinkingThread
+          fromPosition={linkingFromPosition}
+          mousePosition={mousePosition}
+        />
+      )}
 
       <UploadModal
         isOpen={showUploadModal}
@@ -385,7 +438,8 @@ export default function LearningPage() {
             &ldquo;{deleteConfirmation.sessionTitle}&rdquo;?
           </p>
           <p className="mt-4 text-sm text-destructive/90">
-            This cannot be undone. All globe images and chat history will be permanently lost.
+            This cannot be undone. All globe images and chat history will be
+            permanently lost.
           </p>
         </ConfirmDialog>
       )}
@@ -396,7 +450,12 @@ export default function LearningPage() {
           title="Delete Connection"
           confirmLabel="Delete Link"
           onCancel={() =>
-            setLinkDeleteConfirmation({ isOpen: false, linkId: "", fromSessionTitle: "", toSessionTitle: "" })
+            setLinkDeleteConfirmation({
+              isOpen: false,
+              linkId: "",
+              fromSessionTitle: "",
+              toSessionTitle: "",
+            })
           }
           onConfirm={confirmDeleteLink}
         >
@@ -408,7 +467,9 @@ export default function LearningPage() {
           <p className="break-words font-semibold text-fg">
             &ldquo;{linkDeleteConfirmation.toSessionTitle}&rdquo;?
           </p>
-          <p className="mt-4 text-sm text-destructive/90">This cannot be undone.</p>
+          <p className="mt-4 text-sm text-destructive/90">
+            This cannot be undone.
+          </p>
         </ConfirmDialog>
       )}
     </div>

@@ -1,6 +1,12 @@
 import * as THREE from "three";
 
-export default function getStarfield({ numStars = 500, sprite }: { numStars?: number; sprite?: THREE.Texture }) {
+export default function getStarfield({
+  numStars = 500,
+  sprite,
+}: {
+  numStars?: number;
+  sprite?: THREE.Texture;
+}) {
   function randomSpherePoint() {
     const radius = Math.random() * 25 + 25;
     const u = Math.random();

@@ -19,7 +19,8 @@ export function useOverscrollPrevention() {
       const clientHeight = document.documentElement.clientHeight;
 
       if (scrollTop === 0 && diff > 0) e.preventDefault();
-      if (scrollTop + clientHeight >= scrollHeight && diff < 0) e.preventDefault();
+      if (scrollTop + clientHeight >= scrollHeight && diff < 0)
+        e.preventDefault();
     }
 
     function onWheel(e: WheelEvent) {
@@ -28,12 +29,17 @@ export function useOverscrollPrevention() {
       const clientHeight = document.documentElement.clientHeight;
 
       if (e.deltaY < 0 && scrollTop === 0) e.preventDefault();
-      if (e.deltaY > 0 && scrollTop + clientHeight >= scrollHeight) e.preventDefault();
+      if (e.deltaY > 0 && scrollTop + clientHeight >= scrollHeight)
+        e.preventDefault();
     }
 
     window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false } as AddEventListenerOptions);
-    window.addEventListener("wheel", onWheel, { passive: false } as AddEventListenerOptions);
+    window.addEventListener("touchmove", onTouchMove, {
+      passive: false,
+    } as AddEventListenerOptions);
+    window.addEventListener("wheel", onWheel, {
+      passive: false,
+    } as AddEventListenerOptions);
 
     return () => {
       document.documentElement.style.overscrollBehavior = prevOverscroll || "";

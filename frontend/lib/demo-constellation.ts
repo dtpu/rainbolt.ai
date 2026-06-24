@@ -11,7 +11,7 @@ const demoSession = (
   images: number,
   chats: number,
   lastAccessedAt: string,
-  status: "active" | "completed" = "active"
+  status: "active" | "completed" = "active",
 ): GlobeSessionWithData => ({
   id: `demo-${id}`,
   userId: "demo",
@@ -29,10 +29,30 @@ const demoSession = (
 export const DEMO_SESSIONS: GlobeSessionWithData[] = [
   demoSession("tokyo", "Tokyo back-alleys", 6, 14, "2026-06-17T00:00:00.000Z"),
   demoSession("fjords", "Norwegian fjords", 4, 9, "2026-06-15T00:00:00.000Z"),
-  demoSession("sahara", "Trans-Sahara highway", 3, 5, "2026-06-12T00:00:00.000Z"),
-  demoSession("patagonia", "Patagonia ridgelines", 5, 11, "2026-06-10T00:00:00.000Z", "completed"),
+  demoSession(
+    "sahara",
+    "Trans-Sahara highway",
+    3,
+    5,
+    "2026-06-12T00:00:00.000Z",
+  ),
+  demoSession(
+    "patagonia",
+    "Patagonia ridgelines",
+    5,
+    11,
+    "2026-06-10T00:00:00.000Z",
+    "completed",
+  ),
   demoSession("kyoto", "Kyoto temple roads", 7, 8, "2026-06-06T00:00:00.000Z"),
-  demoSession("nyc", "NYC subway tiling", 2, 4, "2026-05-30T00:00:00.000Z", "completed"),
+  demoSession(
+    "nyc",
+    "NYC subway tiling",
+    2,
+    4,
+    "2026-05-30T00:00:00.000Z",
+    "completed",
+  ),
 ];
 
 const demoLink = (from: string, to: string): SessionLink => ({
@@ -84,11 +104,20 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
       },
     ],
     messages: chat([
-      ["assistant", "Analyzing the street scene: signage, architecture, road furniture."],
-      ["assistant", "Vertical kanji, compact 2 to 3 story buildings, and dense bar frontage read as urban Japan. Red lanterns and the alley width narrow it to a Tokyo nightlife lane."],
+      [
+        "assistant",
+        "Analyzing the street scene: signage, architecture, road furniture.",
+      ],
+      [
+        "assistant",
+        "Vertical kanji, compact 2 to 3 story buildings, and dense bar frontage read as urban Japan. Red lanterns and the alley width narrow it to a Tokyo nightlife lane.",
+      ],
       ["assistant", "Best estimate: Nonbei Yokocho, Shibuya. Confidence 93%."],
       ["user", "What ruled out Shinjuku's Golden Gai?"],
-      ["assistant", "The JR Yamanote embankment visible at the end of the alley and the lantern signage style match Nonbei Yokocho; Golden Gai sits away from the tracks and has narrower, more uniform facades."],
+      [
+        "assistant",
+        "The JR Yamanote embankment visible at the end of the alley and the lantern signage style match Nonbei Yokocho; Golden Gai sits away from the tracks and has narrower, more uniform facades.",
+      ],
     ]),
   },
   "demo-kyoto": {
@@ -105,10 +134,19 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
     ],
     messages: chat([
       ["assistant", "Reading paving, building materials, and skyline cues."],
-      ["assistant", "Hand-set stone paving and unpainted timber machiya are heritage-district Japan; the pagoda finial above the roofs places it in Kyoto."],
-      ["assistant", "Best estimate: Higashiyama, near Kiyomizu-dera. Confidence 88%."],
+      [
+        "assistant",
+        "Hand-set stone paving and unpainted timber machiya are heritage-district Japan; the pagoda finial above the roofs places it in Kyoto.",
+      ],
+      [
+        "assistant",
+        "Best estimate: Higashiyama, near Kiyomizu-dera. Confidence 88%.",
+      ],
       ["user", "Could this be Nara instead?"],
-      ["assistant", "Nara's old town is flatter and its temple roofs differ; the consistent uphill gradient toward a three-story pagoda is the Kiyomizu approach."],
+      [
+        "assistant",
+        "Nara's old town is flatter and its temple roofs differ; the consistent uphill gradient toward a three-story pagoda is the Kiyomizu approach.",
+      ],
     ]),
   },
   "demo-fjords": {
@@ -125,10 +163,16 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
     ],
     messages: chat([
       ["assistant", "Assessing landform, water colour, and road engineering."],
-      ["assistant", "U-shaped glacial valley, near-vertical walls, and turquoise meltwater are classic western Norway. Red falu cabins and switchback guardrails support a fjord tourist route."],
+      [
+        "assistant",
+        "U-shaped glacial valley, near-vertical walls, and turquoise meltwater are classic western Norway. Red falu cabins and switchback guardrails support a fjord tourist route.",
+      ],
       ["assistant", "Best estimate: Geiranger fjord. Confidence 81%."],
       ["user", "How confident on Geiranger vs. Nærøyfjord?"],
-      ["assistant", "Moderate. The waterfall placement and the road's switchback profile favour Geiranger, but a few other Sunnmøre fjords share this look, hence 81%."],
+      [
+        "assistant",
+        "Moderate. The waterfall placement and the road's switchback profile favour Geiranger, but a few other Sunnmøre fjords share this look, hence 81%.",
+      ],
     ]),
   },
   "demo-sahara": {
@@ -145,10 +189,19 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
     ],
     messages: chat([
       ["assistant", "Reading vegetation, building style, and road furniture."],
-      ["assistant", "Date palms with a whitewashed ksar and red-and-white kerb striping read as a Saharan oasis town in the Maghreb. Pole-mounted lighting and the asphalt standard lean Algerian."],
-      ["assistant", "Best estimate: El Goléa, central Algeria. Confidence 72%."],
+      [
+        "assistant",
+        "Date palms with a whitewashed ksar and red-and-white kerb striping read as a Saharan oasis town in the Maghreb. Pole-mounted lighting and the asphalt standard lean Algerian.",
+      ],
+      [
+        "assistant",
+        "Best estimate: El Goléa, central Algeria. Confidence 72%.",
+      ],
       ["user", "What ruled out Morocco or Tunisia?"],
-      ["assistant", "The ksar form and deep-desert setting fit Algeria's central oases; Moroccan kasbahs run earthier red and Tunisia's southern towns sit nearer the coast."],
+      [
+        "assistant",
+        "The ksar form and deep-desert setting fit Algeria's central oases; Moroccan kasbahs run earthier red and Tunisia's southern towns sit nearer the coast.",
+      ],
     ]),
   },
   "demo-patagonia": {
@@ -165,10 +218,16 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
     ],
     messages: chat([
       ["assistant", "Matching peak silhouette, vegetation, and water colour."],
-      ["assistant", "Sheer granite towers over treeless steppe with milky-blue glacial lakes is unmistakably southern Patagonia."],
+      [
+        "assistant",
+        "Sheer granite towers over treeless steppe with milky-blue glacial lakes is unmistakably southern Patagonia.",
+      ],
       ["assistant", "Best estimate: Torres del Paine, Chile. Confidence 85%."],
       ["user", "Chilean or Argentine side?"],
-      ["assistant", "Chilean. The three-tower 'Torres' profile and the lake's position place the viewpoint inside the Chilean national park rather than near El Chaltén."],
+      [
+        "assistant",
+        "Chilean. The three-tower 'Torres' profile and the lake's position place the viewpoint inside the Chilean national park rather than near El Chaltén.",
+      ],
     ]),
   },
   "demo-nyc": {
@@ -185,10 +244,19 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
     ],
     messages: chat([
       ["assistant", "Inspecting tile, column type, and signage typography."],
-      ["assistant", "Yellow cast-iron tactile edge tiles, riveted steel columns, and the cut-and-cover track layout are the NYC subway's IRT-era build."],
-      ["assistant", "Best estimate: IRT Lexington Avenue line, Manhattan. Confidence 79%."],
+      [
+        "assistant",
+        "Yellow cast-iron tactile edge tiles, riveted steel columns, and the cut-and-cover track layout are the NYC subway's IRT-era build.",
+      ],
+      [
+        "assistant",
+        "Best estimate: IRT Lexington Avenue line, Manhattan. Confidence 79%.",
+      ],
       ["user", "Which station, roughly?"],
-      ["assistant", "The platform width and column spacing suggest a Grand Central area local stop, though restoration across the line keeps this to a station group, not an exact platform."],
+      [
+        "assistant",
+        "The platform width and column spacing suggest a Grand Central area local stop, though restoration across the line keeps this to a station group, not an exact platform.",
+      ],
     ]),
   },
 };

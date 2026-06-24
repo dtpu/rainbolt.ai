@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
-import { Button } from './Button';
+import React, { useEffect } from "react";
+import { X } from "lucide-react";
+import { Button } from "./Button";
 
 interface DialogProps {
   isOpen: boolean;
@@ -19,24 +19,24 @@ export const Dialog: React.FC<DialogProps> = ({
   title,
   description,
   children,
-  className = '',
+  className = "",
 }) => {
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 
@@ -48,14 +48,14 @@ export const Dialog: React.FC<DialogProps> = ({
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
-        style={{ pointerEvents: 'auto' }}
+        style={{ pointerEvents: "auto" }}
       />
 
       {/* Modal */}
       <div
         className={`relative z-[10000] w-full max-w-2xl animate-in zoom-in-95 duration-200 ${className}`}
         onClick={(e) => e.stopPropagation()}
-        style={{ pointerEvents: 'auto' }}
+        style={{ pointerEvents: "auto" }}
       >
         <div className="relative backdrop-blur-md border border-white/10 rounded-xl bg-[#0a0a0f]/95 shadow-2xl overflow-hidden">
           {/* Glow effect */}
@@ -72,9 +72,7 @@ export const Dialog: React.FC<DialogProps> = ({
                     </h2>
                   )}
                   {description && (
-                    <p className="text-white/60 text-sm">
-                      {description}
-                    </p>
+                    <p className="text-white/60 text-sm">{description}</p>
                   )}
                 </div>
                 <button
@@ -89,9 +87,7 @@ export const Dialog: React.FC<DialogProps> = ({
           )}
 
           {/* Content */}
-          <div className="relative p-6">
-            {children}
-          </div>
+          <div className="relative p-6">{children}</div>
         </div>
       </div>
     </div>

@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { ConstellationNode, NODE_W, NODE_H } from "@/components/constellation/types";
+import {
+  ConstellationNode,
+  NODE_W,
+  NODE_H,
+} from "@/components/constellation/types";
 
 interface UseSessionLinkingArgs {
   getNode: (sessionId: string) => ConstellationNode | undefined;
@@ -8,16 +12,26 @@ interface UseSessionLinkingArgs {
     fromSessionId: string,
     toSessionId: string,
     linkType?: "related" | "sequential" | "reference",
-    description?: string
+    description?: string,
   ) => Promise<{ success: boolean; error?: string }>;
   onStartLinking?: () => void;
 }
 
-export function useSessionLinking({ getNode, canvasRef, createLink, onStartLinking }: UseSessionLinkingArgs) {
+export function useSessionLinking({
+  getNode,
+  canvasRef,
+  createLink,
+  onStartLinking,
+}: UseSessionLinkingArgs) {
   const [isLinking, setIsLinking] = useState(false);
-  const [linkingFromNodeId, setLinkingFromNodeId] = useState<string | null>(null);
+  const [linkingFromNodeId, setLinkingFromNodeId] = useState<string | null>(
+    null,
+  );
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [linkingFromPosition, setLinkingFromPosition] = useState({ x: 0, y: 0 });
+  const [linkingFromPosition, setLinkingFromPosition] = useState({
+    x: 0,
+    y: 0,
+  });
 
   const cancelLinking = useCallback(() => {
     setIsLinking(false);
@@ -42,12 +56,17 @@ export function useSessionLinking({ getNode, canvasRef, createLink, onStartLinki
       setMousePosition(nodePosition);
       onStartLinking?.();
     },
-    [getNode, canvasRef, onStartLinking]
+    [getNode, canvasRef, onStartLinking],
   );
 
   const completeLink = useCallback(
     async (targetSessionId: string) => {
-      if (!isLinking || !linkingFromNodeId || linkingFromNodeId === targetSessionId) return;
+      if (
+        !isLinking ||
+        !linkingFromNodeId ||
+        linkingFromNodeId === targetSessionId
+      )
+        return;
 
       try {
         await createLink(linkingFromNodeId, targetSessionId, "related");
@@ -57,7 +76,7 @@ export function useSessionLinking({ getNode, canvasRef, createLink, onStartLinki
 
       cancelLinking();
     },
-    [isLinking, linkingFromNodeId, createLink, cancelLinking]
+    [isLinking, linkingFromNodeId, createLink, cancelLinking],
   );
 
   // ESC cancels linking

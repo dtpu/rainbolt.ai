@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import type { Marker } from "@/components/useChatStore";
 
 export function useMapillaryImages(markers: Marker[], currentMarker: number) {
-  const [mapillaryImages, setMapillaryImages] = useState<Record<number, string[]>>({});
-  const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
+  const [mapillaryImages, setMapillaryImages] = useState<
+    Record<number, string[]>
+  >({});
+  const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>(
+    {},
+  );
 
   useEffect(() => {
     const fetchMapillaryImages = async () => {
@@ -28,7 +32,8 @@ export function useMapillaryImages(markers: Marker[], currentMarker: number) {
       setLoadingImages((prev) => ({ ...prev, [currentMarker]: true }));
 
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+        const backendUrl =
+          process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         const response = await fetch(`${backendUrl}/api/mapillary-images`, {
           method: "POST",
           headers: {

@@ -70,9 +70,16 @@ export function ConstellationLines({
               y1={from.y}
               x2={to.x}
               y2={to.y}
-              stroke={isActive ? "rgba(143, 184, 216, 0.9)" : "rgba(143, 184, 216, 0.3)"}
+              stroke={
+                isActive
+                  ? "rgba(143, 184, 216, 0.9)"
+                  : "rgba(143, 184, 216, 0.3)"
+              }
               strokeWidth={isActive ? 2 : 1.5}
-              style={{ transition: "stroke 0.3s ease-in-out", pointerEvents: "none" }}
+              style={{
+                transition: "stroke 0.3s ease-in-out",
+                pointerEvents: "none",
+              }}
             />
             {/* Midpoint star */}
             <circle
@@ -80,7 +87,10 @@ export function ConstellationLines({
               cy={(from.y + to.y) / 2}
               r={isActive ? 3 : 2}
               fill={isActive ? "#ffffff" : "rgba(255, 255, 255, 0.55)"}
-              style={{ transition: "fill 0.3s ease-in-out", pointerEvents: "none" }}
+              style={{
+                transition: "fill 0.3s ease-in-out",
+                pointerEvents: "none",
+              }}
             />
             {/* Delete affordance when selected */}
             {selectedLinkId === link.id && (

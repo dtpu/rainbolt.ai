@@ -28,7 +28,10 @@ export default function ChatPage() {
 
   useChatSession(sessionId);
 
-  const { mapillaryImages, loadingImages } = useMapillaryImages(markers, currentMarker);
+  const { mapillaryImages, loadingImages } = useMapillaryImages(
+    markers,
+    currentMarker,
+  );
 
   useEffect(() => {
     if (markers.length > 0) {
@@ -54,7 +57,9 @@ export default function ChatPage() {
   };
 
   const currentMarkerData =
-    markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
+    markers.length > 0 && currentMarker < markers.length
+      ? markers[currentMarker]
+      : null;
 
   return (
     <div className="relative h-screen w-screen bg-black flex">
@@ -105,8 +110,12 @@ export default function ChatPage() {
         <div className="flex-shrink-0 border-b border-white/20 p-4 bg-black/60">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <div className={`w-2 h-2 rounded-full ${isDemo ? "bg-sky-400" : "bg-green-500 animate-pulse"}`} />
-              {!isDemo && <div className="absolute inset-0 w-2 h-2 bg-green-500 rounded-full animate-ping" />}
+              <div
+                className={`w-2 h-2 rounded-full ${isDemo ? "bg-sky-400" : "bg-green-500 animate-pulse"}`}
+              />
+              {!isDemo && (
+                <div className="absolute inset-0 w-2 h-2 bg-green-500 rounded-full animate-ping" />
+              )}
             </div>
             <h2 className="text-white font-medium text-base">Rainbolt AI</h2>
             {isDemo && (

@@ -35,7 +35,12 @@ export function ConfirmDialog({
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/15">
             <Trash2 className="h-6 w-6 text-destructive" />
           </div>
-          <h3 id="confirm-dialog-title" className="mt-5 text-xl font-bold text-fg">{title}</h3>
+          <h3
+            id="confirm-dialog-title"
+            className="mt-5 text-xl font-bold text-fg"
+          >
+            {title}
+          </h3>
           <div className="mt-3">{children}</div>
           <div className="mt-8 flex gap-3">
             <Button
