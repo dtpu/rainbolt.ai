@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
 import { useGlobeSessions } from "@/hooks/useGlobeSessions";
@@ -34,8 +34,17 @@ export default function LearningPage() {
   const isGuest = !isLoading && !user;
   // Guests get the full app (create / upload / chat under a per-browser id) plus
   // the seeded demo examples to explore. Only the `demo-` nodes are read-only.
-  const displaySessions = isGuest ? [...DEMO_SESSIONS, ...sessions] : sessions;
-  const displayLinks = isGuest ? [...DEMO_LINKS, ...links] : links;
+  // Memoized so their references stay stable between renders; otherwise the
+  // spread creates a new array every render and the layout effect below
+  // (which depends on displaySessions) loops infinitely.
+  const displaySessions = useMemo(
+    () => (isGuest ? [...DEMO_SESSIONS, ...sessions] : sessions),
+    [isGuest, sessions]
+  );
+  const displayLinks = useMemo(
+    () => (isGuest ? [...DEMO_LINKS, ...links] : links),
+    [isGuest, links]
+  );
 
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -109,26 +118,35 @@ export default function LearningPage() {
     clearSelectedLink: () => setSelectedLinkId(null),
   });
 
-  // Lay out nodes when sessions load
+  // Lay out nodes only when the actual set of sessions changes. The signature
+  // guard makes this impossible to loop even if a dependency (e.g. the Auth0
+  // user object) churns a new reference on every render: setNodes runs once per
+  // real change, never repeatedly.
+  const layoutKeyRef = useRef<string>("");
   useEffect(() => {
-    if (displaySessions.length > 0) {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      const width = rect?.width || window.innerWidth;
-      const height = rect?.height || window.innerHeight;
+    const layoutKey = displaySessions.map((s) => s.id).join("|");
+    if (layoutKey !== layoutKeyRef.current) {
+      layoutKeyRef.current = layoutKey;
 
-      setNodes(
-        displaySessions.map((session, index) => ({
-          id: session.id,
-          session,
-          position: spiralPosition(index, width, height),
-          isDragging: false,
-        }))
-      );
+      if (displaySessions.length > 0) {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        const width = rect?.width || window.innerWidth;
+        const height = rect?.height || window.innerHeight;
 
-      // Reload links once nodes exist so the lines can resolve endpoints
-      setTimeout(() => reloadLinks(), 100);
-    } else {
-      setNodes([]);
+        setNodes(
+          displaySessions.map((session, index) => ({
+            id: session.id,
+            session,
+            position: spiralPosition(index, width, height),
+            isDragging: false,
+          }))
+        );
+
+        // Reload links once nodes exist so the lines can resolve endpoints
+        setTimeout(() => reloadLinks(), 100);
+      } else {
+        setNodes([]);
+      }
     }
 
     if (!sessionsLoading && !isLoading) {

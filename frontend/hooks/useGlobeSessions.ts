@@ -10,7 +10,10 @@ export function useGlobeSessions() {
 
     // Load sessions from database
     const loadSessions = async () => {
-        if (!firebaseUserId) {
+        // Guests (per-browser "guest-" id) aren't authenticated to Firebase, so
+        // Firestore denies their reads ("Missing or insufficient permissions").
+        // Skip the query and let the page fall back to the demo constellation.
+        if (!firebaseUserId || firebaseUserId.startsWith("guest-")) {
             setSessions([]);
             setLoading(false);
             return;
