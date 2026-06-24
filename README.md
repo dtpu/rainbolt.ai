@@ -2,6 +2,8 @@
 
 AI-powered geolocation: upload a photo and the system predicts where it was taken, streams its reasoning live, and verifies the guess against street-level imagery.
 
+**[Live demo](https://rainbolt-ai.vercel.app)** &nbsp;·&nbsp; **[Devpost](https://devpost.com/software/rainbolt-ai)**
+
 ![Hackathon Winner Badge](https://img.shields.io/badge/Hackathon-Winner%20Best%20UI%20Hack-brightgreen)
 ![License Badge](https://img.shields.io/badge/License-Proprietary-blue)
 
