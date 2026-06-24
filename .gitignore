@@ -6,3 +6,6 @@ __pycache__/
 **/.env
 !.env.example
 !**/.env.example
+
+# Local Claude Code config
+.claude/
