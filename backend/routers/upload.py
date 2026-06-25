@@ -29,7 +29,7 @@ async def upload_image(session_id: str, file: UploadFile = File(...), _: None = 
     logger.info(f"Received upload request for session_id: {session_id}")
 
     # Check if file is an image
-    if not file.content_type.startswith("image/"):
+    if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
     # Check file size (limit to 10MB)
@@ -68,5 +68,6 @@ async def upload_image(session_id: str, file: UploadFile = File(...), _: None = 
             "file_path": str(file_path)
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid image file: {str(e)}")
+    except Exception:
+        logger.exception(f"Failed to process upload for session_id: {session_id}")
+        raise HTTPException(status_code=400, detail="Invalid image file")

@@ -32,6 +32,6 @@ async def get_mapillary_images_endpoint(request: MapillaryRequest, _: None = Dep
             "images": images,
             "count": len(images)
         }
-    except Exception as e:
-        logger.error(f"Error fetching Mapillary images: {e}")
-        raise HTTPException(status_code=500, detail=f"Error fetching Mapillary images: {str(e)}")
+    except Exception:
+        logger.exception("Error fetching Mapillary images")
+        raise HTTPException(status_code=500, detail="Error fetching Mapillary images")

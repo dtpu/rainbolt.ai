@@ -3,18 +3,16 @@ from typing import List
 
 import clip
 import torch
-from dotenv import load_dotenv
 from PIL import Image
 from pinecone import Pinecone
 
-load_dotenv()
+# Importing config runs load_dotenv() once for the whole app and exposes the
+# configurable Pinecone index name.
+from config import PINECONE_INDEX_NAME
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
-
-# Index name is configurable so we can point at a freshly-rebuilt index.
-INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "htv2025")
 
 _index = None
 
@@ -30,7 +28,7 @@ def get_index():
         api_key = os.getenv("PINECONE_API_KEY")
         if not api_key:
             raise RuntimeError("PINECONE_API_KEY environment variable not set")
-        _index = Pinecone(api_key=api_key).Index(INDEX_NAME)
+        _index = Pinecone(api_key=api_key).Index(PINECONE_INDEX_NAME)
     return _index
 
 

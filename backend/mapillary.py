@@ -1,10 +1,9 @@
-import logging
 import math
 import os
 
 import requests
 
-logger = logging.getLogger("rainbolt")
+from config import logger
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

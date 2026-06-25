@@ -3,7 +3,7 @@ import io
 import json
 import os
 import re
-from typing import Dict
+from typing import Iterator, List
 
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -83,7 +83,7 @@ Be VERY concise, explain super simply, your audience is a 14-18 year old. Do not
 """
 
 
-def _format_matches(image_matches: Dict, features: Dict):
+def _format_matches(image_matches: List[dict], features: List[dict]):
     """Render visual-match and feature-match context strings from query results."""
     visual_match = ""
     for match in image_matches:
@@ -120,14 +120,14 @@ def _multimodal_message(prompt: str, image: Image) -> HumanMessage:
     )
 
 
-def think(image_matches: Dict, features: Dict, image: Image) -> str:
+def think(image_matches: List[dict], features: List[dict], image: Image) -> Iterator:
     visual_match, features_match = _format_matches(image_matches, features)
     prompt = THINK_PROMPT.format(visual_match=visual_match, features_match=features_match)
     message = _multimodal_message(prompt, image)
     return model.stream([message])
 
 
-def estimate_coordinates(reasoning) -> Dict:
+def estimate_coordinates(reasoning: str) -> str:
     prompt = ESTIMATE_PROMPT.format(reasoning=reasoning)
     response = model.invoke(prompt)
 
@@ -154,7 +154,7 @@ def estimate_coordinates(reasoning) -> Dict:
         return response.content
 
 
-def chat_with_context(user_message: str, conversation_history: str, image_matches: Dict, features: Dict, image: Image) -> str:
+def chat_with_context(user_message: str, conversation_history: str, image_matches: List[dict], features: List[dict], image: Image) -> Iterator:
     """
     Handle follow-up questions with full conversation context
     """
