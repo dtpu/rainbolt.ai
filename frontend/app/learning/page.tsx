@@ -19,6 +19,7 @@ import {
 } from "@/hooks/useCanvasGestures";
 import { Navbar } from "@/components/ui/Navbar";
 import StarryNightBackground from "@/components/globe/StarryNightBackground";
+import { HowItWorks } from "@/components/HowItWorks";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ConstellationNodeCard } from "@/components/constellation/ConstellationNodeCard";
 import { CenteredState } from "@/components/constellation/CenteredState";
@@ -35,7 +36,7 @@ import { DEMO_SESSIONS, DEMO_LINKS } from "@/lib/demo-constellation";
 import { UploadModal } from "@/components/chat/UploadModal";
 import { useChatStore } from "@/components/useChatStore";
 
-import { Plus, Star } from "lucide-react";
+import { HelpCircle, Plus, Star } from "lucide-react";
 
 export default function LearningPage() {
   const router = useRouter();
@@ -68,6 +69,7 @@ export default function LearningPage() {
 
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showHowTo, setShowHowTo] = useState(false);
   const [settingsOpenNodeId, setSettingsOpenNodeId] = useState<string | null>(
     null,
   );
@@ -177,6 +179,14 @@ export default function LearningPage() {
       setInitialLoadComplete(true);
     }
   }, [displaySessions, sessionsLoading, isLoading]);
+
+  // Show the walkthrough once on a visitor's first arrival.
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("rainbolt-howto-seen")) {
+      setShowHowTo(true);
+      localStorage.setItem("rainbolt-howto-seen", "1");
+    }
+  }, []);
 
   const openUploadModal = () => setShowUploadModal(true);
 
@@ -422,6 +432,16 @@ export default function LearningPage() {
         onClose={() => setShowUploadModal(false)}
         onCreateSession={handleCreateSessionFromUpload}
       />
+
+      <button
+        onClick={() => setShowHowTo(true)}
+        aria-label="How to use rainbolt.ai"
+        className="fixed bottom-5 right-5 z-[150] flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-space-900/80 text-white/80 backdrop-blur-md transition-colors hover:border-white/30 hover:text-white"
+      >
+        <HelpCircle className="h-5 w-5" />
+      </button>
+
+      <HowItWorks open={showHowTo} onClose={() => setShowHowTo(false)} />
 
       {/* Delete session confirmation */}
       {deleteConfirmation.isOpen && (
