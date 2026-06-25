@@ -42,6 +42,8 @@ services:
       - AUTH0_DOMAIN=${AUTH0_DOMAIN}
       - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}
       - AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}
+      # Shared secret the /api/upload proxy attaches when forwarding to the backend
+      - BACKEND_INTERNAL_KEY=${BACKEND_INTERNAL_KEY}
     ports:
       - "3000:3000"
     depends_on:
