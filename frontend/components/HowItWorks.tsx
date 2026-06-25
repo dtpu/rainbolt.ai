@@ -1,41 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, X } from "lucide-react";
+import { useEffect } from "react";
+import { Upload, Sparkles, Waypoints, X } from "lucide-react";
 
-type Step = { title: string; body: string; image: string };
-
-const STEPS: Step[] = [
+const STEPS = [
   {
+    icon: Upload,
     title: "Upload a photo",
-    body: "Drop in any photo and rainbolt.ai predicts where on Earth it was taken.",
-    image: "/howto/upload.jpg",
+    body: "Drop in any photo and the model guesses where on Earth it was taken.",
   },
   {
-    title: "Watch it reason",
-    body: "It works through GeoGuessr-style clues (road lines, signage, vegetation, license plates) and streams its thinking live.",
-    image: "/howto/reason.jpg",
+    icon: Sparkles,
+    title: "See it reason",
+    body: "It reads the clues, road lines, signage, plates, vegetation, and streams its thinking live.",
   },
   {
+    icon: Waypoints,
     title: "Explore your map",
-    body: "Every guess becomes a star. Drag the cards around, link related sessions together, and click any card to revisit it.",
-    image: "/howto/constellation.jpg",
+    body: "Every guess becomes a star you can drag, link to others, and revisit.",
   },
 ];
 
 export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    if (open) setStep(0);
-  }, [open]);
-
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowRight") setStep((s) => Math.min(s + 1, STEPS.length - 1));
-      else if (e.key === "ArrowLeft") setStep((s) => Math.max(s - 1, 0));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -43,84 +33,59 @@ export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => vo
 
   if (!open) return null;
 
-  const current = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="How to use rainbolt.ai"
+      aria-label="How rainbolt.ai works"
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-space-900 shadow-2xl"
+        className="relative w-full max-w-md rounded-2xl border border-white/10 bg-space-900 p-7 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative aspect-[16/9] w-full bg-space-950">
-          <img src={current.image} alt={current.title} className="h-full w-full object-cover" />
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-3 top-3 rounded-full bg-black/50 p-1.5 text-white/80 transition-colors hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 text-white/40 transition-colors hover:text-white"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <h2 className="text-xl font-bold tracking-tight text-white">How it works</h2>
+        <p className="mt-1 text-sm text-white/50">Find where any photo was taken, in three steps.</p>
+
+        <div className="relative mt-6">
+          {/* Thread connecting the steps, echoing the constellation links */}
+          <div
+            className="absolute bottom-5 left-[17px] top-5 w-px bg-gradient-to-b from-sky-400/50 via-white/15 to-rose-500/40"
+            aria-hidden
+          />
+          <ol className="space-y-5">
+            {STEPS.map(({ icon: Icon, title, body }) => (
+              <li key={title} className="relative flex gap-4">
+                <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-space-800 text-sky-300">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div className="pt-1">
+                  <p className="text-sm font-semibold text-white">{title}</p>
+                  <p className="mt-0.5 text-[13px] leading-relaxed text-white/55">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
 
-        <div className="p-6">
-          <p className="text-xs font-medium uppercase tracking-wider text-sky-400">
-            Step {step + 1} of {STEPS.length}
-          </p>
-          <h2 className="mt-1 text-2xl font-bold text-white">{current.title}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-white/70">{current.body}</p>
-
-          <div className="mt-5 flex items-center justify-between">
-            <div className="flex gap-1.5">
-              {STEPS.map((s, i) => (
-                <button
-                  key={s.title}
-                  onClick={() => setStep(i)}
-                  aria-label={`Go to step ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === step ? "w-5 bg-sky-400" : "w-1.5 bg-white/25 hover:bg-white/40"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {step > 0 && (
-                <button
-                  onClick={() => setStep((s) => s - 1)}
-                  className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm text-white/70 transition-colors hover:text-white"
-                >
-                  <ArrowLeft className="h-4 w-4" /> Back
-                </button>
-              )}
-              {isLast ? (
-                <button
-                  onClick={onClose}
-                  className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90"
-                >
-                  Get started
-                </button>
-              ) : (
-                <button
-                  onClick={() => setStep((s) => s + 1)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-white/90"
-                >
-                  Next <ArrowRight className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <p className="mt-4 text-center text-xs text-white/40">
-            Exploring in guest mode, no sign-in needed. Sign in anytime to save your sessions.
-          </p>
-        </div>
+        <button
+          onClick={onClose}
+          className="mt-7 w-full rounded-lg bg-white py-2.5 text-sm font-semibold text-black transition-colors hover:bg-white/90"
+        >
+          Start exploring
+        </button>
+        <p className="mt-3 text-center text-xs text-white/35">
+          No sign-in needed. Sign in anytime to save your map.
+        </p>
       </div>
     </div>
   );
