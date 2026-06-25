@@ -9,7 +9,13 @@ AI-powered geolocation: upload a photo and the system predicts where it was take
 
 ![Landing Page](images/landing.png)
 
-![Example reasoning](images/ex1.png)
+### Screenshots
+
+![Example reasoning: streamed model thinking over the retrieved evidence](images/ex1.png)
+
+![Constellation view: the prediction rendered on the interactive globe](images/canvas.png)
+
+![Detected GeoGuessr-style feature clues surfaced from the image](images/features.png)
 
 This document is the developer and operator guide. For the original project story, see the [Devpost submission](https://devpost.com/software/rainbolt-ai).
 
@@ -18,7 +24,7 @@ This document is the developer and operator guide. For the original project stor
 rainbolt.ai is a retrieval-augmented geolocation pipeline. A photo flows through embedding, vector retrieval, language-model reasoning, and street-view verification before reaching the UI.
 
 1. Upload. The browser posts an image to the Next.js route `/api/upload`. That route is a server-side proxy: it forwards the image to the FastAPI backend's `/upload-image` endpoint with a shared internal key, so the backend is never called directly from the browser.
-2. CLIP embedding. The backend encodes the image with OpenAI CLIP (ViT-B/32) into a vector embedding.
+2. CLIP embedding. The backend encodes the image with OpenAI's open-source CLIP (ViT-B/32), run locally on CPU, into a vector embedding.
 3. Pinecone retrieval. The embedding is queried against a Pinecone index that holds two namespaces:
    - `images`: CLIP embeddings of geotagged reference images, each carrying `{latitude, longitude}` metadata. Nearest neighbors give candidate coordinates. Image-to-image similarity scores are high (~0.7).
    - `features`: CLIP text embeddings of GeoGuessr-style clues (bollards, road-line styles, license plates, scripts, Street View car metadata, and so on), stored as `metadata['text']`. The image embedding is matched against these text vectors to surface human-readable evidence. Image-to-text scores are low (~0.19 to 0.28), so a lower threshold (~0.22) is used for this namespace.
@@ -37,7 +43,7 @@ rainbolt.ai is a retrieval-augmented geolocation pipeline. A photo flows through
 | Auth and identity | Auth0 (server-side sessions), Firebase (client) |
 | Backend framework | FastAPI, uvicorn |
 | Realtime transport | WebSockets |
-| Embeddings | OpenAI CLIP (ViT-B/32), Pillow for image handling |
+| Embeddings | OpenAI's open-source CLIP (ViT-B/32), run locally on CPU; Pillow for image handling |
 | Reasoning model | Google Gemini via LangChain (langchain_google_genai) |
 | Vector database | Pinecone (namespaces: images, features) |
 | Street view | Mapillary API |
@@ -124,7 +130,7 @@ docker compose up -d
 
 Health checks:
 
-- Backend: http://localhost:8000/
+- Backend: `curl http://localhost:8000/`   # `{"status":"ok"}`
 - Frontend: http://localhost:3000
 
 The backend listens on port 8000 and the frontend on port 3000. Uploaded images persist to `backend/uploads` via a bind mount; the Kaggle dataset cache persists in a named volume.
@@ -178,12 +184,17 @@ The backend is not meant to be hit directly from the public internet. Three gate
 ```
 .
 ├── backend/                 FastAPI service: CLIP, Pinecone, Gemini, Mapillary
-│   ├── main.py              API, WebSocket, upload + origin/key gates
+│   ├── main.py              FastAPI app wiring: mounts routers + CORS
+│   ├── config.py            Env config, allowed origins, thresholds
+│   ├── security.py          Origin allowlist + internal-key gates
+│   ├── ws_manager.py        WebSocket connection management
+│   ├── routers/             Route modules: upload, chat WebSocket, mapillary, health
 │   ├── reasoning.py         Gemini reasoning over retrieved evidence
 │   ├── pineconedb.py        Pinecone client and queries
 │   ├── mapillary.py         Street-view lookups
 │   ├── ingest.py            Image-namespace index build
 │   ├── ingest_features.py   Feature-namespace (text clues) build
+│   ├── notebooks/           Scratch/experiment notebooks
 │   ├── data/                Source data (GeoGuessr feature clues)
 │   └── REBUILD.md           Index rebuild guide
 ├── frontend/                Next.js 15 / React 19 app (bun)
@@ -198,12 +209,7 @@ The backend is not meant to be hit directly from the public internet. Three gate
 
 ## Team
 
-| Member |
-|--------|
-| Daniel Pu |
-| Daniel Liu |
-| Evan |
-| Justin Wang |
+Daniel Pu, Daniel Liu, Evan, Justin Wang
 
 ## License
 

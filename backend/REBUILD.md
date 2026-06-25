@@ -25,6 +25,11 @@ with `ingest.py`. No images or text are added by hand.
 
 ## Steps
 
+0. **Create the env file** from the template:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+
 1. **Credentials** in `backend/.env`:
    - `PINECONE_API_KEY`: already restored from git history; that account is live,
      and `ingest.py` will create the `htv2025` index in it. (Or use your own
