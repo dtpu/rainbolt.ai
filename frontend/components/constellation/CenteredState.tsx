@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Navbar } from "@/components/ui/Navbar";
-import StarryNightBackground from "@/components/ui/starry-night-background";
+import StarryNightBackground from "@/components/globe/StarryNightBackground";
 
 // Full-screen starfield with a centered glass panel, shared by loading/auth states.
 export function CenteredState({ children }: { children: React.ReactNode }) {

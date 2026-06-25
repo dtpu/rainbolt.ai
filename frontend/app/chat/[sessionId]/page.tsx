@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import SimpleGlobe from "@/components/ui/SimpleGlobe";
-import { ChatHistory } from "@/components/ChatHistory";
-import { ChatComposer } from "@/components/ChatComposer";
+import SimpleGlobe from "@/components/globe/SimpleGlobe";
+import { ChatHistory } from "@/components/chat/ChatHistory";
+import { ChatComposer } from "@/components/chat/ChatComposer";
 import { useChatStore } from "@/components/useChatStore";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useMapillaryImages } from "@/hooks/useMapillaryImages";

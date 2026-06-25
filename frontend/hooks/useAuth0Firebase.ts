@@ -58,9 +58,9 @@ export function useAuth0Firebase() {
             setSyncError(result.error || "Failed to sync user");
           }
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error("Firebase sync error:", err);
-        setSyncError(err.message);
+        setSyncError(err instanceof Error ? err.message : "Failed to sync user");
       }
     };
 

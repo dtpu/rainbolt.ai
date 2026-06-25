@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
-import StarryNightBackground from "@/components/ui/starry-night-background";
+import StarryNightBackground from "@/components/globe/StarryNightBackground";
 import { ArrowRight, Github, Star } from "lucide-react";
 
 // Auth0 social connection identifiers. Adjust if the tenant names them differently.

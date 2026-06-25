@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { ArrowRight, Play } from "lucide-react";
 import { Navbar } from "@/components/ui/Navbar";
-import EarthScene from "@/components/ui/Globe";
+import EarthScene from "@/components/globe/Globe";
 
 import "./glow.css";
 

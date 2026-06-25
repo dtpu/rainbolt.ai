@@ -184,21 +184,3 @@ export const UserProvider = ({ children, auth0User }: UserProviderProps) => {
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
-
-// Example hook for game session management
-export const useGameSession = () => {
-  const { user } = useUser();
-
-  const [currentGame, setCurrentGame] = useState<any>(null);
-  const [gameHistory, setGameHistory] = useState<any[]>([]);
-
-  // Add your game session logic here
-  // This is where you'll integrate with your game mechanics
-
-  return {
-    user,
-    currentGame,
-    gameHistory,
-    // Add game-specific methods
-  };
-};

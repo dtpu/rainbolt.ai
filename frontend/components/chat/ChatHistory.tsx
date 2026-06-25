@@ -5,7 +5,7 @@ import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
-import { useChatStore } from "./useChatStore";
+import { useChatStore } from "../useChatStore";
 
 export function ChatHistory() {
   const { messages, sending, thinking } = useChatStore();

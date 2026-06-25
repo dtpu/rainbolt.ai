@@ -72,8 +72,8 @@ export default function StarryNightBackground({
       scene.remove(stars);
       try {
         stars.geometry.dispose();
-        if (Array.isArray(stars.material as any)) {
-          (stars.material as any).forEach((m: THREE.Material) => m.dispose());
+        if (Array.isArray(stars.material)) {
+          stars.material.forEach((m: THREE.Material) => m.dispose());
         } else if (stars.material instanceof THREE.Material) {
           stars.material.dispose();
         }

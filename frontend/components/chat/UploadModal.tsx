@@ -2,9 +2,9 @@
 
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "./ui/Button";
-import { Dialog } from "./ui/Dialog";
-import { useChatStore } from "./useChatStore";
+import { Button } from "../ui/Button";
+import { Dialog } from "../ui/Dialog";
+import { useChatStore } from "../useChatStore";
 
 interface UploadResult {
   message: string;

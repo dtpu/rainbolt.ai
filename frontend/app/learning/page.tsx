@@ -18,7 +18,7 @@ import {
   useGlobalCanvasClick,
 } from "@/hooks/useCanvasGestures";
 import { Navbar } from "@/components/ui/Navbar";
-import StarryNightBackground from "@/components/ui/starry-night-background";
+import StarryNightBackground from "@/components/globe/StarryNightBackground";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ConstellationNodeCard } from "@/components/constellation/ConstellationNodeCard";
 import { CenteredState } from "@/components/constellation/CenteredState";
@@ -32,7 +32,7 @@ import {
 } from "@/components/constellation/types";
 import { deleteSessionLinks } from "@/lib/globe-database";
 import { DEMO_SESSIONS, DEMO_LINKS } from "@/lib/demo-constellation";
-import { UploadModal } from "@/components/UploadModal";
+import { UploadModal } from "@/components/chat/UploadModal";
 import { useChatStore } from "@/components/useChatStore";
 
 import { Plus, Star } from "lucide-react";
@@ -82,8 +82,6 @@ export default function LearningPage() {
     fromSessionTitle: string;
     toSessionTitle: string;
   }>({ isOpen: false, linkId: "", fromSessionTitle: "", toSessionTitle: "" });
-  const [linkCopiedId] = useState<string | null>(null);
-
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
@@ -362,7 +360,7 @@ export default function LearningPage() {
             }}
             isSettingsOpen={settingsOpenNodeId === node.id}
             onToggleSettings={() => handleToggleSettings(node.id)}
-            linkCopied={linkCopiedId === node.id}
+            linkCopied={false}
             isLinking={isLinking}
             isLinkingFrom={linkingFromNodeId === node.id}
             isHovered={hoveredNodeId === node.id}

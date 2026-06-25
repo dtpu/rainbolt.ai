@@ -2,7 +2,7 @@
 
 import { useState, KeyboardEvent, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
-import { useChatStore } from "./useChatStore";
+import { useChatStore } from "../useChatStore";
 
 export function ChatComposer() {
   const [value, setValue] = useState("");
