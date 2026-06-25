@@ -180,11 +180,15 @@ export default function LearningPage() {
     }
   }, [displaySessions, sessionsLoading, isLoading]);
 
-  // Show the walkthrough once on a visitor's first arrival.
+  // Show the walkthrough on a visitor's first arrival, or whenever the URL
+  // carries ?tour (a shareable link that always opens it).
   useEffect(() => {
-    if (typeof window !== "undefined" && !localStorage.getItem("rainbolt-howto-seen")) {
+    if (typeof window === "undefined") return;
+    const forced = new URLSearchParams(window.location.search).has("tour");
+    const firstVisit = !localStorage.getItem("rainbolt-howto-seen");
+    if (forced || firstVisit) {
       setShowHowTo(true);
-      localStorage.setItem("rainbolt-howto-seen", "1");
+      if (firstVisit) localStorage.setItem("rainbolt-howto-seen", "1");
     }
   }, []);
 
