@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { Upload, Sparkles, Waypoints, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Upload, Sparkles, Waypoints, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
 
 const STEPS = [
   {
@@ -22,16 +22,28 @@ const STEPS = [
 ];
 
 export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (open) setStep(0);
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowRight") setStep((s) => Math.min(s + 1, STEPS.length - 1));
+      else if (e.key === "ArrowLeft") setStep((s) => Math.max(s - 1, 0));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   if (!open) return null;
+
+  const { icon: Icon, title, body } = STEPS[step];
+  const isFirst = step === 0;
+  const isLast = step === STEPS.length - 1;
 
   return (
     <div
@@ -42,7 +54,7 @@ export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => vo
       aria-label="How rainbolt.ai works"
     >
       <div
-        className="relative w-full max-w-md rounded-2xl border border-white/10 bg-space-900 p-7 shadow-2xl"
+        className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-space-900 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -53,39 +65,53 @@ export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => vo
           <X className="h-4 w-4" />
         </button>
 
-        <h2 className="text-xl font-bold tracking-tight text-white">How it works</h2>
-        <p className="mt-1 text-sm text-white/50">Find where any photo was taken, in three steps.</p>
-
-        <div className="relative mt-6">
-          {/* Thread connecting the steps, echoing the constellation links */}
-          <div
-            className="absolute bottom-5 left-[17px] top-5 w-px bg-gradient-to-b from-sky-400/50 via-white/15 to-rose-500/40"
-            aria-hidden
-          />
-          <ol className="space-y-5">
-            {STEPS.map(({ icon: Icon, title, body }) => (
-              <li key={title} className="relative flex gap-4">
-                <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-space-800 text-sky-300">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <div className="pt-1">
-                  <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-white/55">{body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+        <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-space-800 text-sky-300">
+          <Icon className="h-5 w-5" />
         </div>
+        <h2 className="mt-4 text-lg font-bold text-white">{title}</h2>
+        <p className="mt-1.5 text-sm leading-relaxed text-white/55">{body}</p>
 
-        <button
-          onClick={onClose}
-          className="mt-7 w-full rounded-lg bg-white py-2.5 text-sm font-semibold text-black transition-colors hover:bg-white/90"
-        >
-          Start exploring
-        </button>
-        <p className="mt-3 text-center text-xs text-white/35">
-          No sign-in needed. Sign in anytime to save your map.
-        </p>
+        <div className="mt-6 flex items-center justify-between">
+          <button
+            onClick={() => setStep((s) => s - 1)}
+            disabled={isFirst}
+            aria-label="Previous"
+            className="text-white/50 transition-colors enabled:hover:text-white disabled:opacity-20"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <div className="flex gap-1.5">
+            {STEPS.map((s, i) => (
+              <button
+                key={s.title}
+                onClick={() => setStep(i)}
+                aria-label={`Step ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === step ? "w-5 bg-sky-400" : "w-1.5 bg-white/25 hover:bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
+
+          {isLast ? (
+            <button
+              onClick={onClose}
+              aria-label="Done"
+              className="text-sky-300 transition-colors hover:text-sky-200"
+            >
+              <Check className="h-5 w-5" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setStep((s) => s + 1)}
+              aria-label="Next"
+              className="text-white/50 transition-colors hover:text-white"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
