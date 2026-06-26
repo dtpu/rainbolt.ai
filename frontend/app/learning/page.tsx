@@ -339,7 +339,7 @@ export default function LearningPage() {
         </div>
 
         {/* Header */}
-        <div className="pointer-events-none absolute left-0 right-0 top-24 z-10 text-center">
+        <div className="pointer-events-none absolute left-0 right-0 top-24 z-[60] text-center">
           <h1 className="text-3xl font-bold tracking-tight text-fg">
             {isGuest
               ? "Guest Constellation"
