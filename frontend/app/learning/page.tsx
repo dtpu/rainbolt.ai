@@ -114,6 +114,13 @@ export default function LearningPage() {
 
   const openNode = useCallback(
     (nodeId: string) => {
+      // First time a visitor opens a node, introduce the app with the
+      // walkthrough instead of dropping them straight into a session.
+      if (typeof window !== "undefined" && !localStorage.getItem("rainbolt-howto-seen")) {
+        localStorage.setItem("rainbolt-howto-seen", "1");
+        setShowHowTo(true);
+        return;
+      }
       useChatStore.getState().clear();
       router.push(`/chat/${nodeId}`);
     },
@@ -180,15 +187,12 @@ export default function LearningPage() {
     }
   }, [displaySessions, sessionsLoading, isLoading]);
 
-  // Show the walkthrough on a visitor's first arrival, or whenever the URL
-  // carries ?tour (a shareable link that always opens it).
+  // Open the walkthrough on demand via a ?tour link (the first-node-click path
+  // above handles first-time onboarding).
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const forced = new URLSearchParams(window.location.search).has("tour");
-    const firstVisit = !localStorage.getItem("rainbolt-howto-seen");
-    if (forced || firstVisit) {
+    if (new URLSearchParams(window.location.search).has("tour")) {
       setShowHowTo(true);
-      if (firstVisit) localStorage.setItem("rainbolt-howto-seen", "1");
     }
   }, []);
 
