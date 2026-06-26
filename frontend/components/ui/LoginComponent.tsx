@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Avatar, DropdownMenu } from "@radix-ui/themes";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
 
@@ -14,15 +15,23 @@ export default function LoginComponent() {
     );
   }
 
-  // Logged out: a clean sign-in pill (no guest avatar badge).
+  // Logged out: jump straight in as a guest, or sign in.
   if (!user) {
     return (
-      <a
-        href="/login"
-        className="rounded-full border border-white/15 bg-white/5 px-6 py-2.5 text-base font-medium text-white transition-colors hover:border-white/30 hover:bg-white/10"
-      >
-        Sign in
-      </a>
+      <div className="flex items-center gap-1.5">
+        <Link
+          href="/learning"
+          className="rounded-full px-4 py-2.5 text-base font-medium text-white/70 transition-colors hover:text-white"
+        >
+          Guest
+        </Link>
+        <a
+          href="/login"
+          className="rounded-full border border-white/15 bg-white/5 px-6 py-2.5 text-base font-medium text-white transition-colors hover:border-white/30 hover:bg-white/10"
+        >
+          Sign in
+        </a>
+      </div>
     );
   }
 
