@@ -8,26 +8,27 @@ export default function LoginComponent() {
   const { user, isLoading } = useAuth0Firebase();
 
   if (isLoading) {
+    // Same footprint as the logged-out state so the navbar never shifts.
     return (
-      <div className="rounded-full border border-white/15 bg-white/5 px-6 py-2.5">
-        <span className="text-base text-white/50">Loading…</span>
+      <div className="flex items-center gap-1.5">
+        <div className="h-10 w-[4.5rem] rounded-full bg-white/[0.03]" />
+        <div className="h-10 w-24 rounded-full border border-white/10 bg-white/[0.04]" />
       </div>
     );
   }
 
-  // Logged out: jump straight in as a guest, or sign in.
   if (!user) {
     return (
       <div className="flex items-center gap-1.5">
         <Link
           href="/learning"
-          className="rounded-full px-4 py-2.5 text-base font-medium text-white/70 transition-colors hover:text-white"
+          className="rounded-full px-4 py-2.5 text-base font-medium text-fg/70 transition-colors hover:text-fg"
         >
           Guest
         </Link>
         <a
           href="/login"
-          className="rounded-full border border-white/15 bg-white/5 px-6 py-2.5 text-base font-medium text-white transition-colors hover:border-white/30 hover:bg-white/10"
+          className="rounded-full border border-white/15 bg-white/[0.04] px-6 py-2.5 text-base font-medium text-fg transition-colors hover:border-white/30 hover:bg-white/[0.08]"
         >
           Sign in
         </a>
@@ -35,7 +36,6 @@ export default function LoginComponent() {
     );
   }
 
-  // Logged in: real avatar + name with a logout dropdown.
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>

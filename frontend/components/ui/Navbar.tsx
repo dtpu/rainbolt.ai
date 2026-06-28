@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Plus } from "lucide-react";
 import LoginComponent from "./LoginComponent";
 
 interface NavbarProps {
   currentSection?: number;
   variant?: "default" | "learning";
+  // When provided (constellation view), renders a "New Session" action to the
+  // right of the sign-in controls so the top bar reads as one unbroken row.
+  onNewSession?: () => void;
 }
 
 const LINKS = [
@@ -16,7 +19,7 @@ const LINKS = [
   { href: "/learning", label: "Learning" },
 ];
 
-export function Navbar({ variant = "default" }: NavbarProps) {
+export function Navbar({ variant = "default", onNewSession }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -50,6 +53,15 @@ export function Navbar({ variant = "default" }: NavbarProps) {
 
         <div className="col-start-3 flex items-center justify-self-end gap-3">
           <LoginComponent />
+          {onNewSession && (
+            <button
+              onClick={onNewSession}
+              className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/15 px-5 py-2.5 text-base font-medium text-white transition-all hover:border-sky-300/70 hover:bg-sky-500/25"
+            >
+              <Plus className="h-4 w-4" />
+              New Session
+            </button>
+          )}
           {variant !== "learning" && (
             <button
               onClick={() => setMenuOpen((open) => !open)}

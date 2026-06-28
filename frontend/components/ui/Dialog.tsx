@@ -53,41 +53,34 @@ export const Dialog: React.FC<DialogProps> = ({
 
       {/* Modal */}
       <div
-        className={`relative z-[10000] w-full max-w-2xl animate-in zoom-in-95 duration-200 ${className}`}
+        className={`relative z-[10000] w-full max-w-lg animate-in zoom-in-95 duration-200 ${className}`}
         onClick={(e) => e.stopPropagation()}
         style={{ pointerEvents: "auto" }}
       >
-        <div className="relative backdrop-blur-md border border-white/10 rounded-xl bg-[#0a0a0f]/95 shadow-2xl overflow-hidden">
-          {/* Glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-600/10 pointer-events-none" />
-
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-space-900 shadow-2xl">
           {/* Header */}
           {(title || description) && (
-            <div className="relative border-b border-white/10 p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  {title && (
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                      {title}
-                    </h2>
-                  )}
-                  {description && (
-                    <p className="text-white/60 text-sm">{description}</p>
-                  )}
-                </div>
-                <button
-                  onClick={onClose}
-                  className="ml-4 p-2 rounded-lg hover:bg-white/10 transition-colors group"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                </button>
+            <div className="relative flex items-start justify-between gap-4 px-6 pt-6 pb-5">
+              <div className="flex-1">
+                {title && (
+                  <h2 className="text-lg font-semibold text-fg">{title}</h2>
+                )}
+                {description && (
+                  <p className="mt-1 text-sm text-fg-muted">{description}</p>
+                )}
               </div>
+              <button
+                onClick={onClose}
+                className="-mr-1.5 -mt-1.5 rounded-lg p-2 text-fg-muted transition-colors hover:bg-white/[0.06] hover:text-fg"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           )}
 
           {/* Content */}
-          <div className="relative p-6">{children}</div>
+          <div className="relative px-6 pb-6">{children}</div>
         </div>
       </div>
     </div>

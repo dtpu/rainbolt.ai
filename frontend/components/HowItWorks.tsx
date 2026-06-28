@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const STEPS = [
   {
@@ -11,12 +11,12 @@ const STEPS = [
   },
   {
     title: "See it reason",
-    body: "It reads the clues, road lines, signage, plates, vegetation, and streams its thinking live.",
+    body: "It reads the clues — road lines, signage, plates, vegetation — and streams its thinking live.",
     image: "/howto/reason.jpg",
   },
   {
     title: "Explore your map",
-    body: "Every guess becomes a star you can drag, link to others, and revisit.",
+    body: "Every guess becomes a pin you can revisit, link to others, and dig into.",
     image: "/howto/map.jpg",
   },
 ];
@@ -47,37 +47,36 @@ export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => vo
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed left-5 top-[6.75rem] z-[120] w-[340px] animate-in fade-in slide-in-from-left-2 duration-300"
       role="dialog"
-      aria-modal="true"
       aria-label="How rainbolt.ai works"
     >
-      <div
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-space-900 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-space-900/95 shadow-2xl backdrop-blur-md">
         <div className="relative aspect-video w-full bg-space-950">
-          <img src={current.image} alt={current.title} className="h-full w-full object-cover" />
+          <img src={current.image} alt="" className="h-full w-full object-cover" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-space-900/80 to-transparent" />
           <button
             onClick={onClose}
-            aria-label="Close"
-            className="absolute right-3 top-3 rounded-full bg-black/50 p-1.5 text-white/80 transition-colors hover:text-white"
+            aria-label="Dismiss"
+            className="absolute right-2.5 top-2.5 rounded-full bg-black/50 p-1.5 text-white/70 backdrop-blur-sm transition-colors hover:text-white"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="p-6">
-          <h2 className="text-lg font-bold text-white">{current.title}</h2>
-          <p className="mt-1.5 text-sm leading-relaxed text-white/55">{current.body}</p>
+        <div className="p-5">
+          <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-fg-muted/50">
+            Getting started · {step + 1} of {STEPS.length}
+          </div>
+          <h2 className="text-base font-semibold text-fg">{current.title}</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{current.body}</p>
 
           <div className="mt-5 flex items-center justify-between">
             <button
               onClick={() => setStep((s) => s - 1)}
               disabled={isFirst}
               aria-label="Previous"
-              className="text-white/50 transition-colors enabled:hover:text-white disabled:opacity-20"
+              className="rounded-md p-1 text-fg-muted transition-colors enabled:hover:text-fg disabled:opacity-20"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -89,7 +88,7 @@ export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => vo
                   onClick={() => setStep(i)}
                   aria-label={`Step ${i + 1}`}
                   className={`h-1.5 rounded-full transition-all ${
-                    i === step ? "w-5 bg-sky-400" : "w-1.5 bg-white/25 hover:bg-white/40"
+                    i === step ? "w-5 bg-fg" : "w-1.5 bg-white/20 hover:bg-white/35"
                   }`}
                 />
               ))}
@@ -98,16 +97,15 @@ export function HowItWorks({ open, onClose }: { open: boolean; onClose: () => vo
             {isLast ? (
               <button
                 onClick={onClose}
-                aria-label="Done"
-                className="text-sky-300 transition-colors hover:text-sky-200"
+                className="rounded-lg bg-white px-3.5 py-1.5 text-xs font-semibold text-space-950 transition-colors hover:bg-white/90"
               >
-                <Check className="h-5 w-5" />
+                Got it
               </button>
             ) : (
               <button
                 onClick={() => setStep((s) => s + 1)}
                 aria-label="Next"
-                className="text-white/50 transition-colors hover:text-white"
+                className="rounded-md p-1 text-fg-muted transition-colors hover:text-fg"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>

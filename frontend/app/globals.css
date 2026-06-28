@@ -56,6 +56,34 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Gold text selection, tuned for the dark palette */
+::selection {
+  background-color: rgb(232 180 79 / 0.25);
+  color: #fff;
+}
+
+/* Thin, unobtrusive scrollbars that match the palette */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.12) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(255 255 255 / 0.1);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(255 255 255 / 0.18);
+}
+
 /* Globe specific styles */
 .globe-container {
   position: relative;
@@ -75,3 +103,23 @@ body {
 .fade-in {
   animation: fadeIn 0.5s ease-in-out;
 }
+
+/* View Transitions — fast crossfade, no black frame */
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-old(main-globe),
+::view-transition-new(main-globe) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-in-out;
+}
+::view-transition-old(root),
+::view-transition-old(main-globe) {
+  animation-name: vt-fade-out;
+}
+::view-transition-new(root),
+::view-transition-new(main-globe) {
+  animation-name: vt-fade-in;
+}
+
+@keyframes vt-fade-in  { from { opacity: 0; } }
+@keyframes vt-fade-out { to   { opacity: 0; } }
