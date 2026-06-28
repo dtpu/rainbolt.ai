@@ -34,8 +34,8 @@ export function createFirebaseStorage(
     const userId = getUserId();
     const sessionId = getSessionId ? getSessionId() : null;
 
-    if (!userId) {
-      // If no user, write to localStorage only (browser only)
+    if (!userId || userId.startsWith("guest-")) {
+      // Guests use localStorage only — Firestore rules reject guest IDs.
       if (typeof window !== "undefined") {
         writeQueue.forEach(({ key, value }) => {
           try {
@@ -151,8 +151,8 @@ export function createFirebaseStorage(
         }
       }
 
-      // If user is authenticated, try Firebase
-      if (userId) {
+      // If user is authenticated (not a guest), try Firebase
+      if (userId && !userId.startsWith("guest-")) {
         try {
           const sessionId = getSessionId ? getSessionId() : null;
 
@@ -249,8 +249,8 @@ export function createFirebaseStorage(
         }
       }
 
-      // Remove from Firebase if authenticated
-      if (userId) {
+      // Remove from Firebase if authenticated (not a guest)
+      if (userId && !userId.startsWith("guest-")) {
         try {
           if (sessionId && collectionName === "globeSessions") {
             // Remove from globeSessions data field
