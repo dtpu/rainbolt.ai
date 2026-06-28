@@ -1,19 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { HelpCircle } from "lucide-react";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
 import { useGlobeSessions } from "@/hooks/useGlobeSessions";
 import { useSessionLinks } from "@/hooks/useSessionLinks";
 import { Navbar } from "@/components/ui/Navbar";
 import { UploadModal } from "@/components/chat/UploadModal";
-import { HowItWorks } from "@/components/HowItWorks";
 import { useChatStore } from "@/components/useChatStore";
 import { DEMO_SESSIONS, DEMO_LINKS } from "@/lib/demo-constellation";
 import { GlobeRail } from "@/components/constellation/GlobeRail";
 
-export default function LearningPage() {
+export default function ConstellationPreviewPage() {
   const router = useRouter();
   const { user, firebaseUserId, isLoading } = useAuth0Firebase();
   const { sessions, loading: sessionsLoading, createNewSession } =
@@ -21,8 +19,6 @@ export default function LearningPage() {
   const { links } = useSessionLinks();
 
   const [showUpload, setShowUpload] = useState(false);
-  const [showHowTo, setShowHowTo] = useState(false);
-  const tutorialShownRef = useRef(false);
 
   const isGuest = !isLoading && !user;
 
@@ -39,32 +35,6 @@ export default function LearningPage() {
     router.prefetch("/chat/preview");
   }, [router]);
 
-  useEffect(() => {
-    if (isLoading) return;
-    if (typeof window !== "undefined") {
-      const tour = new URLSearchParams(window.location.search).get("tour");
-      if (tour === "off") return; // escape hatch (e.g. screenshots / previews)
-      if (tour !== null) {
-        setShowHowTo(true);
-        return;
-      }
-    }
-    if (isGuest) {
-      // Always show for guests on every landing.
-      if (!tutorialShownRef.current) {
-        tutorialShownRef.current = true;
-        setShowHowTo(true);
-      }
-    } else if (firebaseUserId) {
-      // Show once per account; afterwards the bottom-right icon reopens it.
-      const key = `rainbolt-howto-seen-${firebaseUserId}`;
-      if (!localStorage.getItem(key)) {
-        localStorage.setItem(key, "1");
-        setShowHowTo(true);
-      }
-    }
-  }, [isGuest, isLoading, firebaseUserId]);
-
   const openNode = (id: string) => {
     useChatStore.getState().clear();
     router.push(`/chat/${id}`);
@@ -77,14 +47,18 @@ export default function LearningPage() {
   if (isLoading || sessionsLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-space-950">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-white/40" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-400/20 border-t-sky-400" />
       </div>
     );
   }
 
   return (
     <div className="h-screen overflow-hidden bg-space-950 text-white">
-      <Navbar currentSection={0} variant="learning" />
+      <Navbar
+        currentSection={0}
+        variant="learning"
+        onNewSession={() => setShowUpload(true)}
+      />
 
       <GlobeRail
         sessions={displaySessions}
@@ -102,19 +76,6 @@ export default function LearningPage() {
           return createNewSession(t);
         }}
       />
-
-      <HowItWorks open={showHowTo} onClose={() => setShowHowTo(false)} />
-
-      {/* Persistent help icon for logged-in users */}
-      {!isGuest && (
-        <button
-          onClick={() => setShowHowTo(true)}
-          title="How it works"
-          className="fixed bottom-5 right-5 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-white/35 backdrop-blur-sm transition-colors hover:bg-white/[0.13] hover:text-white/80"
-        >
-          <HelpCircle className="h-4 w-4" />
-        </button>
-      )}
     </div>
   );
 }

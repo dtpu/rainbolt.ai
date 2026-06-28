@@ -5,12 +5,20 @@ import { Marker, Message } from "@/components/useChatStore";
 // Lets a visitor (e.g. a recruiter) see the feature populated without logging
 // in. All ids are namespaced `demo-` so they never collide with real sessions,
 // and the dates are static so the build stays deterministic.
+interface DemoPlace {
+  lat: number;
+  lng: number;
+  name: string;
+  thumb: string;
+}
+
 const demoSession = (
   id: string,
   title: string,
   images: number,
   chats: number,
   lastAccessedAt: string,
+  place: DemoPlace,
   status: "active" | "completed" = "active",
 ): GlobeSessionWithData => ({
   id: `demo-${id}`,
@@ -21,36 +29,73 @@ const demoSession = (
   updatedAt: lastAccessedAt,
   lastAccessedAt,
   data: {
-    globeImages: Array.from({ length: images }),
+    // The first globe image carries the resolved guess (coordinates, place
+    // name, and a street-level thumbnail) so the constellation can plot it as a
+    // real pin on the globe; the remaining slots just preserve the image count.
+    globeImages: [
+      {
+        id: `demo-img-${id}`,
+        location: { lat: place.lat, lng: place.lng },
+        locationName: place.name,
+        imageUrl: place.thumb,
+      },
+      ...Array.from({ length: Math.max(0, images - 1) }),
+    ],
     chatHistory: Array.from({ length: chats }),
   },
 });
 
 export const DEMO_SESSIONS: GlobeSessionWithData[] = [
-  demoSession("tokyo", "Tokyo back-alleys", 6, 14, "2026-06-17T00:00:00.000Z"),
-  demoSession("fjords", "Norwegian fjords", 4, 9, "2026-06-15T00:00:00.000Z"),
-  demoSession(
-    "sahara",
-    "Trans-Sahara highway",
-    3,
-    5,
-    "2026-06-12T00:00:00.000Z",
-  ),
+  demoSession("tokyo", "Tokyo back-alleys", 6, 14, "2026-06-17T00:00:00.000Z", {
+    lat: 35.6595,
+    lng: 139.7005,
+    name: "Nonbei Yokocho, Shibuya",
+    thumb: "/demo/tokyo-1.jpg",
+  }),
+  demoSession("fjords", "Norwegian fjords", 4, 9, "2026-06-15T00:00:00.000Z", {
+    lat: 62.101,
+    lng: 7.206,
+    name: "Geiranger, Norway",
+    thumb: "/demo/fjords-1.jpg",
+  }),
+  demoSession("sahara", "Trans-Sahara highway", 3, 5, "2026-06-12T00:00:00.000Z", {
+    lat: 30.5707,
+    lng: 2.88,
+    name: "El Goléa, Algeria",
+    thumb: "/demo/sahara-1.jpg",
+  }),
   demoSession(
     "patagonia",
     "Patagonia ridgelines",
     5,
     11,
     "2026-06-10T00:00:00.000Z",
+    {
+      lat: -51.0,
+      lng: -73.0,
+      name: "Torres del Paine, Chile",
+      thumb: "/demo/patagonia-1.jpg",
+    },
     "completed",
   ),
-  demoSession("kyoto", "Kyoto temple roads", 7, 8, "2026-06-06T00:00:00.000Z"),
+  demoSession("kyoto", "Kyoto temple roads", 7, 8, "2026-06-06T00:00:00.000Z", {
+    lat: 35.0036,
+    lng: 135.7788,
+    name: "Higashiyama, Kyoto",
+    thumb: "/demo/kyoto-1.jpg",
+  }),
   demoSession(
     "nyc",
     "NYC subway tiling",
     2,
     4,
     "2026-05-30T00:00:00.000Z",
+    {
+      lat: 40.7527,
+      lng: -73.9772,
+      name: "IRT Lexington Ave, NYC",
+      thumb: "/demo/nyc-1.jpg",
+    },
     "completed",
   ),
 ];
