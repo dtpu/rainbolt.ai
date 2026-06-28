@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { useChatStore } from "../useChatStore";
@@ -13,73 +13,45 @@ export function ChatHistory() {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
-  // Auto-scroll to bottom on new messages (only if user is already at bottom)
   useEffect(() => {
     if (isAtBottom && scrollViewportRef.current) {
-      const scrollElement = scrollViewportRef.current;
-      scrollElement.scrollTo({
-        top: scrollElement.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [messages.length, isAtBottom]);
-
-  // Check if user is at bottom
-  const handleScroll = () => {
-    if (!scrollViewportRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = scrollViewportRef.current;
-    const atBottom = scrollHeight - scrollTop - clientHeight < 50;
-
-    setIsAtBottom(atBottom);
-    setShowScrollButton(!atBottom && messages.length > 0);
-  };
-
-  const scrollToBottom = () => {
-    if (scrollViewportRef.current) {
       scrollViewportRef.current.scrollTo({
         top: scrollViewportRef.current.scrollHeight,
         behavior: "smooth",
       });
     }
+  }, [messages.length, isAtBottom]);
+
+  const handleScroll = () => {
+    if (!scrollViewportRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollViewportRef.current;
+    const atBottom = scrollHeight - scrollTop - clientHeight < 50;
+    setIsAtBottom(atBottom);
+    setShowScrollButton(!atBottom && messages.length > 0);
+  };
+
+  const scrollToBottom = () => {
+    scrollViewportRef.current?.scrollTo({
+      top: scrollViewportRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   };
 
   return (
-    <div className="flex-1 relative min-h-0">
+    <div className="relative min-h-0 flex-1">
       <ScrollArea.Root className="h-full">
         <ScrollArea.Viewport
           ref={scrollViewportRef}
           onScroll={handleScroll}
-          className="h-full px-3 md:px-4 py-4"
+          className="h-full px-3 py-4"
         >
-          {/* Empty state */}
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <div className="mb-4 p-4 rounded-full bg-white/5 border border-white/10">
-                <svg
-                  className="w-8 h-8 text-white/60"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                  />
-                </svg>
-              </div>
+            <div className="flex h-full items-center justify-center">
+              <p className="text-xs text-white/20">Upload an image to get started</p>
             </div>
           )}
 
-          {/* Messages */}
-          <div
-            className="flex flex-col"
-            role="log"
-            aria-live="polite"
-            aria-relevant="additions"
-          >
+          <div role="log" aria-live="polite" className="flex flex-col">
             {messages.map((msg) => (
               <ChatMessage
                 key={msg.id}
@@ -90,31 +62,21 @@ export function ChatHistory() {
               />
             ))}
 
-            {/* Typing/Thinking indicator */}
             {(sending || thinking) && (
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-start mb-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-2 flex justify-start"
               >
-                <div className="bg-white/10 dark:bg-black/20 border border-white/10 rounded-2xl px-4 py-3">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <motion.div
-                        key={i}
-                        className="w-2 h-2 bg-white/60 rounded-full"
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.5, 1, 0.5],
-                        }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          delay: i * 0.15,
-                        }}
-                      />
-                    ))}
-                  </div>
+                <div className="flex items-center gap-1.5 px-1 py-2">
+                  {[0, 1, 2].map((i) => (
+                    <motion.span
+                      key={i}
+                      className="block h-1 w-1 rounded-full bg-white/30"
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                    />
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -122,25 +84,23 @@ export function ChatHistory() {
         </ScrollArea.Viewport>
 
         <ScrollArea.Scrollbar
-          className="flex select-none touch-none p-0.5 transition-colors duration-150 ease-out hover:bg-white/10 data-[orientation=vertical]:w-2"
+          className="flex select-none touch-none p-0.5 transition-colors data-[orientation=vertical]:w-1.5"
           orientation="vertical"
         >
-          <ScrollArea.Thumb className="flex-1 bg-white/30 rounded-full relative before:content-[''] before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 before:w-full before:h-full before:min-w-[44px] before:min-h-[44px]" />
+          <ScrollArea.Thumb className="flex-1 rounded-full bg-white/[0.12]" />
         </ScrollArea.Scrollbar>
       </ScrollArea.Root>
 
-      {/* Scroll to bottom button */}
       <AnimatePresence>
         {showScrollButton && (
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            exit={{ opacity: 0, y: 6 }}
             onClick={scrollToBottom}
-            className="absolute bottom-4 right-4 p-2 rounded-full bg-blue-500 hover:bg-blue-600 shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-            aria-label="Scroll to bottom"
+            className="absolute bottom-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.1] text-white/60 hover:bg-white/[0.16] hover:text-white"
           >
-            <ChevronDown className="w-5 h-5 text-white" />
+            <ChevronDown className="h-4 w-4" />
           </motion.button>
         )}
       </AnimatePresence>

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import getStarfield from "../../utils/getStarfield";
+import getAtmosphere from "../../utils/getAtmosphere";
 import { latLongToVector3 } from "../../utils/coordinates";
 
 interface Location {
@@ -140,20 +141,23 @@ export default function SimpleGlobe({
   useEffect(() => {
     if (!mountRef.current) return;
 
+    const mount = mountRef.current;
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000,
-    );
+    // Use the mount element's actual dimensions so the globe is never stretched
+    // when the canvas is smaller than the full viewport (e.g. flex-1 layout).
+    const initW = mount.clientWidth  || window.innerWidth;
+    const initH = mount.clientHeight || window.innerHeight;
+
+    const camera = new THREE.PerspectiveCamera(45, initW / initH, 0.1, 1000);
     camera.position.set(0, 0, 4.5);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
+      alpha: true,
       powerPreference: "default",
     });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
+    renderer.setSize(initW, initH);
     // Cap pixel ratio so HiDPI screens don't render at 4x+ the pixels.
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -306,8 +310,12 @@ export default function SimpleGlobe({
     const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
     scene.add(ambientLight);
 
-    const stars = getStarfield({ numStars: 1500, sprite: starSprite });
+    // Fresnel atmosphere shell — soft rim of glowing air around the planet.
+    globeYRotationGroup.add(getAtmosphere({ color: "#6b9cc4", size: 1.16, intensity: 1.1, power: 3.0 }));
+
+    const stars = getStarfield({ numStars: 1800, sprite: starSprite });
     scene.add(stars);
+    const clock = new THREE.Clock();
 
     let frameCount = 0;
     function handleRaycast() {
@@ -363,6 +371,7 @@ export default function SimpleGlobe({
 
       stars.rotation.y += 0.0002;
       stars.rotation.x += 0.0001;
+      stars.update(clock.getElapsedTime());
 
       const zoomLerpFactor = 0.06;
       const cameraDeltaZ =
@@ -448,11 +457,18 @@ export default function SimpleGlobe({
       isDragging = false;
     }
 
-    function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        const w = width  || 1;
+        const h = height || 1;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      }
+    });
+    if (mountRef.current) ro.observe(mountRef.current);
+    function onResize() { /* handled by ResizeObserver */ }
 
     if (mountRef.current) {
       mountRef.current.style.cursor = "grab";
@@ -461,7 +477,6 @@ export default function SimpleGlobe({
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
-    window.addEventListener("resize", onResize);
 
     if (
       isLocked &&
@@ -484,10 +499,10 @@ export default function SimpleGlobe({
     }
 
     return () => {
+      ro.disconnect();
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
-      window.removeEventListener("resize", onResize);
 
       const mount = mountRef.current;
       if (mount && mount.contains(renderer.domElement)) {
@@ -618,13 +633,7 @@ export default function SimpleGlobe({
   return (
     <div
       ref={mountRef}
-      style={{
-        width: "100vw",
-        height: "100vh",
-        position: "fixed",
-        top: 0,
-        left: 0,
-      }}
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
     />
   );
 }
