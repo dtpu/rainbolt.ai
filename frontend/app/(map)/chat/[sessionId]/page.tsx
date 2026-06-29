@@ -15,6 +15,7 @@ import { Reticle } from "@/components/ui/Reticle";
 import { DesktopOnlyNotice } from "@/components/chat/DesktopOnlyNotice";
 import { useChatStore, type Marker } from "@/components/useChatStore";
 import { useChatSession } from "@/hooks/useChatSession";
+import { useAreaPhotos } from "@/hooks/useAreaPhotos";
 import { useGlobeStore } from "@/lib/globe/store";
 
 const confColor = (acc: number) =>
@@ -52,6 +53,7 @@ export default function ChatPage() {
   useChatSession(sessionId);
 
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
+  const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
 
   // Feed this session's candidate guesses into the shared persistent globe.
   const setCurrentRef = useRef(setCurrentMarker);
@@ -237,6 +239,42 @@ export default function ChatPage() {
                   />
                 </div>
               </div>
+
+              {/* nearby photos of the area (Wikimedia Commons) */}
+              {(photosLoading || areaPhotos.length > 0) && (
+                <div className="mt-5 border-t border-white/[0.06] pt-4">
+                  <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                    Photos nearby
+                  </p>
+                  {photosLoading ? (
+                    <div className="flex h-20 items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-fg-muted/40" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {areaPhotos.slice(0, 6).map((p, i) => (
+                        <a
+                          key={i}
+                          href={p.full}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={p.title}
+                          className="group relative aspect-square overflow-hidden rounded-md border border-white/[0.07] bg-space-900"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.thumb}
+                            alt={p.title}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {marker.facts && (
                 <div className="mt-5 border-t border-white/[0.06] pt-4">
