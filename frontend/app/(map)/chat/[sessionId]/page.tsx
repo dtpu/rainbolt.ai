@@ -49,12 +49,12 @@ export default function ChatPage() {
   const previousMarker   = useChatStore((s) => s.previousMarker);
 
   const [tab, setTab] = useState<Tab>("chat");
-  const [showStreet, setShowStreet] = useState(false);
+  const [media, setMedia] = useState<"map" | "street" | "photos">("map");
 
   useChatSession(sessionId);
 
-  // Reset the (heavy) Street View embed when switching candidates.
-  useEffect(() => { setShowStreet(false); }, [currentMarker, sessionId]);
+  // Back to the light Map view when switching candidates (street view is heavy).
+  useEffect(() => { setMedia("map"); }, [currentMarker, sessionId]);
 
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
@@ -200,70 +200,32 @@ export default function ChatPage() {
                 </div>
               )}
 
-              {/* actual Google street-level photos of the guessed place */}
+              {/* one media viewer: map / street view / nearby photos */}
               <div className="mt-5 border-t border-white/[0.06] pt-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-                    Street view
-                  </p>
-                  <a
-                    href={streetViewUrl(marker.latitude, marker.longitude)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[11px] text-fg-muted transition-colors hover:text-fg"
-                  >
-                    Open <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-                <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
-                  {showStreet ? (
-                    <iframe
-                      key={`sv-${marker.latitude},${marker.longitude}`}
-                      title={`${marker.name} street view`}
-                      src={streetEmbed(marker.latitude, marker.longitude)}
-                      referrerPolicy="no-referrer-when-downgrade"
-                      className="h-full w-full border-0"
-                    />
-                  ) : (
+                <div className="mb-2.5 flex gap-1 rounded-lg bg-white/[0.04] p-0.5 text-[11px] font-medium">
+                  {([
+                    ["map", "Map"],
+                    ["street", "Street view"],
+                    ["photos", `Photos${areaPhotos.length ? ` ${areaPhotos.length}` : ""}`],
+                  ] as const).map(([k, label]) => (
                     <button
-                      onClick={() => setShowStreet(true)}
-                      className="group flex h-full w-full flex-col items-center justify-center gap-2 text-fg-muted transition-colors hover:bg-white/[0.03] hover:text-fg"
+                      key={k}
+                      onClick={() => setMedia(k)}
+                      className={`flex-1 rounded-md px-2 py-1 transition-colors ${
+                        media === k ? "bg-white/[0.1] text-fg" : "text-fg-muted hover:text-fg"
+                      }`}
                     >
-                      <MapIcon className="h-5 w-5" />
-                      <span className="text-xs font-medium">Load Street View</span>
+                      {label}
                     </button>
-                  )}
+                  ))}
                 </div>
-              </div>
 
-              {/* on the map - a look at the guessed place */}
-              <div className="mt-5 border-t border-white/[0.06] pt-4">
-                <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-                  On the map
-                </p>
-                <div className="relative overflow-hidden rounded-lg border border-white/[0.07]">
-                  <iframe
-                    key={`${marker.latitude},${marker.longitude}`}
-                    title={marker.name}
-                    src={mapEmbed(marker.latitude, marker.longitude)}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="aspect-[4/3] w-full border-0"
-                  />
-                </div>
-              </div>
-
-              {/* nearby photos of the area (Wikimedia Commons) */}
-              {(photosLoading || areaPhotos.length > 0) && (
-                <div className="mt-5 border-t border-white/[0.06] pt-4">
-                  <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-                    Photos nearby
-                  </p>
-                  {photosLoading ? (
-                    <div className="flex h-20 items-center justify-center">
+                {media === "photos" ? (
+                  photosLoading ? (
+                    <div className="flex h-28 items-center justify-center">
                       <Loader2 className="h-4 w-4 animate-spin text-fg-muted/40" />
                     </div>
-                  ) : (
+                  ) : areaPhotos.length > 0 ? (
                     <div className="grid grid-cols-3 gap-1.5">
                       {areaPhotos.slice(0, 6).map((p, i) => (
                         <a
@@ -285,9 +247,36 @@ export default function ChatPage() {
                         </a>
                       ))}
                     </div>
-                  )}
-                </div>
-              )}
+                  ) : (
+                    <p className="py-8 text-center text-xs text-fg-muted/50">No nearby photos found</p>
+                  )
+                ) : (
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
+                    <iframe
+                      key={`${media}-${marker.latitude},${marker.longitude}`}
+                      title={marker.name}
+                      src={media === "street"
+                        ? streetEmbed(marker.latitude, marker.longitude)
+                        : mapEmbed(marker.latitude, marker.longitude)}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="h-full w-full border-0"
+                    />
+                  </div>
+                )}
+
+                <a
+                  href={media === "street"
+                    ? streetViewUrl(marker.latitude, marker.longitude)
+                    : mapsUrl(marker.latitude, marker.longitude)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2.5 flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {media === "street" ? "Open Street View" : "Open in Google Maps"}
+                </a>
+              </div>
 
               {marker.facts && (
                 <div className="mt-5 border-t border-white/[0.06] pt-4">
@@ -297,16 +286,6 @@ export default function ChatPage() {
                   <p className="text-[13px] leading-relaxed text-fg/70">{marker.facts}</p>
                 </div>
               )}
-
-              <a
-                href={`https://www.google.com/maps/place/${marker.latitude},${marker.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Open in Google Maps
-              </a>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 px-4 py-16 text-center">
