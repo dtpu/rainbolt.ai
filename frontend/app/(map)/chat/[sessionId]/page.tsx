@@ -49,8 +49,12 @@ export default function ChatPage() {
   const previousMarker   = useChatStore((s) => s.previousMarker);
 
   const [tab, setTab] = useState<Tab>("chat");
+  const [showStreet, setShowStreet] = useState(false);
 
   useChatSession(sessionId);
+
+  // Reset the (heavy) Street View embed when switching candidates.
+  useEffect(() => { setShowStreet(false); }, [currentMarker, sessionId]);
 
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
@@ -105,9 +109,9 @@ export default function ChatPage() {
   ];
 
   return (
-    <div className="relative z-10 flex h-screen text-fg">
+    <div className="pointer-events-none relative z-10 flex h-screen text-fg">
       {/* ── Left: result + ranked guesses ──────────────────────────────── */}
-      <aside className="flex w-[340px] shrink-0 flex-col border-r border-white/[0.08] bg-space-950">
+      <aside className="pointer-events-auto flex w-[340px] shrink-0 flex-col border-r border-white/[0.08] bg-space-950">
         <div className="flex h-14 shrink-0 items-center border-b border-white/[0.07] px-3">
           <button
             onClick={handleBack}
@@ -211,15 +215,24 @@ export default function ChatPage() {
                     Open <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
-                <div className="relative overflow-hidden rounded-lg border border-white/[0.07]">
-                  <iframe
-                    key={`sv-${marker.latitude},${marker.longitude}`}
-                    title={`${marker.name} street view`}
-                    src={streetEmbed(marker.latitude, marker.longitude)}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="aspect-[4/3] w-full border-0"
-                  />
+                <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
+                  {showStreet ? (
+                    <iframe
+                      key={`sv-${marker.latitude},${marker.longitude}`}
+                      title={`${marker.name} street view`}
+                      src={streetEmbed(marker.latitude, marker.longitude)}
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="h-full w-full border-0"
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setShowStreet(true)}
+                      className="group flex h-full w-full flex-col items-center justify-center gap-2 text-fg-muted transition-colors hover:bg-white/[0.03] hover:text-fg"
+                    >
+                      <MapIcon className="h-5 w-5" />
+                      <span className="text-xs font-medium">Load Street View</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -304,8 +317,8 @@ export default function ChatPage() {
         </div>
       </aside>
 
-      {/* ── Center: transparent; the persistent globe shows through ──────── */}
-      <div className="relative min-w-0 flex-1 overflow-hidden">
+      {/* ── Center: transparent + click-through so the globe behind is interactive ── */}
+      <div className="pointer-events-none relative min-w-0 flex-1 overflow-hidden">
         {markers.length > 1 && (
           <MarkerNav
             currentMarker={currentMarker}
@@ -317,7 +330,7 @@ export default function ChatPage() {
       </div>
 
       {/* ── Right: tabbed panel ────────────────────────────────────────── */}
-      <aside className="flex w-[360px] shrink-0 flex-col border-l border-white/[0.08] bg-space-950">
+      <aside className="pointer-events-auto flex w-[360px] shrink-0 flex-col border-l border-white/[0.08] bg-space-950">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
           <span className="text-sm font-semibold text-fg">Rainbolt AI</span>
           <Link

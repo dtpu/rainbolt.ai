@@ -112,12 +112,12 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
   const selectedEntry = selectedId ? placed.find(p => p.session.id === selectedId) : null;
 
   return (
-    <div className="relative z-10 flex h-screen w-full overflow-hidden">
-      {/* Globe area - transparent; the persistent globe shows through */}
-      <div className="relative min-w-0 flex-1 overflow-hidden">
+    <div className="pointer-events-none relative z-10 flex h-screen w-full overflow-hidden">
+      {/* Globe area - transparent + click-through so the globe behind is interactive */}
+      <div className="pointer-events-none relative min-w-0 flex-1 overflow-hidden">
         <Link
           href="/"
-          className="absolute left-6 top-5 z-20 flex items-center gap-2 text-fg transition-opacity hover:opacity-80"
+          className="pointer-events-auto absolute left-6 top-5 z-20 flex items-center gap-2 text-fg transition-opacity hover:opacity-80"
           style={{ textShadow: "0 2px 16px rgba(5,7,15,0.95)" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -160,7 +160,7 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
 
       {/* Rail */}
       <aside
-        className="flex w-[340px] shrink-0 flex-col overflow-hidden border-l border-white/[0.08] bg-space-950 transition-all duration-500"
+        className="pointer-events-auto flex w-[340px] shrink-0 flex-col overflow-hidden border-l border-white/[0.08] bg-space-950 transition-all duration-500"
         style={{ opacity: entered ? 1 : 0, transform: entered ? "translateX(0)" : "translateX(16px)" }}
       >
         {/* Account header */}
@@ -251,7 +251,7 @@ function SessionPreview({
     : "#e5373e";
 
   return (
-    <div className="absolute left-6 top-1/2 z-30 flex w-[300px] -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-space-900/95 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left-2 duration-200">
+    <div className="pointer-events-auto absolute left-6 top-1/2 z-30 flex w-[300px] -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-space-900/95 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left-2 duration-200">
       {/* Hero image */}
       {place.thumb && (
         <div className="relative aspect-video w-full overflow-hidden">

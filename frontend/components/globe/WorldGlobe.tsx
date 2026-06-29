@@ -39,9 +39,10 @@ export default function WorldGlobe() {
     camera.position.set(0, 0, ZOOM_OUT);
     camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "default" });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Full-viewport globe: cap DPR so HiDPI screens don't render 4x the pixels.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.style.cssText = "width:100%;height:100%;display:block";
     mount.appendChild(renderer.domElement);
@@ -92,9 +93,9 @@ export default function WorldGlobe() {
     dir.position.set(5, 3, 5);
     scene.add(dir);
     scene.add(new THREE.AmbientLight(0x404040, 0.8));
-    const stars = getStarfield({ numStars: 2200, sprite: starSprite });
+    const stars = getStarfield({ numStars: 1400, sprite: starSprite });
     scene.add(stars);
-    const shooting = getShootingStars({ count: 2 });
+    const shooting = getShootingStars({ count: 1 });
     scene.add(shooting);
     const clock = new THREE.Clock();
 

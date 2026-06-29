@@ -16,7 +16,7 @@ export function MarkerNav({
   onNext,
 }: MarkerNavProps) {
   return (
-    <div className="absolute bottom-7 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/[0.08] bg-black/60 px-2 py-1.5 backdrop-blur-md">
+    <div className="pointer-events-auto absolute bottom-7 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/[0.08] bg-black/60 px-2 py-1.5 backdrop-blur-md">
       <button
         onClick={(e) => { e.stopPropagation(); onPrevious(); }}
         onMouseDown={(e) => e.stopPropagation()}
