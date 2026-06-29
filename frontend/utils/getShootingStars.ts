@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 /**
- * A small pool of occasional shooting stars — thin additive streaks that drift
+ * A small pool of occasional shooting stars - thin additive streaks that drift
  * across the far sky and fade. Kept rare and subtle on purpose. Call
  * `update(dt)` each frame with the delta time in seconds.
  */

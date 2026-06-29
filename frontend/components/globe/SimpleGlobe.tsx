@@ -310,7 +310,7 @@ export default function SimpleGlobe({
     const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
     scene.add(ambientLight);
 
-    // Fresnel atmosphere shell — soft rim of glowing air around the planet.
+    // Fresnel atmosphere shell - soft rim of glowing air around the planet.
     globeYRotationGroup.add(getAtmosphere({ color: "#6b9cc4", size: 1.16, intensity: 1.1, power: 3.0 }));
 
     const stars = getStarfield({ numStars: 1800, sprite: starSprite });

@@ -1,5 +1,5 @@
 /**
- * Viewfinder corner ticks — a recurring "instrument / observatory" motif used
+ * Viewfinder corner ticks - a recurring "instrument / observatory" motif used
  * over imagery across the app. Drop inside a `relative` container.
  */
 export function Reticle({ inset = 8 }: { inset?: number }) {

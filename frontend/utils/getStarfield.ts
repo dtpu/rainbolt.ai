@@ -4,7 +4,7 @@ import * as THREE from "three";
  * A depth-layered starfield that gently twinkles. Stars get a random size,
  * a slight colour tint (mostly white, a few ice-blue and warm-gold), and a
  * per-star phase so they shimmer independently. The returned object exposes
- * `update(t)` — call it each frame with elapsed seconds to animate the twinkle.
+ * `update(t)` - call it each frame with elapsed seconds to animate the twinkle.
  */
 export default function getStarfield({
   numStars = 1500,
@@ -68,7 +68,7 @@ export default function getStarfield({
       varying float vTwinkle;
       void main() {
         vTint = aTint;
-        // Gentle, slow shimmer — narrow range so stars stay calm.
+        // Gentle, slow shimmer - narrow range so stars stay calm.
         vTwinkle = 0.55 + 0.2 * sin(uTime * 0.9 + aPhase);
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_PointSize = aSize * uPixelRatio * (300.0 / -mv.z) * (0.85 + 0.25 * vTwinkle);

@@ -35,7 +35,7 @@ export function createFirebaseStorage(
     const sessionId = getSessionId ? getSessionId() : null;
 
     if (!userId || userId.startsWith("guest-")) {
-      // Guests use localStorage only — Firestore rules reject guest IDs.
+      // Guests use localStorage only - Firestore rules reject guest IDs.
       if (typeof window !== "undefined") {
         writeQueue.forEach(({ key, value }) => {
           try {

@@ -37,7 +37,7 @@ export const LEARNING_DECOR: DecorItem[] = [
   { id: "cube-90047", shape: "cube", position: [-2.4, 0.53, -0.22], scale: 0.183, spin: 0.18, bob: 0.06 },
 ];
 
-// Landing hero — a few prominent props in the EarthScene's world space (globe
+// Landing hero - a few prominent props in the EarthScene's world space (globe
 // near x = -6) so they share the rainbolt model's 3D space and parallax with
 // the camera on scroll. Kept light on purpose.
 export const LANDING_DECOR: DecorItem[] = [
@@ -45,12 +45,4 @@ export const LANDING_DECOR: DecorItem[] = [
   { id: "star-tl", shape: "star", position: [-5.85, -0.64, -1.25], scale: 0.255, spin: 0.12, bob: 0.05 },
   { id: "star-bl", shape: "star", position: [-6.77, -0.67, 2.12], scale: 0.201, spin: 0.16, bob: 0.05 },
   { id: "aster-br", shape: "asteroid", position: [-6.79, 0.63, 2.2], scale: 0.147, spin: 0.25, bob: 0.07 },
-];
-
-// Calmer set for the chat / location page — three small props, well clear of
-// the location panel (left) and the chat panel (right).
-export const CHAT_DECOR: DecorItem[] = [
-  { id: "planet-tl", shape: "planet", position: [-1.7, 1.3, -0.4], scale: 0.3, spin: 0.1, bob: 0.05 },
-  { id: "star-bl", shape: "star", position: [-1.8, -1.25, 0.0], scale: 0.22, spin: 0.12, bob: 0.05 },
-  { id: "aster-tr", shape: "asteroid", position: [1.85, 1.3, -0.3], scale: 0.26, spin: 0.22, bob: 0.06 },
 ];

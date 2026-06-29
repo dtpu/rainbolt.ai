@@ -191,7 +191,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {/* Suggested samples — try one without uploading */}
+        {/* Suggested samples - try one without uploading */}
         {!file && SAMPLES.length > 0 && (
           <div>
             <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-fg-muted/50">

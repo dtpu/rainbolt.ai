@@ -155,7 +155,7 @@ const ConstellationGlobe = forwardRef<ConstellationGlobeHandle, ConstellationGlo
       });
       contentGroup.add(new THREE.Points(new THREE.IcosahedronGeometry(1.01, 50), pointsMat));
 
-      // Fresnel atmosphere shell — the rim of glowing air around the planet.
+      // Fresnel atmosphere shell - the rim of glowing air around the planet.
       contentGroup.add(getAtmosphere({ color: "#6b9cc4", size: 1.16, intensity: 1.15, power: 3.0 }));
 
       scene.add(new THREE.HemisphereLight(0xffffff, 0x080820, 2));

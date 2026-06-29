@@ -103,7 +103,7 @@ export default function LearningPage() {
 
       <HowItWorks open={showHowTo} onClose={() => setShowHowTo(false)} />
 
-      {/* Persistent help icon — reopens the tutorial. Fades in once the
+      {/* Persistent help icon - reopens the tutorial. Fades in once the
           tutorial has finished closing so it never pops mid-animation. */}
       <motion.button
         onClick={() => setShowHowTo(true)}

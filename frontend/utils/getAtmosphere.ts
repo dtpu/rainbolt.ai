@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 /**
  * A soft fresnel "atmosphere" shell rendered just outside the globe. Drawn on
- * the back side with additive blending so it reads as a rim of glowing air —
+ * the back side with additive blending so it reads as a rim of glowing air -
  * the single biggest upgrade to making a Three.js planet look alive.
  */
 export default function getAtmosphere({

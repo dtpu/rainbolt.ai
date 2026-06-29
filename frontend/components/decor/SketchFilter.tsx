@@ -1,5 +1,5 @@
 /**
- * The global hand-drawn "wobble" — an SVG turbulence + displacement filter,
+ * The global hand-drawn "wobble" - an SVG turbulence + displacement filter,
  * ported from the gacha prototype. Applied to the decor canvas via
  * `filter: url(#decor-sketch)` so every drawn edge wobbles together. The
  * turbulence is reseeded a few times a second by DecorLayer for a live "boil".

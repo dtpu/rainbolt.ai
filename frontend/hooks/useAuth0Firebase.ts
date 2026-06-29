@@ -7,7 +7,7 @@ import {
 } from "@/lib/globe-database";
 
 // A stable per-browser id for signed-out visitors, so guests (e.g. interviewers)
-// get the full app — create sessions, upload, chat — without an account. Their
+// get the full app - create sessions, upload, chat - without an account. Their
 // data lives under this id, separate from real Auth0 users.
 function getOrCreateGuestId(): string {
   if (typeof window === "undefined") return "guest";

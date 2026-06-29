@@ -300,7 +300,7 @@ function GuessRow({
   );
 }
 
-// ── Places tab — each candidate location, mapped + linkable ────────────
+// ── Places tab - each candidate location, mapped + linkable ────────────
 function PlacesTab({
   markers, onAdd,
 }: {

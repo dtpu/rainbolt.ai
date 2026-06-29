@@ -111,7 +111,7 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-space-950">
-      {/* Globe — fills full height; brand sits top-left over it */}
+      {/* Globe - fills full height; brand sits top-left over it */}
       <div className="relative min-w-0 flex-1 overflow-hidden" style={{ viewTransitionName: "main-globe" }}>
         <SpaceBackdrop />
 
@@ -163,7 +163,7 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
 
         <DecorLayer items={LEARNING_DECOR} storageKey="learning" />
 
-        {/* Floating session preview — opens to the left of the globe */}
+        {/* Floating session preview - opens to the left of the globe */}
         {selectedEntry && !pendingOpenId && (
           <SessionPreview
             key={selectedEntry.session.id}
@@ -236,7 +236,7 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
 
           {sessions.length === 0 && (
             <p className="px-1 py-10 text-center text-sm text-fg-muted/40">
-              No sessions yet — start one to drop your first pin.
+              No sessions yet. Start one to drop your first pin.
             </p>
           )}
         </div>
@@ -361,7 +361,7 @@ const RailCard = forwardRef<
   const lat = `${Math.abs(place.lat).toFixed(2)}°${place.lat >= 0 ? "N" : "S"}`;
   const lng = `${Math.abs(place.lng).toFixed(2)}°${place.lng >= 0 ? "E" : "W"}`;
 
-  // Viewfinder reticle corner ticks — geolocation/observatory flair.
+  // Viewfinder reticle corner ticks - geolocation/observatory flair.
   const corner =
     "pointer-events-none absolute h-2 w-2 border-white/30 transition-colors duration-200 group-hover:border-white/70";
 

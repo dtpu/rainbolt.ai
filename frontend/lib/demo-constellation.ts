@@ -165,7 +165,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         accuracy: 0.41,
         name: "Omoide Yokocho, Shinjuku",
         facts:
-          "Another lantern-lit warren of yakitori counters with the same alley width — ruled slightly lower because the JR embankment in frame sits beside Nonbei Yokocho, not here.",
+          "Another lantern-lit warren of yakitori counters with the same alley width, ruled slightly lower because the JR embankment in frame sits beside Nonbei Yokocho, not here.",
         mapillary_images: [],
       },
       {
@@ -212,7 +212,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         accuracy: 0.39,
         name: "Sannenzaka, Kyoto",
         facts:
-          "The neighbouring preserved slope toward Kiyomizu — same paving and machiya, but its steps and shopfront spacing differ from the frame.",
+          "The neighbouring preserved slope toward Kiyomizu, with the same paving and machiya, but its steps and shopfront spacing differ from the frame.",
         mapillary_images: [],
       },
       {
