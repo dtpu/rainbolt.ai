@@ -12,6 +12,18 @@ interface DemoPlace {
   thumb: string;
 }
 
+// Real sessions use Firebase-generated unique ids; these demos derive a stable,
+// opaque id from their slug so the URLs read like real session ids (e.g.
+// /chat/s_1a2b3c) instead of guessable names, and still expand cleanly.
+function oid(slug: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < slug.length; i++) {
+    h ^= slug.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return "s_" + (h >>> 0).toString(36).padStart(7, "0").slice(0, 8);
+}
+
 const demoSession = (
   id: string,
   title: string,
@@ -21,7 +33,7 @@ const demoSession = (
   place: DemoPlace,
   status: "active" | "completed" = "active",
 ): GlobeSessionWithData => ({
-  id: `demo-${id}`,
+  id: oid(id),
   userId: "demo",
   title,
   status,
@@ -103,8 +115,8 @@ export const DEMO_SESSIONS: GlobeSessionWithData[] = [
 const demoLink = (from: string, to: string): SessionLink => ({
   id: `demo-link-${from}-${to}`,
   userId: "demo",
-  fromSessionId: `demo-${from}`,
-  toSessionId: `demo-${to}`,
+  fromSessionId: oid(from),
+  toSessionId: oid(to),
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
   linkType: "related",
@@ -135,8 +147,8 @@ const chat = (lines: Array<["user" | "assistant", string]>): Message[] =>
     type: "normal",
   }));
 
-export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
-  "demo-tokyo": {
+const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
+  "tokyo": {
     markers: [
       {
         latitude: 35.6595,
@@ -146,6 +158,24 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
         facts:
           "A tightly packed alley of two-story izakaya, vertical kanji signage, and red paper lanterns. The narrow lane width, overhead utility lines, and the JR rail embankment at the end of the street point to Nonbei Yokocho in Shibuya, Tokyo.",
         mapillary_images: ["/demo/tokyo-1.jpg"],
+      },
+      {
+        latitude: 35.6936,
+        longitude: 139.6995,
+        accuracy: 0.41,
+        name: "Omoide Yokocho, Shinjuku",
+        facts:
+          "Another lantern-lit warren of yakitori counters with the same alley width — ruled slightly lower because the JR embankment in frame sits beside Nonbei Yokocho, not here.",
+        mapillary_images: [],
+      },
+      {
+        latitude: 35.694,
+        longitude: 139.7045,
+        accuracy: 0.22,
+        name: "Golden Gai, Shinjuku",
+        facts:
+          "A denser block of tiny bars, but its facades are narrower and more uniform and it sits away from the rail line.",
+        mapillary_images: [],
       },
     ],
     messages: chat([
@@ -165,7 +195,7 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
       ],
     ]),
   },
-  "demo-kyoto": {
+  "kyoto": {
     markers: [
       {
         latitude: 35.0036,
@@ -175,6 +205,24 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
         facts:
           "A stone-paved sloped lane lined with wooden machiya townhouses, with a glimpse of a pagoda above the rooflines. The preserved streetscape and gentle gradient indicate the Higashiyama approach to Kiyomizu-dera in Kyoto.",
         mapillary_images: ["/demo/kyoto-1.jpg"],
+      },
+      {
+        latitude: 34.9968,
+        longitude: 135.7807,
+        accuracy: 0.39,
+        name: "Sannenzaka, Kyoto",
+        facts:
+          "The neighbouring preserved slope toward Kiyomizu — same paving and machiya, but its steps and shopfront spacing differ from the frame.",
+        mapillary_images: [],
+      },
+      {
+        latitude: 34.679,
+        longitude: 135.827,
+        accuracy: 0.14,
+        name: "Naramachi, Nara",
+        facts:
+          "Shares the timber-townhouse look, but Nara's old town is flatter and lacks the uphill gradient toward a pagoda.",
+        mapillary_images: [],
       },
     ],
     messages: chat([
@@ -194,7 +242,7 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
       ],
     ]),
   },
-  "demo-fjords": {
+  "fjords": {
     markers: [
       {
         latitude: 62.101,
@@ -204,6 +252,24 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
         facts:
           "Steep glacier-carved valley walls drop to deep blue water, with scattered red-painted cabins and a switchback road guarded by stone-topped barriers. The vegetation line and fjord geometry match the Geiranger area in western Norway.",
         mapillary_images: ["/demo/fjords-1.jpg"],
+      },
+      {
+        latitude: 60.88,
+        longitude: 6.88,
+        accuracy: 0.44,
+        name: "Nærøyfjord, Norway",
+        facts:
+          "A narrower UNESCO fjord with the same glacial walls; the waterfall placement and switchback profile favour Geiranger.",
+        mapillary_images: [],
+      },
+      {
+        latitude: 59.0,
+        longitude: 6.3,
+        accuracy: 0.19,
+        name: "Lysefjord, Norway",
+        facts:
+          "Similar sheer walls but its cliffs are more vertical and it lacks the road switchbacks visible in frame.",
+        mapillary_images: [],
       },
     ],
     messages: chat([
@@ -220,7 +286,7 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
       ],
     ]),
   },
-  "demo-sahara": {
+  "sahara": {
     markers: [
       {
         latitude: 30.5707,
@@ -230,6 +296,24 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
         facts:
           "A paved road skirts a Saharan oasis settlement: date palms, a whitewashed mud-brick ksar, and a low sand ridge under a hard blue sky. The pole lighting, red-and-white kerb striping, and architecture place it in the central Algerian Sahara near El Goléa.",
         mapillary_images: ["/demo/sahara-1.jpg"],
+      },
+      {
+        latitude: 29.26,
+        longitude: 0.23,
+        accuracy: 0.34,
+        name: "Timimoun, Algeria",
+        facts:
+          "A red-earth Saharan oasis with similar palms and ksar architecture; its buildings run a deeper ochre than the whitewashed frame.",
+        mapillary_images: [],
+      },
+      {
+        latitude: 32.49,
+        longitude: 3.67,
+        accuracy: 0.16,
+        name: "Ghardaïa, Algeria",
+        facts:
+          "Another M'zab valley oasis town, but its tiered hillside layout differs from the flat roadside scene.",
+        mapillary_images: [],
       },
     ],
     messages: chat([
@@ -249,7 +333,7 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
       ],
     ]),
   },
-  "demo-patagonia": {
+  "patagonia": {
     markers: [
       {
         latitude: -51.0,
@@ -259,6 +343,24 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
         facts:
           "Jagged granite spires rise over windswept golden grassland with a turquoise glacial lake below. The horn-shaped peaks and guanaco-grazed steppe are signatures of Torres del Paine in Chilean Patagonia.",
         mapillary_images: ["/demo/patagonia-1.jpg"],
+      },
+      {
+        latitude: -49.3,
+        longitude: -73.05,
+        accuracy: 0.37,
+        name: "Los Glaciares, Argentina",
+        facts:
+          "The same granite-and-steppe palette across the border; the three-tower 'Torres' silhouette in frame is the Chilean park, not here.",
+        mapillary_images: [],
+      },
+      {
+        latitude: -49.27,
+        longitude: -72.99,
+        accuracy: 0.18,
+        name: "Cerro Fitz Roy, El Chaltén",
+        facts:
+          "A famous spire cluster with similar lakes, but its peak profile is sharper and singular versus the broad horns shown.",
+        mapillary_images: [],
       },
     ],
     messages: chat([
@@ -275,7 +377,7 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
       ],
     ]),
   },
-  "demo-nyc": {
+  "nyc": {
     markers: [
       {
         latitude: 40.7527,
@@ -285,6 +387,24 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
         facts:
           "Yellow tactile warning tiles along the platform edge, riveted steel I-beam columns, and the track and third-rail layout identify the New York City subway. The platform construction points to an original IRT Lexington Avenue line station in Manhattan.",
         mapillary_images: ["/demo/nyc-1.jpg"],
+      },
+      {
+        latitude: 40.758,
+        longitude: -73.9855,
+        accuracy: 0.36,
+        name: "BMT Broadway Line, NYC",
+        facts:
+          "Same NYC subway build era, but its platforms are wider with different column spacing than the IRT shown.",
+        mapillary_images: [],
+      },
+      {
+        latitude: 40.7527,
+        longitude: -73.9908,
+        accuracy: 0.17,
+        name: "IND Eighth Ave Line, NYC",
+        facts:
+          "A later cut-and-cover line; its tiling palette and signage typography don't match the riveted IRT columns in frame.",
+        mapillary_images: [],
       },
     ],
     messages: chat([
@@ -305,3 +425,9 @@ export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> = {
     ]),
   },
 };
+
+// Keyed by the same opaque session ids used on the globe + in the URL.
+export const DEMO_SESSION_CONTENT: Record<string, DemoSessionContent> =
+  Object.fromEntries(
+    Object.entries(DEMO_CONTENT_BY_SLUG).map(([slug, content]) => [oid(slug), content]),
+  );

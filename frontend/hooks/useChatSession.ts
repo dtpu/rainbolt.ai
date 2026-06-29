@@ -10,7 +10,7 @@ export function useChatSession(sessionId: string) {
   useEffect(() => {
     // Guest demo sessions are read-only and backend-free: seed the example
     // marker + chat straight into the store instead of opening a socket.
-    if (sessionId?.startsWith("demo-")) {
+    if (sessionId && DEMO_SESSION_CONTENT[sessionId]) {
       const content = DEMO_SESSION_CONTENT[sessionId];
       useChatStore.setState({
         sessionId,

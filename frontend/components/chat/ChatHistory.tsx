@@ -59,6 +59,7 @@ export function ChatHistory() {
                 text={msg.text}
                 ts={msg.ts}
                 type={msg.type}
+                image={msg.image}
               />
             ))}
 

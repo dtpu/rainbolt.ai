@@ -9,6 +9,8 @@ export type Message = {
   text: string;
   ts: number;
   type?: "status" | "normal";
+  /** Optional attached image (e.g. a reference photo added from the Similar tab). */
+  image?: string;
 };
 
 export type Marker = {
