@@ -8,14 +8,9 @@ import { sessionPlace, SessionPlace } from "@/lib/session-place";
 import { DEMO_SESSION_CONTENT } from "@/lib/demo-constellation";
 import LoginComponent from "@/components/ui/LoginComponent";
 import { Reticle } from "@/components/ui/Reticle";
-import { SpaceBackdrop } from "@/components/SpaceBackdrop";
 import { DecorLayer } from "@/components/decor/DecorLayer";
 import { LEARNING_DECOR } from "@/lib/decor/layouts";
-import ConstellationGlobe, {
-  ConstellationGlobeHandle,
-  GlobeMarker,
-  GlobeArc,
-} from "./ConstellationGlobe";
+import { useGlobeStore, type WorldMarker, type WorldArc } from "@/lib/globe/store";
 
 interface PlacedSession { session: GlobeSessionWithData; place: SessionPlace; }
 
@@ -33,7 +28,6 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
   const [pendingOpenId, setPendingOpenId] = useState<string | null>(null);
   const [entered,       setEntered]       = useState(false);
 
-  const globeRef = useRef<ConstellationGlobeHandle>(null);
   const railRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -46,12 +40,12 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
     return { placed, pending };
   }, [sessions]);
 
-  const markers = useMemo<GlobeMarker[]>(
+  const markers = useMemo<WorldMarker[]>(
     () => placed.map(p => ({ id: p.session.id, lat: p.place.lat, lng: p.place.lng })),
     [placed],
   );
 
-  const arcs = useMemo<GlobeArc[]>(() => {
+  const arcs = useMemo<WorldArc[]>(() => {
     const byId = new Map(placed.map(p => [p.session.id, p.place]));
     return links.flatMap(l => {
       const a = byId.get(l.fromSessionId), b = byId.get(l.toSessionId);
@@ -59,46 +53,54 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
     });
   }, [links, placed]);
 
-  // Hover: rotate globe toward pin. Don't move globe while a preview is open.
+  // Hover a pin/card: highlight it (and scroll the card into view).
   const handleHover = useCallback((id: string | null) => {
     if (pendingOpenId || selectedId) return;
     setActiveId(id);
-    if (id) {
-      railRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      const place = placed.find(p => p.session.id === id)?.place;
-      if (place) globeRef.current?.rotateTo(place.lat, place.lng);
-    } else {
-      globeRef.current?.cancelRotation();
-    }
-  }, [pendingOpenId, selectedId, placed]);
+    if (id) railRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [pendingOpenId, selectedId]);
 
-  // Select: show the preview panel (no navigation yet).
-  const handleSelect = useCallback((id: string, place?: SessionPlace) => {
+  // Select: show the preview panel; the globe flies via the focus effect below.
+  const handleSelect = useCallback((id: string) => {
     if (pendingOpenId) return;
     setSelectedId(id);
     setActiveId(id);
-    globeRef.current?.cancelRotation();
-    if (place) globeRef.current?.rotateTo(place.lat, place.lng);
   }, [pendingOpenId]);
 
-  // Open: fly-to then navigate (called from preview "Open session" button).
-  const handleOpen = useCallback((id: string, place?: SessionPlace) => {
+  // Open: navigate (the globe is already focused on this session, so the next
+  // page just keeps flying — a continuation, not a remount).
+  const handleOpen = useCallback((id: string) => {
     if (pendingOpenId) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     setPendingOpenId(id);
     setActiveId(id);
-    globeRef.current?.cancelRotation();
-    if (place) globeRef.current?.flyTo(place.lat, place.lng);
-
-    timerRef.current = setTimeout(() => {
-      if (typeof document !== "undefined" && "startViewTransition" in document) {
-        (document as Document & { startViewTransition: (cb: () => void) => void })
-          .startViewTransition(() => onOpen(id));
-      } else {
-        onOpen(id);
-      }
-    }, place ? 220 : 60);
+    timerRef.current = setTimeout(() => onOpen(id), 260);
   }, [pendingOpenId, onOpen]);
+
+  // Keep latest handlers reachable from the (stable) store callbacks.
+  const hoverRef = useRef(handleHover); hoverRef.current = handleHover;
+  const selectRef = useRef(handleSelect); selectRef.current = handleSelect;
+
+  // Push this page's data + interaction handlers into the shared globe.
+  useEffect(() => {
+    useGlobeStore.getState().configure({
+      markers,
+      arcs,
+      mode: "constellation",
+      onHover: (id) => hoverRef.current(id),
+      onPick: (id) => selectRef.current(id),
+    });
+  }, [markers, arcs]);
+
+  // Drive focus (fly/zoom) + highlight from the current selection.
+  useEffect(() => {
+    const focusId = selectedId ?? pendingOpenId;
+    const idx = focusId ? markers.findIndex(m => m.id === focusId) : -1;
+    useGlobeStore.getState().configure({
+      focusIndex: idx >= 0 ? idx : null,
+      activeId: pendingOpenId ?? selectedId ?? activeId,
+    });
+  }, [selectedId, activeId, pendingOpenId, markers]);
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
@@ -110,11 +112,9 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
   const selectedEntry = selectedId ? placed.find(p => p.session.id === selectedId) : null;
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-space-950">
-      {/* Globe - fills full height; brand sits top-left over it */}
-      <div className="relative min-w-0 flex-1 overflow-hidden" style={{ viewTransitionName: "main-globe" }}>
-        <SpaceBackdrop />
-
+    <div className="relative z-10 flex h-screen w-full overflow-hidden">
+      {/* Globe area - transparent; the persistent globe shows through */}
+      <div className="relative min-w-0 flex-1 overflow-hidden">
         <Link
           href="/"
           className="absolute left-6 top-5 z-20 flex items-center gap-2 text-fg transition-opacity hover:opacity-80"
@@ -144,23 +144,6 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
           </p>
         </div>
 
-        <div
-          className="absolute inset-0 transition-opacity duration-700"
-          style={{ opacity: entered ? 1 : 0 }}
-        >
-          <ConstellationGlobe
-            ref={globeRef}
-            markers={markers}
-            arcs={arcs}
-            activeId={pendingOpenId ?? activeId}
-            onHover={id => { if (id) handleHover(id); else handleHover(null); }}
-            onOpen={id => {
-              const place = placed.find(p => p.session.id === id)?.place;
-              handleSelect(id, place);
-            }}
-          />
-        </div>
-
         <DecorLayer items={LEARNING_DECOR} storageKey="learning" />
 
         {/* Floating session preview - opens to the left of the globe */}
@@ -169,8 +152,8 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
             key={selectedEntry.session.id}
             session={selectedEntry.session}
             place={selectedEntry.place}
-            onClose={() => { setSelectedId(null); setActiveId(null); globeRef.current?.cancelRotation(); }}
-            onOpen={() => handleOpen(selectedEntry.session.id, selectedEntry.place)}
+            onClose={() => { setSelectedId(null); setActiveId(null); }}
+            onOpen={() => handleOpen(selectedEntry.session.id)}
           />
         )}
       </div>
@@ -215,7 +198,7 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
               index={i}
               onEnter={() => handleHover(session.id)}
               onLeave={() => handleHover(null)}
-              onClick={() => handleSelect(session.id, place)}
+              onClick={() => handleSelect(session.id)}
             />
           ))}
 

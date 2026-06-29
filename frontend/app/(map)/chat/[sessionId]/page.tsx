@@ -8,15 +8,14 @@ import {
   ArrowLeft, ExternalLink, Home, ImagePlus,
   Loader2, Map as MapIcon, MapPin, MessageSquare, Plus, X,
 } from "lucide-react";
-import SimpleGlobe from "@/components/globe/SimpleGlobe";
 import { ChatHistory } from "@/components/chat/ChatHistory";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { MarkerNav } from "@/components/chat/MarkerNav";
-import { SpaceBackdrop } from "@/components/SpaceBackdrop";
 import { Reticle } from "@/components/ui/Reticle";
 import { DesktopOnlyNotice } from "@/components/chat/DesktopOnlyNotice";
 import { useChatStore, type Marker } from "@/components/useChatStore";
 import { useChatSession } from "@/hooks/useChatSession";
+import { useGlobeStore } from "@/lib/globe/store";
 
 const confColor = (acc: number) =>
   acc >= 0.75 ? "#4ade80" : acc >= 0.5 ? "#e8b44f" : "#e5373e";
@@ -43,25 +42,32 @@ export default function ChatPage() {
   const nextMarker       = useChatStore((s) => s.nextMarker);
   const previousMarker   = useChatStore((s) => s.previousMarker);
 
-  const [isLocked, setIsLocked] = useState(false);
   const [tab, setTab] = useState<Tab>("chat");
-  const hasLockedRef = useRef(false);
 
   useChatSession(sessionId);
 
-  useEffect(() => {
-    if (markers.length > 0) {
-      if (!hasLockedRef.current) { setIsLocked(true); hasLockedRef.current = true; }
-    } else {
-      setIsLocked(false);
-      hasLockedRef.current = false;
-    }
-  }, [markers.length]);
-
-  const globeMarkers = markers.map((m) => ({
-    lat: m.latitude, long: m.longitude, confidence: m.accuracy * 100,
-  }));
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
+
+  // Feed this session's candidate guesses into the shared persistent globe.
+  const setCurrentRef = useRef(setCurrentMarker);
+  setCurrentRef.current = setCurrentMarker;
+  useEffect(() => {
+    useGlobeStore.getState().configure({
+      markers: markers.map((m, i) => ({
+        id: String(i), lat: m.latitude, lng: m.longitude, confidence: m.accuracy * 100,
+      })),
+      arcs: [],
+      mode: "located",
+      onHover: undefined,
+      onPick: (id) => setCurrentRef.current(Number(id)),
+    });
+  }, [markers]);
+  useEffect(() => {
+    useGlobeStore.getState().configure({
+      focusIndex: markers.length ? currentMarker : null,
+      activeId: markers.length ? String(currentMarker) : null,
+    });
+  }, [currentMarker, markers.length]);
 
   // Drop a reference (text and/or image) into the chat as a comparison prompt.
   const addToChat = (text: string, image?: string) => {
@@ -95,7 +101,7 @@ export default function ChatPage() {
   ];
 
   return (
-    <div className="flex h-screen bg-space-950 text-fg">
+    <div className="relative z-10 flex h-screen text-fg">
       {/* ── Left: result + ranked guesses ──────────────────────────────── */}
       <aside className="flex w-[340px] shrink-0 flex-col border-r border-white/[0.08] bg-space-950">
         <div className="flex h-14 shrink-0 items-center border-b border-white/[0.07] px-3">
@@ -158,7 +164,7 @@ export default function ChatPage() {
                         rank={i + 1}
                         marker={m}
                         active={i === currentMarker}
-                        onClick={() => { setCurrentMarker(i); setIsLocked(true); }}
+                        onClick={() => setCurrentMarker(i)}
                       />
                     ))}
                   </div>
@@ -193,26 +199,14 @@ export default function ChatPage() {
         </div>
       </aside>
 
-      {/* ── Center: globe ──────────────────────────────────────────────── */}
-      <div
-        className="relative min-w-0 flex-1 overflow-hidden"
-        style={{ viewTransitionName: "main-globe" }}
-      >
-        <SpaceBackdrop />
-        <SimpleGlobe
-          markers={globeMarkers}
-          targetMarkerIndex={currentMarker}
-          isLocked={isLocked}
-          onUnlock={() => setIsLocked(false)}
-          onLock={() => setIsLocked(true)}
-          onMarkerClick={(i) => { setCurrentMarker(i); setIsLocked(true); }}
-        />
+      {/* ── Center: transparent; the persistent globe shows through ──────── */}
+      <div className="relative min-w-0 flex-1 overflow-hidden">
         {markers.length > 1 && (
           <MarkerNav
             currentMarker={currentMarker}
             markersCount={markers.length}
-            onPrevious={() => { setIsLocked(true); previousMarker(); }}
-            onNext={() => { setIsLocked(true); nextMarker(); }}
+            onPrevious={previousMarker}
+            onNext={nextMarker}
           />
         )}
       </div>

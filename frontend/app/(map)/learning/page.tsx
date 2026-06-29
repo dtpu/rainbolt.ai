@@ -83,7 +83,7 @@ export default function LearningPage() {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-space-950 text-white">
+    <div className="h-screen overflow-hidden text-white">
       <GlobeRail
         sessions={displaySessions}
         links={displayLinks}
