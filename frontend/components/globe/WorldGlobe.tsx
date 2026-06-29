@@ -7,9 +7,9 @@ import getAtmosphere from "../../utils/getAtmosphere";
 import getShootingStars from "../../utils/getShootingStars";
 import { latLongToVector3 } from "../../utils/coordinates";
 import { useGlobeStore, type WorldMarker, type WorldArc } from "@/lib/globe/store";
+import { pinColor } from "@/lib/globe/palette";
 
-const ACCENT = new THREE.Color("#e5373e");
-const ACCENT_BRIGHT = new THREE.Color("#ff6b6b");
+const ARC_COLOR = new THREE.Color("#8fb8d8");
 const MARKER_RADIUS = 1.02;
 const ZOOM_OUT = 3.2;
 const ZOOM_IN = 2.0;
@@ -185,7 +185,7 @@ export default function WorldGlobe() {
         const mid = start.clone().add(end).multiplyScalar(0.5).normalize().multiplyScalar(1.15 + start.distanceTo(end) * 0.18);
         const tube = new THREE.Mesh(
           new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(start, mid, end), 44, 0.0032, 6, false),
-          new THREE.MeshBasicMaterial({ color: ACCENT, transparent: true, opacity: 0.4 }),
+          new THREE.MeshBasicMaterial({ color: ARC_COLOR, transparent: true, opacity: 0.35 }),
         );
         tube.userData.isArc = true;
         contentGroup.add(tube);
@@ -194,18 +194,29 @@ export default function WorldGlobe() {
       markers.forEach((m, i) => {
         const [x, y, z] = latLongToVector3(m.lat, m.lng, MARKER_RADIUS);
         const conf = m.confidence ?? 60;
-        const h = 0.55 + (conf / 100) * 1.0; // confidence -> pin height
+        const h = 0.5 + (conf / 100) * 0.6; // confidence -> pin height
+        const col = new THREE.Color(pinColor(i)); // distinct colour per candidate
         const group = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({
-          color: ACCENT, emissive: ACCENT, emissiveIntensity: 0.6, transparent: true, opacity: 0.95, metalness: 0.3, roughness: 0.4,
+          color: col, emissive: col, emissiveIntensity: 0.9, transparent: true, opacity: 0.95, metalness: 0.2, roughness: 0.4,
         });
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 12), mat);
-        head.scale.set(1, 1.3, 1);
-        head.position.set(0, 0.028 * h * 1.6, 0);
+        const headY = 0.026 * h * 1.6;
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.013, 14, 14), mat);
+        head.position.set(0, headY, 0);
         group.add(head);
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.03 * h * 1.6, 6), mat);
-        stem.position.set(0, 0.015 * h * 1.6, 0);
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.0026, 0.0026, headY, 6), mat);
+        stem.position.set(0, headY / 2, 0);
         group.add(stem);
+        // soft additive halo so a small pin is still easy to spot
+        const halo = new THREE.Mesh(
+          new THREE.SphereGeometry(0.03, 12, 12),
+          new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false }),
+        );
+        halo.position.set(0, headY, 0);
+        group.add(halo);
+        // base dot at the surface (the actual pinpoint)
+        const base = new THREE.Mesh(new THREE.SphereGeometry(0.006, 10, 10), mat);
+        group.add(base);
         group.position.set(x, y, z);
         const q = new THREE.Quaternion();
         q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x, y, z).normalize());
@@ -221,13 +232,12 @@ export default function WorldGlobe() {
     const applyActive = (activeId: string | null) => {
       for (const [id, group] of pinById) {
         const on = id === activeId;
-        group.userData.baseScale = on ? 1.7 : 1; // actual scale applied per-frame (constant screen size)
+        group.userData.baseScale = on ? 1.5 : 1; // actual scale applied per-frame (constant screen size)
         group.traverse((c) => {
           if (c instanceof THREE.Mesh) {
-            const mt = c.material as THREE.MeshStandardMaterial;
-            mt.color.copy(on ? ACCENT_BRIGHT : ACCENT);
-            mt.emissive.copy(on ? ACCENT_BRIGHT : ACCENT);
-            mt.emissiveIntensity = on ? 1.4 : 0.6;
+            const mt = c.material; // keep each pin's own colour; only pop the active one
+            if (mt instanceof THREE.MeshStandardMaterial) mt.emissiveIntensity = on ? 1.7 : 0.9;
+            else if (mt instanceof THREE.MeshBasicMaterial) mt.opacity = on ? 0.42 : 0.2; // halo
           }
         });
       }

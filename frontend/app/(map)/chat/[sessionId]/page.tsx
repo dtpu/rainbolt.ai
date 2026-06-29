@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, ExternalLink, Home, ImagePlus,
-  Loader2, Map as MapIcon, MapPin, MessageSquare, Plus, X,
+  Loader2, Map as MapIcon, MessageSquare, Plus, X,
 } from "lucide-react";
 import { ChatHistory } from "@/components/chat/ChatHistory";
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -18,6 +18,7 @@ import { useChatSession } from "@/hooks/useChatSession";
 import { useAreaPhotos } from "@/hooks/useAreaPhotos";
 import { useAreaPlaces } from "@/hooks/useAreaPlaces";
 import { useGlobeStore } from "@/lib/globe/store";
+import { pinColor } from "@/lib/globe/palette";
 
 const confColor = (acc: number) =>
   acc >= 0.75 ? "#4ade80" : acc >= 0.5 ? "#e8b44f" : "#e5373e";
@@ -146,7 +147,10 @@ export default function ChatPage() {
             <div className="px-4 py-4">
               {/* selected guess header */}
               <div className="mb-1 flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-fg-muted/60" />
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/30"
+                  style={{ backgroundColor: pinColor(currentMarker), boxShadow: `0 0 7px ${pinColor(currentMarker)}` }}
+                />
                 <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
                   Best guess
                 </span>
@@ -385,9 +389,11 @@ function GuessRow({
         active ? "bg-white/[0.06]" : "hover:bg-white/[0.035]"
       }`}
     >
-      <span className={`w-4 shrink-0 text-center text-xs font-semibold tabular-nums ${active ? "text-fg" : "text-fg-muted/50"}`}>
-        {rank}
-      </span>
+      <span
+        className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/30"
+        style={{ backgroundColor: pinColor(rank - 1), boxShadow: active ? `0 0 7px ${pinColor(rank - 1)}` : "none" }}
+        title={`Pin ${rank}`}
+      />
       <div className="min-w-0 flex-1">
         <p className={`truncate text-[13px] ${active ? "font-medium text-fg" : "text-fg/80"}`}>{marker.name}</p>
         <div className="mt-1 h-[2px] w-full overflow-hidden rounded-full bg-white/[0.07]">

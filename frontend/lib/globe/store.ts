@@ -35,6 +35,8 @@ interface GlobeStore {
   arcs: WorldArc[];
   /** Place/landmark labels that fade in as you zoom (map-style LOD). */
   labels: PlaceLabel[];
+  /** True when the globe is zoomed in close (used to nudge users to the Map). */
+  zoomedIn: boolean;
   /** Index of the marker to centre/zoom; null = free idle orbit. */
   focusIndex: number | null;
   /** Highlighted marker id (hover/selection). */
@@ -56,6 +58,7 @@ const INITIAL = {
   markers: [] as WorldMarker[],
   arcs: [] as WorldArc[],
   labels: [] as PlaceLabel[],
+  zoomedIn: false,
   focusIndex: null as number | null,
   activeId: null as string | null,
   mode: "constellation" as const,
