@@ -67,15 +67,32 @@ export default function WorldGlobe() {
       }),
     ));
 
+    // Point-cloud earth with a per-point random so the dots can reconfigure on zoom.
+    const pointsGeo = new THREE.IcosahedronGeometry(1.01, 50);
+    {
+      const pn = pointsGeo.attributes.position.count;
+      const rnd = new Float32Array(pn);
+      for (let i = 0; i < pn; i++) rnd[i] = Math.random();
+      pointsGeo.setAttribute("aRand", new THREE.BufferAttribute(rnd, 1));
+    }
     const pointsMat = new THREE.ShaderMaterial({
-      uniforms: { size: { value: 5.0 }, otherTexture: { value: otherMap }, elevTexture: { value: elevMap }, alphaTexture: { value: alphaMap } },
+      uniforms: {
+        size: { value: 5.0 },
+        otherTexture: { value: otherMap }, elevTexture: { value: elevMap }, alphaTexture: { value: alphaMap },
+        uZoom: { value: 0 }, uZoomVel: { value: 0 }, uTime: { value: 0 },
+      },
       vertexShader: `
-        uniform float size; uniform sampler2D elevTexture;
+        uniform float size, uZoom, uZoomVel, uTime; uniform sampler2D elevTexture;
+        attribute float aRand;
         varying vec2 vUv; varying float vVisible;
-        void main(){ vUv=uv; vec4 mvPos=modelViewMatrix*vec4(position,1.0);
-          float elv=texture2D(elevTexture,vUv).r; vec3 vN=normalMatrix*normal;
-          vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN))); mvPos.z+=0.35*elv;
-          gl_PointSize=size; gl_Position=projectionMatrix*mvPos; }`,
+        void main(){ vUv=uv;
+          float elv=texture2D(elevTexture,uv).r; vec3 nn=normalize(normal);
+          float relief = elv * (0.02 + uZoom*0.10);                       // terrain rises as you zoom in
+          float scatter = uZoomVel * (0.10 + aRand*0.28) * sin(uTime*13.0 + aRand*6.2831); // shimmer while zooming
+          vec3 p = position + nn * (relief + scatter);
+          vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
+          vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
+          gl_PointSize=size*(1.0+uZoom*0.55); gl_Position=projectionMatrix*mvPos; }`,
       fragmentShader: `
         uniform sampler2D alphaTexture, otherTexture;
         varying vec2 vUv; varying float vVisible;
@@ -85,7 +102,7 @@ export default function WorldGlobe() {
       transparent: true, depthWrite: false, blending: THREE.NormalBlending,
     });
     void colorMap;
-    contentGroup.add(new THREE.Points(new THREE.IcosahedronGeometry(1.01, 50), pointsMat));
+    contentGroup.add(new THREE.Points(pointsGeo, pointsMat));
     contentGroup.add(getAtmosphere({ color: "#6b9cc4", size: 1.16, intensity: 1.15, power: 3.0 }));
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x080820, 2));
@@ -241,7 +258,16 @@ export default function WorldGlobe() {
       } else if (!isDragging && hoveredId === null) {
         spinGroup.rotation.y += 0.0009;
       }
+      const prevZ = camera.position.z;
       camera.position.z += (targetZ - camera.position.z) * 0.08;
+
+      // Drive the dot reconfigure: zoom level + how fast we're zooming.
+      const zoom = Math.max(0, Math.min(1, (5 - camera.position.z) / 2.8));
+      const vel = Math.min(1, Math.abs(camera.position.z - prevZ) * 9);
+      const pu = pointsMat.uniforms;
+      pu.uZoom.value += (zoom - pu.uZoom.value) * 0.15;
+      pu.uZoomVel.value += (vel - pu.uZoomVel.value) * 0.25;
+      pu.uTime.value = t;
 
       if (frame % 3 === 0 && !isDragging) {
         const hit = pickPin();
