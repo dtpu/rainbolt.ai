@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { HelpCircle } from "lucide-react";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
 import { useGlobeSessions } from "@/hooks/useGlobeSessions";
 import { useSessionLinks } from "@/hooks/useSessionLinks";
-import { Navbar } from "@/components/ui/Navbar";
 import { UploadModal } from "@/components/chat/UploadModal";
 import { HowItWorks } from "@/components/HowItWorks";
 import { useChatStore } from "@/components/useChatStore";
@@ -84,8 +84,6 @@ export default function LearningPage() {
 
   return (
     <div className="h-screen overflow-hidden bg-space-950 text-white">
-      <Navbar currentSection={0} variant="learning" />
-
       <GlobeRail
         sessions={displaySessions}
         links={displayLinks}
@@ -105,16 +103,25 @@ export default function LearningPage() {
 
       <HowItWorks open={showHowTo} onClose={() => setShowHowTo(false)} />
 
-      {/* Persistent help icon for logged-in users */}
-      {!isGuest && (
-        <button
-          onClick={() => setShowHowTo(true)}
-          title="How it works"
-          className="fixed bottom-5 right-5 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07] text-white/35 backdrop-blur-sm transition-colors hover:bg-white/[0.13] hover:text-white/80"
-        >
-          <HelpCircle className="h-4 w-4" />
-        </button>
-      )}
+      {/* Persistent help icon — reopens the tutorial. Fades in once the
+          tutorial has finished closing so it never pops mid-animation. */}
+      <motion.button
+        onClick={() => setShowHowTo(true)}
+        title="How it works"
+        aria-label="How it works"
+        initial={false}
+        animate={{
+          opacity: showHowTo ? 0 : 1,
+          scale: showHowTo ? 0.8 : 1,
+        }}
+        transition={{ duration: 0.25, ease: "easeOut", delay: showHowTo ? 0 : 0.25 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.94 }}
+        style={{ pointerEvents: showHowTo ? "none" : "auto" }}
+        className="fixed bottom-5 right-5 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-space-900/90 text-fg-muted shadow-lg backdrop-blur-sm hover:border-white/20 hover:text-fg"
+      >
+        <HelpCircle className="h-[18px] w-[18px]" />
+      </motion.button>
     </div>
   );
 }

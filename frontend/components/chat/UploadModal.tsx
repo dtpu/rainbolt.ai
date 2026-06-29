@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Dialog } from "../ui/Dialog";
 import { useChatStore } from "../useChatStore";
+import { DEMO_SESSIONS } from "@/lib/demo-constellation";
+
+const SAMPLES = DEMO_SESSIONS.slice(0, 4).map((s) => ({
+  id: s.id,
+  title: s.title,
+  thumb: s.data?.globeImages?.[0]?.imageUrl as string | undefined,
+}));
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -100,6 +107,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     onClose();
   };
 
+  // Try a ready-made example instead of uploading your own photo.
+  const openSample = (id: string) => {
+    handleClose();
+    if (typeof document !== "undefined" && "startViewTransition" in document) {
+      (document as Document & { startViewTransition: (cb: () => void) => void })
+        .startViewTransition(() => router.push(`/chat/${id}`));
+    } else {
+      router.push(`/chat/${id}`);
+    }
+  };
+
   return (
     <Dialog
       isOpen={isOpen}
@@ -137,7 +155,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
             <ImagePlus className="h-7 w-7 text-fg-muted/60" />
             <div className="text-center">
               <p className="text-sm text-fg">
-                Drop an image, or <span className="text-star-400">browse</span>
+                Drop an image, or <span className="text-fg underline decoration-white/30 underline-offset-2">browse</span>
               </p>
               <p className="mt-1 text-xs text-fg-muted/60">PNG or JPG, up to 10MB</p>
             </div>
@@ -173,6 +191,35 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
+        {/* Suggested samples — try one without uploading */}
+        {!file && SAMPLES.length > 0 && (
+          <div>
+            <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-fg-muted/50">
+              No photo? Try a sample
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {SAMPLES.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => openSample(s.id)}
+                  title={s.title}
+                  className="group relative aspect-square overflow-hidden rounded-lg border border-white/[0.08] bg-space-900 transition-colors hover:border-white/25"
+                >
+                  {s.thumb && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={s.thumb}
+                      alt={s.title}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                  )}
+                  <span className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 pt-1">
           <button
@@ -185,7 +232,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           <button
             onClick={handleUpload}
             disabled={!file || uploading}
-            className="inline-flex items-center gap-2 rounded-lg bg-star-400 px-5 py-2.5 text-sm font-semibold text-space-950 transition-colors hover:bg-star-300 disabled:cursor-not-allowed disabled:opacity-30"
+            className="inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-space-950 transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-30"
           >
             {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
             {uploading ? "Uploading…" : "Start session"}
