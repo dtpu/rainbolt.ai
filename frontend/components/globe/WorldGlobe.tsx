@@ -87,12 +87,13 @@ export default function WorldGlobe() {
         varying vec2 vUv; varying float vVisible;
         void main(){ vUv=uv;
           float elv=texture2D(elevTexture,uv).r; vec3 nn=normalize(normal);
-          float relief = elv * (0.02 + uZoom*0.10);                       // terrain rises as you zoom in
-          float scatter = uZoomVel * (0.10 + aRand*0.28) * sin(uTime*13.0 + aRand*6.2831); // shimmer while zooming
-          vec3 p = position + nn * (relief + scatter);
+          float relief = elv * (0.03 + uZoom*0.20);                       // terrain rises as you zoom in
+          float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0035;           // always-on gentle shimmer
+          float scatter = uZoomVel * (0.20 + aRand*0.55) * sin(uTime*17.0 + aRand*6.2831); // reconfigure while zooming
+          vec3 p = position + nn * (relief + flow + scatter);
           vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
           vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
-          gl_PointSize=size*(1.0+uZoom*0.55); gl_Position=projectionMatrix*mvPos; }`,
+          gl_PointSize=size*(1.0 + uZoom*0.7 + uZoomVel*0.8); gl_Position=projectionMatrix*mvPos; }`,
       fragmentShader: `
         uniform sampler2D alphaTexture, otherTexture;
         varying vec2 vUv; varying float vVisible;
@@ -263,10 +264,11 @@ export default function WorldGlobe() {
 
       // Drive the dot reconfigure: zoom level + how fast we're zooming.
       const zoom = Math.max(0, Math.min(1, (5 - camera.position.z) / 2.8));
-      const vel = Math.min(1, Math.abs(camera.position.z - prevZ) * 9);
+      const vel = Math.min(1, Math.abs(camera.position.z - prevZ) * 16);
       const pu = pointsMat.uniforms;
       pu.uZoom.value += (zoom - pu.uZoom.value) * 0.15;
-      pu.uZoomVel.value += (vel - pu.uZoomVel.value) * 0.25;
+      // peak-hold so the reconfigure pops on zoom and eases out smoothly
+      pu.uZoomVel.value = Math.max(vel, pu.uZoomVel.value * 0.92);
       pu.uTime.value = t;
 
       if (frame % 3 === 0 && !isDragging) {
@@ -304,7 +306,7 @@ export default function WorldGlobe() {
       }
       isDragging = false; downId = null;
     };
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); targetZ = Math.max(2.2, Math.min(5, targetZ + e.deltaY * 0.0015)); flyTarget.active = false; };
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); targetZ = Math.max(1.9, Math.min(5.2, targetZ + e.deltaY * 0.0024)); flyTarget.active = false; };
 
     const el = renderer.domElement;
     el.addEventListener("mousemove", onMove);
