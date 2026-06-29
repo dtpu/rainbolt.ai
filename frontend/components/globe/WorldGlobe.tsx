@@ -77,17 +77,17 @@ export default function WorldGlobe() {
       varying vec2 vUv; varying float vVisible; varying float vGlow;
       void main(){ vUv=uv;
         float elv=texture2D(elevTexture,uv).r; vec3 nn=normalize(normal);
-        float relief = elv * (0.03 + uZoom*0.20);                          // terrain rises as you zoom in
-        float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0035;               // always-on gentle shimmer
-        float scatter = uZoomVel * (0.20 + aRand*0.55) * sin(uTime*17.0 + aRand*6.2831); // reconfigure while zooming
+        float relief = elv * (0.03 + uZoom*0.11);                          // gentle terrain as you zoom in
+        float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0030;               // always-on faint shimmer
+        float scatter = uZoomVel * (0.08 + aRand*0.20) * sin(uTime*17.0 + aRand*6.2831); // subtle reconfigure
         float d = length(nn - uTarget);                                    // chord distance to active guess
         float g = exp(-d*d*7.0);                                           // glow near the guess
-        float ring = smoothstep(0.10, 0.0, abs(d - fract(uTime*0.33)*1.7)) * step(d, 1.7); // expanding rings
-        vGlow = uActive * (g*(0.5 + 0.35*sin(uTime*4.0)) + ring*0.3);
-        vec3 p = position + nn * (relief + flow + scatter + vGlow*0.02);
+        float ring = smoothstep(0.09, 0.0, abs(d - fract(uTime*0.30)*1.7)) * step(d, 1.7); // expanding rings
+        vGlow = uActive * (g*(0.30 + 0.18*sin(uTime*3.0)) + ring*0.14);
+        vec3 p = position + nn * (relief + flow + scatter + vGlow*0.010);
         vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
         vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
-        gl_PointSize=size*(1.0 + uZoom*0.7 + uZoomVel*0.8 + vGlow*0.6); gl_Position=projectionMatrix*mvPos; }`;
+        gl_PointSize=size*(1.0 + uZoom*0.28); gl_Position=projectionMatrix*mvPos; }`;
     const POINT_FRAG = `
       uniform sampler2D alphaTexture, otherTexture; uniform float uZoom, uDense;
       varying vec2 vUv; varying float vVisible; varying float vGlow;
@@ -95,8 +95,8 @@ export default function WorldGlobe() {
         float a=(1.0-texture2D(alphaTexture,vUv).r)*0.6;
         a *= mix(1.0, clamp((uZoom-0.45)*2.2, 0.0, 1.0), uDense);          // dense layer fades in near
         vec3 c=texture2D(otherTexture,vUv).rgb;
-        c *= 1.0 + vGlow*1.1;                                              // brighten toward the guess
-        gl_FragColor=vec4(c, a + vGlow*0.2); }`;
+        c *= 1.0 + vGlow*0.55;                                             // subtle brighten toward the guess
+        gl_FragColor=vec4(c, a + vGlow*0.12); }`;
     const makePointsMat = (dense: boolean) => new THREE.ShaderMaterial({
       uniforms: {
         size: { value: dense ? 4.0 : 5.0 },
@@ -196,7 +196,7 @@ export default function WorldGlobe() {
     const applyActive = (activeId: string | null) => {
       for (const [id, group] of pinById) {
         const on = id === activeId;
-        group.scale.setScalar(on ? 1.8 : 1);
+        group.userData.baseScale = on ? 1.7 : 1; // actual scale applied per-frame (constant screen size)
         group.traverse((c) => {
           if (c instanceof THREE.Mesh) {
             const mt = c.material as THREE.MeshStandardMaterial;
@@ -283,22 +283,26 @@ export default function WorldGlobe() {
       shooting.update(dt);
 
       if (flyTarget.active) {
-        spinGroup.rotation.y += (flyTarget.rotY - spinGroup.rotation.y) * 0.08;
-        spinGroup.rotation.x += (flyTarget.rotX - spinGroup.rotation.x) * 0.08;
+        spinGroup.rotation.y += (flyTarget.rotY - spinGroup.rotation.y) * 0.16;
+        spinGroup.rotation.x += (flyTarget.rotX - spinGroup.rotation.x) * 0.16;
       } else if (!isDragging && hoveredId === null) {
         spinGroup.rotation.y += 0.0009;
       }
       const prevZ = camera.position.z;
-      camera.position.z += (targetZ - camera.position.z) * 0.08;
+      camera.position.z += (targetZ - camera.position.z) * 0.18; // snappy, google-maps-style zoom
+
+      // Keep markers a constant on-screen size (scale with distance, not perspective).
+      const pinScale = camera.position.z / ZOOM_OUT;
+      for (const g of pinById.values()) g.scale.setScalar((g.userData.baseScale ?? 1) * pinScale);
 
       // Drive the dot reconfigure: zoom level + how fast we're zooming.
       const zoom = Math.max(0, Math.min(1, (5 - camera.position.z) / 2.8));
       const vel = Math.min(1, Math.abs(camera.position.z - prevZ) * 16);
       for (const m of pointMats) {
         const u = m.uniforms;
-        u.uZoom.value += (zoom - u.uZoom.value) * 0.15;
+        u.uZoom.value += (zoom - u.uZoom.value) * 0.18;
         // peak-hold so the reconfigure pops on zoom and eases out smoothly
-        u.uZoomVel.value = Math.max(vel, u.uZoomVel.value * 0.92);
+        u.uZoomVel.value = Math.max(vel, u.uZoomVel.value * 0.9);
         u.uTime.value = t;
       }
       densePoints.visible = baseMat.uniforms.uZoom.value > 0.5; // density LOD: dense layer only when zoomed in
@@ -338,7 +342,7 @@ export default function WorldGlobe() {
       }
       isDragging = false; downId = null;
     };
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); targetZ = Math.max(1.9, Math.min(5.2, targetZ + e.deltaY * 0.0024)); flyTarget.active = false; };
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); targetZ = Math.max(1.9, Math.min(5.2, targetZ + e.deltaY * 0.004)); flyTarget.active = false; };
 
     const el = renderer.domElement;
     el.addEventListener("mousemove", onMove);
