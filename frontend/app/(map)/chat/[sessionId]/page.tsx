@@ -27,6 +27,11 @@ const mapsUrl = (lat: number, lng: number) =>
   `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 const mapEmbed = (lat: number, lng: number) =>
   `https://www.google.com/maps?q=${lat},${lng}&z=10&output=embed`;
+// Legacy keyless Street View embed - actual on-the-ground Google photos.
+const streetEmbed = (lat: number, lng: number) =>
+  `https://www.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=svembed`;
+const streetViewUrl = (lat: number, lng: number) =>
+  `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
 
 type Tab = "chat" | "photos" | "places";
 
@@ -188,6 +193,33 @@ export default function ChatPage() {
                   </div>
                 </div>
               )}
+
+              {/* actual Google street-level photos of the guessed place */}
+              <div className="mt-5 border-t border-white/[0.06] pt-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                    Street view
+                  </p>
+                  <a
+                    href={streetViewUrl(marker.latitude, marker.longitude)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[11px] text-fg-muted transition-colors hover:text-fg"
+                  >
+                    Open <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                <div className="relative overflow-hidden rounded-lg border border-white/[0.07]">
+                  <iframe
+                    key={`sv-${marker.latitude},${marker.longitude}`}
+                    title={`${marker.name} street view`}
+                    src={streetEmbed(marker.latitude, marker.longitude)}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="aspect-[4/3] w-full border-0"
+                  />
+                </div>
+              </div>
 
               {/* on the map - a look at the guessed place */}
               <div className="mt-5 border-t border-white/[0.06] pt-4">
