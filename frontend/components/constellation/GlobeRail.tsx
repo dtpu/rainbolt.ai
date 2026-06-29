@@ -86,11 +86,12 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
     useGlobeStore.getState().configure({
       markers,
       arcs,
+      labels: placed.map((p) => ({ name: p.place.name || p.session.title, lat: p.place.lat, lng: p.place.lng, rank: 0 })),
       mode: "constellation",
       onHover: (id) => hoverRef.current(id),
       onPick: (id) => selectRef.current(id),
     });
-  }, [markers, arcs]);
+  }, [markers, arcs, placed]);
 
   // Drive focus (fly/zoom) + highlight from the current selection.
   useEffect(() => {

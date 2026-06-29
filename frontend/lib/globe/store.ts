@@ -15,6 +15,14 @@ export interface WorldArc {
   toLng: number;
 }
 
+export interface PlaceLabel {
+  name: string;
+  lat: number;
+  lng: number;
+  /** 0 = major (appears when slightly zoomed) .. 1 = minor (appears when close). */
+  rank?: number;
+}
+
 /**
  * Drives the single persistent globe shared by the learning and location
  * pages. Each page pushes its data + interaction handlers here on mount; the
@@ -25,6 +33,8 @@ export interface WorldArc {
 interface GlobeStore {
   markers: WorldMarker[];
   arcs: WorldArc[];
+  /** Place/landmark labels that fade in as you zoom (map-style LOD). */
+  labels: PlaceLabel[];
   /** Index of the marker to centre/zoom; null = free idle orbit. */
   focusIndex: number | null;
   /** Highlighted marker id (hover/selection). */
@@ -45,6 +55,7 @@ interface GlobeStore {
 const INITIAL = {
   markers: [] as WorldMarker[],
   arcs: [] as WorldArc[],
+  labels: [] as PlaceLabel[],
   focusIndex: null as number | null,
   activeId: null as string | null,
   mode: "constellation" as const,

@@ -16,6 +16,7 @@ import { DesktopOnlyNotice } from "@/components/chat/DesktopOnlyNotice";
 import { useChatStore, type Marker } from "@/components/useChatStore";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useAreaPhotos } from "@/hooks/useAreaPhotos";
+import { useAreaPlaces } from "@/hooks/useAreaPlaces";
 import { useGlobeStore } from "@/lib/globe/store";
 
 const confColor = (acc: number) =>
@@ -58,6 +59,13 @@ export default function ChatPage() {
 
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
+  const areaPlaces = useAreaPlaces(marker?.latitude, marker?.longitude);
+
+  // Feed map-style place labels: the candidate names (always) + nearby landmarks.
+  useEffect(() => {
+    const candidateLabels = markers.map((m) => ({ name: m.name, lat: m.latitude, lng: m.longitude, rank: 0 }));
+    useGlobeStore.getState().configure({ labels: [...candidateLabels, ...areaPlaces] });
+  }, [markers, areaPlaces]);
 
   // Feed this session's candidate guesses into the shared persistent globe.
   const setCurrentRef = useRef(setCurrentMarker);

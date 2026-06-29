@@ -51,6 +51,27 @@ export default function WorldGlobe() {
     renderer.domElement.style.cssText = "width:100%;height:100%;display:block";
     mount.appendChild(renderer.domElement);
 
+    // Map-style place/landmark labels overlaid on the globe (HTML, positioned per frame).
+    const labelLayer = document.createElement("div");
+    labelLayer.style.cssText = "position:absolute;inset:0;overflow:hidden;pointer-events:none";
+    mount.appendChild(labelLayer);
+    interface LabelEl { el: HTMLDivElement; pos: THREE.Vector3; rank: number; }
+    let labelEls: LabelEl[] = [];
+    const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
+    const buildLabels = (labels: { name: string; lat: number; lng: number; rank?: number }[]) => {
+      for (const l of labelEls) l.el.remove();
+      labelEls = labels.map((p, i) => {
+        const el = document.createElement("div");
+        el.style.cssText = "position:absolute;left:0;top:0;display:flex;align-items:center;gap:5px;white-space:nowrap;opacity:0;will-change:transform,opacity;transition:opacity .25s ease";
+        el.innerHTML =
+          `<span style="width:5px;height:5px;border-radius:50%;background:#e8b44f;box-shadow:0 0 6px rgba(232,180,79,.9);flex:none"></span>` +
+          `<span style="font:500 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.01em;color:#eef2f8;text-shadow:0 1px 5px rgba(0,0,0,.95)">${esc(p.name)}</span>`;
+        labelLayer.appendChild(el);
+        const [x, y, z] = latLongToVector3(p.lat, p.lng, 1.02);
+        return { el, pos: new THREE.Vector3(x, y, z), rank: p.rank ?? i / Math.max(1, labels.length) };
+      });
+    };
+
     const loader = new THREE.TextureLoader();
     const starSprite = loader.load("/circle.png");
     const otherMap = loader.load("/04_rainbow1k.jpg");
@@ -241,6 +262,7 @@ export default function WorldGlobe() {
 
     // initial
     buildContent(useGlobeStore.getState().markers, useGlobeStore.getState().arcs);
+    buildLabels(useGlobeStore.getState().labels);
     applyFocus();
 
     // react to store changes without remounting
@@ -248,11 +270,13 @@ export default function WorldGlobe() {
     let prevArcs = useGlobeStore.getState().arcs;
     let prevActive = useGlobeStore.getState().activeId;
     let prevFocus = useGlobeStore.getState().focusIndex;
+    let prevLabels = useGlobeStore.getState().labels;
     const unsub = useGlobeStore.subscribe((s) => {
       if (s.markers !== prevMarkers || s.arcs !== prevArcs) {
         prevMarkers = s.markers; prevArcs = s.arcs;
         buildContent(s.markers, s.arcs);
       }
+      if (s.labels !== prevLabels) { prevLabels = s.labels; buildLabels(s.labels); }
       if (s.activeId !== prevActive) { prevActive = s.activeId; applyActive(s.activeId); }
       if (s.focusIndex !== prevFocus) { prevFocus = s.focusIndex; applyFocus(); }
     });
@@ -320,6 +344,34 @@ export default function WorldGlobe() {
         }
       }
       renderer.render(scene, camera);
+
+      // Project + fade place labels, then declutter so they never pile up
+      // (map-style LOD: higher-priority names win; more reveal as you zoom and
+      // the places spread apart on screen).
+      if (labelEls.length) {
+        const lw = renderer.domElement.clientWidth, lh = renderer.domElement.clientHeight;
+        const camDir = camera.position.clone().normalize();
+        const cand: { l: LabelEl; sx: number; sy: number; op: number; rank: number }[] = [];
+        for (const l of labelEls) {
+          const world = l.pos.clone().applyMatrix4(spinGroup.matrixWorld);
+          const facing = world.clone().normalize().dot(camDir);          // >0 = front of globe
+          const zoomShow = Math.max(0, Math.min(1, (zoom - (0.05 + l.rank * 0.6)) * 6)); // main places early, landmarks on zoom
+          const occ = Math.max(0, Math.min(1, (facing - 0.12) * 5));
+          const op = zoomShow * occ;
+          if (op < 0.02) { if (l.el.style.opacity !== "0") l.el.style.opacity = "0"; continue; }
+          const ndc = world.project(camera);
+          cand.push({ l, sx: (ndc.x * 0.5 + 0.5) * lw, sy: (-ndc.y * 0.5 + 0.5) * lh, op, rank: l.rank });
+        }
+        cand.sort((a, b) => a.rank - b.rank || b.op - a.op);             // priority: important first
+        const shown: { sx: number; sy: number }[] = [];
+        for (const c of cand) {
+          const clash = shown.some((s) => Math.abs(c.sx - s.sx) < 78 && Math.abs(c.sy - s.sy) < 20);
+          if (clash) { c.l.el.style.opacity = "0"; continue; }
+          shown.push({ sx: c.sx, sy: c.sy });
+          c.l.el.style.transform = `translate(${c.sx.toFixed(1)}px,${c.sy.toFixed(1)}px) translate(8px,-50%)`;
+          c.l.el.style.opacity = c.op.toFixed(2);
+        }
+      }
     };
     animate();
 
@@ -367,6 +419,8 @@ export default function WorldGlobe() {
       el.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
       el.removeEventListener("wheel", onWheel);
+      for (const l of labelEls) l.el.remove();
+      if (mount.contains(labelLayer)) mount.removeChild(labelLayer);
       if (mount.contains(el)) mount.removeChild(el);
       renderer.dispose();
     };
