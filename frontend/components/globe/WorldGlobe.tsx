@@ -12,7 +12,11 @@ const ACCENT = new THREE.Color("#e5373e");
 const ACCENT_BRIGHT = new THREE.Color("#ff6b6b");
 const MARKER_RADIUS = 1.02;
 const ZOOM_OUT = 3.2;
-const ZOOM_IN = 2.45;
+const ZOOM_IN = 2.0;
+const ZOOM_MIN = 1.5;  // closest wheel zoom
+const ZOOM_MAX = 5.2;  // farthest
+// Normalised zoom 0..1 from camera distance; default view sits low so zooming in ramps detail up.
+const zoomLevel = (z: number) => Math.max(0, Math.min(1, (3.45 - z) / 1.5));
 
 function pinRotation(lat: number, lng: number) {
   const [px, py, pz] = latLongToVector3(lat, lng, 1);
@@ -77,9 +81,9 @@ export default function WorldGlobe() {
       varying vec2 vUv; varying float vVisible; varying float vGlow;
       void main(){ vUv=uv;
         float elv=texture2D(elevTexture,uv).r; vec3 nn=normalize(normal);
-        float relief = elv * (0.03 + uZoom*0.11);                          // gentle terrain as you zoom in
-        float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0030;               // always-on faint shimmer
-        float scatter = uZoomVel * (0.08 + aRand*0.20) * sin(uTime*17.0 + aRand*6.2831); // subtle reconfigure
+        float relief = elv * (0.02 + uZoom*0.10);                          // gentle terrain as you zoom in
+        float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0025;               // always-on faint shimmer
+        float scatter = uZoomVel * 0.03 * sin(uTime*10.0 + aRand*6.2831);  // barely-there motion while zooming
         float d = length(nn - uTarget);                                    // chord distance to active guess
         float g = exp(-d*d*7.0);                                           // glow near the guess
         float ring = smoothstep(0.09, 0.0, abs(d - fract(uTime*0.30)*1.7)) * step(d, 1.7); // expanding rings
@@ -87,13 +91,13 @@ export default function WorldGlobe() {
         vec3 p = position + nn * (relief + flow + scatter + vGlow*0.010);
         vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
         vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
-        gl_PointSize=size*(1.0 + uZoom*0.28); gl_Position=projectionMatrix*mvPos; }`;
+        gl_PointSize=size*(1.0 + uZoom*0.18); gl_Position=projectionMatrix*mvPos; }`;
     const POINT_FRAG = `
       uniform sampler2D alphaTexture, otherTexture; uniform float uZoom, uDense;
       varying vec2 vUv; varying float vVisible; varying float vGlow;
       void main(){ if(floor(vVisible+0.1)==0.0) discard;
         float a=(1.0-texture2D(alphaTexture,vUv).r)*0.6;
-        a *= mix(1.0, clamp((uZoom-0.45)*2.2, 0.0, 1.0), uDense);          // dense layer fades in near
+        a *= mix(1.0, clamp((uZoom-0.12)*1.6, 0.0, 1.0), uDense);          // dense layer fades in as you zoom
         vec3 c=texture2D(otherTexture,vUv).rgb;
         c *= 1.0 + vGlow*0.55;                                             // subtle brighten toward the guess
         gl_FragColor=vec4(c, a + vGlow*0.12); }`;
@@ -289,23 +293,22 @@ export default function WorldGlobe() {
         spinGroup.rotation.y += 0.0009;
       }
       const prevZ = camera.position.z;
-      camera.position.z += (targetZ - camera.position.z) * 0.18; // snappy, google-maps-style zoom
+      camera.position.z += (targetZ - camera.position.z) * 0.22; // snappy, google-maps-style zoom
 
       // Keep markers a constant on-screen size (scale with distance, not perspective).
       const pinScale = camera.position.z / ZOOM_OUT;
       for (const g of pinById.values()) g.scale.setScalar((g.userData.baseScale ?? 1) * pinScale);
 
       // Drive the dot reconfigure: zoom level + how fast we're zooming.
-      const zoom = Math.max(0, Math.min(1, (5 - camera.position.z) / 2.8));
+      const zoom = zoomLevel(camera.position.z);
       const vel = Math.min(1, Math.abs(camera.position.z - prevZ) * 16);
       for (const m of pointMats) {
         const u = m.uniforms;
         u.uZoom.value += (zoom - u.uZoom.value) * 0.18;
-        // peak-hold so the reconfigure pops on zoom and eases out smoothly
         u.uZoomVel.value = Math.max(vel, u.uZoomVel.value * 0.9);
         u.uTime.value = t;
       }
-      densePoints.visible = baseMat.uniforms.uZoom.value > 0.5; // density LOD: dense layer only when zoomed in
+      densePoints.visible = baseMat.uniforms.uZoom.value > 0.1; // density LOD: dense detail fades in as you zoom
 
       if (frame % 3 === 0 && !isDragging) {
         const hit = pickPin();
@@ -342,7 +345,7 @@ export default function WorldGlobe() {
       }
       isDragging = false; downId = null;
     };
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); targetZ = Math.max(1.9, Math.min(5.2, targetZ + e.deltaY * 0.004)); flyTarget.active = false; };
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); targetZ = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZ + e.deltaY * 0.004)); flyTarget.active = false; };
 
     const el = renderer.domElement;
     el.addEventListener("mousemove", onMove);
