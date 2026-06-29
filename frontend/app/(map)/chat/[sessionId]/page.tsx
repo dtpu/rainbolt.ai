@@ -87,12 +87,9 @@ export default function ChatPage() {
     setTab("chat");
   };
 
-  const handleBack = () => {
-    if (typeof document !== "undefined" && "startViewTransition" in document) {
-      (document as Document & { startViewTransition: (cb: () => void) => void })
-        .startViewTransition(() => router.back());
-    } else router.back();
-  };
+  // Plain navigation: the globe persists across the (map) group, so going back
+  // is a continuation (the camera flies) - no view-transition snapshot needed.
+  const handleBack = () => router.back();
 
   const TABS: { id: Tab; label: string; icon: typeof MessageSquare }[] = [
     { id: "chat", label: "Chat", icon: MessageSquare },
@@ -151,6 +148,27 @@ export default function ChatPage() {
                 </span>
               </div>
 
+              {/* key clues / evidence */}
+              {marker.clues && marker.clues.length > 0 && (
+                <div className="mt-5 border-t border-white/[0.06] pt-4">
+                  <p className="mb-2.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                    Key clues
+                  </p>
+                  <ul className="space-y-2.5">
+                    {marker.clues.map((c, i) => (
+                      <li key={i} className="flex gap-2.5 text-[13px] leading-snug">
+                        <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-fg-muted/50" />
+                        <span className="min-w-0">
+                          <span className="text-fg/85">{c.sign}</span>
+                          <span className="px-1 font-mono text-fg-muted/40">→</span>
+                          <span className="text-fg-muted">{c.implies}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* ranked candidates */}
               {markers.length > 1 && (
                 <div className="mt-5">
@@ -170,6 +188,23 @@ export default function ChatPage() {
                   </div>
                 </div>
               )}
+
+              {/* on the map - a look at the guessed place */}
+              <div className="mt-5 border-t border-white/[0.06] pt-4">
+                <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                  On the map
+                </p>
+                <div className="relative overflow-hidden rounded-lg border border-white/[0.07]">
+                  <iframe
+                    key={`${marker.latitude},${marker.longitude}`}
+                    title={marker.name}
+                    src={mapEmbed(marker.latitude, marker.longitude)}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="aspect-[4/3] w-full border-0"
+                  />
+                </div>
+              </div>
 
               {marker.facts && (
                 <div className="mt-5 border-t border-white/[0.06] pt-4">

@@ -13,6 +13,8 @@ export type Message = {
   image?: string;
 };
 
+export type GeoClue = { sign: string; implies: string };
+
 export type Marker = {
   latitude: number;
   longitude: number;
@@ -20,6 +22,8 @@ export type Marker = {
   facts: string;
   name: string;
   mapillary_images?: string[];
+  /** Visual evidence the guess was built from: "clue -> what it implies". */
+  clues?: GeoClue[];
 };
 
 type ChatState = {

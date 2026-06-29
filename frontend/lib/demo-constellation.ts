@@ -158,6 +158,12 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "A tightly packed alley of two-story izakaya, vertical kanji signage, and red paper lanterns. The narrow lane width, overhead utility lines, and the JR rail embankment at the end of the street point to Nonbei Yokocho in Shibuya, Tokyo.",
         mapillary_images: ["/demo/tokyo-1.jpg"],
+        clues: [
+          { sign: "Vertical kanji signage", implies: "Dense urban Japan" },
+          { sign: "Red paper lanterns", implies: "Izakaya nightlife alley" },
+          { sign: "JR rail embankment at the lane's end", implies: "Beside the Yamanote tracks" },
+          { sign: "~1.5 m lane width", implies: "Nonbei Yokocho, not Golden Gai" },
+        ],
       },
       {
         latitude: 35.6936,
@@ -179,19 +185,29 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       },
     ],
     messages: chat([
+      ["assistant", "Starting from the wide signals: script, building scale, and street furniture."],
       [
         "assistant",
-        "Analyzing the street scene: signage, architecture, road furniture.",
+        "The signage is vertical kanji and the buildings are tight 2-3 story frontages packed wall to wall. That reads as dense urban Japan rather than China or Korea.",
       ],
       [
         "assistant",
-        "Vertical kanji, compact 2 to 3 story buildings, and dense bar frontage read as urban Japan. Red lanterns and the alley width narrow it to a Tokyo nightlife lane.",
+        "Red paper lanterns over nearly every doorway and a lane barely 1.5 m wide point to an izakaya nightlife alley, not a regular shopping street.",
+      ],
+      [
+        "assistant",
+        "A raised JR rail embankment closes off the far end of the lane. In Tokyo, a lantern alley hard against the Yamanote tracks is a strong signature.",
       ],
       ["assistant", "Best estimate: Nonbei Yokocho, Shibuya. Confidence 93%."],
       ["user", "What ruled out Shinjuku's Golden Gai?"],
       [
         "assistant",
-        "The JR Yamanote embankment visible at the end of the alley and the lantern signage style match Nonbei Yokocho; Golden Gai sits away from the tracks and has narrower, more uniform facades.",
+        "Golden Gai sits away from the tracks and its facades are narrower and more uniform. The visible rail embankment and the lantern style here match Nonbei Yokocho, which runs right beside the Yamanote line.",
+      ],
+      ["user", "Could it be Omoide Yokocho?"],
+      [
+        "assistant",
+        "It's the closest alternate and shares the look, but Omoide Yokocho is a yakitori lane on the west side of Shinjuku station; the embankment geometry and lantern spacing fit Nonbei better, so I keep it second.",
       ],
     ]),
   },
@@ -205,6 +221,12 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "A stone-paved sloped lane lined with wooden machiya townhouses, with a glimpse of a pagoda above the rooflines. The preserved streetscape and gentle gradient indicate the Higashiyama approach to Kiyomizu-dera in Kyoto.",
         mapillary_images: ["/demo/kyoto-1.jpg"],
+        clues: [
+          { sign: "Hand-set stone paving", implies: "Heritage preservation district" },
+          { sign: "Unpainted timber machiya", implies: "Kyoto townhouses" },
+          { sign: "Pagoda finial above the roofs", implies: "Kiyomizu-dera approach" },
+          { sign: "Steady uphill gradient", implies: "Higashiyama slope" },
+        ],
       },
       {
         latitude: 34.9968,
@@ -226,19 +248,29 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       },
     ],
     messages: chat([
-      ["assistant", "Reading paving, building materials, and skyline cues."],
+      ["assistant", "Reading the paving, building materials, and what's on the skyline."],
       [
         "assistant",
-        "Hand-set stone paving and unpainted timber machiya are heritage-district Japan; the pagoda finial above the roofs places it in Kyoto.",
+        "The lane is hand-set stone, not asphalt, lined with unpainted timber machiya townhouses. That's a protected heritage streetscape, which narrows it to a few cities.",
       ],
       [
         "assistant",
-        "Best estimate: Higashiyama, near Kiyomizu-dera. Confidence 88%.",
+        "Above the rooflines there's a multi-tier pagoda finial, and the whole lane climbs at a steady gradient toward it.",
       ],
+      [
+        "assistant",
+        "A preserved sloped approach rising to a pagoda is the Kiyomizu-dera route through Higashiyama in Kyoto.",
+      ],
+      ["assistant", "Best estimate: Higashiyama, Kyoto. Confidence 88%."],
       ["user", "Could this be Nara instead?"],
       [
         "assistant",
-        "Nara's old town is flatter and its temple roofs differ; the consistent uphill gradient toward a three-story pagoda is the Kiyomizu approach.",
+        "Nara's old town (Naramachi) is flatter and its temple roofs differ. The steady climb toward a three-story pagoda is specific to the Kiyomizu approach, so Nara stays a distant third.",
+      ],
+      ["user", "Sannenzaka or the main approach?"],
+      [
+        "assistant",
+        "Sannenzaka is the neighbouring stepped slope and a strong second; the shopfront spacing and the lack of formal steps here lean toward the main Higashiyama lane.",
       ],
     ]),
   },
@@ -252,6 +284,12 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "Steep glacier-carved valley walls drop to deep blue water, with scattered red-painted cabins and a switchback road guarded by stone-topped barriers. The vegetation line and fjord geometry match the Geiranger area in western Norway.",
         mapillary_images: ["/demo/fjords-1.jpg"],
+        clues: [
+          { sign: "U-shaped glacial valley", implies: "Western Norway fjord" },
+          { sign: "Turquoise meltwater", implies: "Glacier-fed" },
+          { sign: "Red falu-painted cabins", implies: "Scandinavian build" },
+          { sign: "Switchback road guardrails", implies: "Geiranger tourist route" },
+        ],
       },
       {
         latitude: 60.88,
@@ -273,16 +311,29 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       },
     ],
     messages: chat([
-      ["assistant", "Assessing landform, water colour, and road engineering."],
+      ["assistant", "Working from the landform first, then the human details."],
       [
         "assistant",
-        "U-shaped glacial valley, near-vertical walls, and turquoise meltwater are classic western Norway. Red falu cabins and switchback guardrails support a fjord tourist route.",
+        "A U-shaped glacial valley with near-vertical walls drops straight into deep water, and the water is the milky turquoise of glacial meltwater. Classic western Norway.",
       ],
-      ["assistant", "Best estimate: Geiranger fjord. Confidence 81%."],
-      ["user", "How confident on Geiranger vs. Nærøyfjord?"],
       [
         "assistant",
-        "Moderate. The waterfall placement and the road's switchback profile favour Geiranger, but a few other Sunnmøre fjords share this look, hence 81%.",
+        "Red falu-painted cabins and a switchback road with stone-topped guardrails confirm a Scandinavian fjord with a built-up tourist route.",
+      ],
+      [
+        "assistant",
+        "The waterfall placement on the far wall and the tight switchback profile match the Geiranger area specifically.",
+      ],
+      ["assistant", "Best estimate: Geiranger, Norway. Confidence 81%."],
+      ["user", "How confident on Geiranger vs Nærøyfjord?"],
+      [
+        "assistant",
+        "Moderate, which is why it's 81%. Nærøyfjord is a narrower UNESCO twin that shares the walls and water, but its road and waterfall layout differ from the frame. Geiranger fits best; Nærøyfjord is runner-up.",
+      ],
+      ["user", "Why not Lysefjord?"],
+      [
+        "assistant",
+        "Lysefjord's cliffs are more sheer and it lacks the visible switchback road in frame, so it sits well behind the other two.",
       ],
     ]),
   },
@@ -296,6 +347,12 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "A paved road skirts a Saharan oasis settlement: date palms, a whitewashed mud-brick ksar, and a low sand ridge under a hard blue sky. The pole lighting, red-and-white kerb striping, and architecture place it in the central Algerian Sahara near El Goléa.",
         mapillary_images: ["/demo/sahara-1.jpg"],
+        clues: [
+          { sign: "Date palms around a whitewashed ksar", implies: "Saharan oasis town" },
+          { sign: "Red-and-white kerb striping", implies: "Maghreb road standard" },
+          { sign: "Pole-mounted highway lighting", implies: "Algerian trunk road" },
+          { sign: "Hard blue sky over a low sand ridge", implies: "Deep central Sahara" },
+        ],
       },
       {
         latitude: 29.26,
@@ -317,19 +374,29 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       },
     ],
     messages: chat([
-      ["assistant", "Reading vegetation, building style, and road furniture."],
+      ["assistant", "Reading vegetation, architecture, and road furniture together."],
       [
         "assistant",
-        "Date palms with a whitewashed ksar and red-and-white kerb striping read as a Saharan oasis town in the Maghreb. Pole-mounted lighting and the asphalt standard lean Algerian.",
+        "Date palms ring a whitewashed mud-brick ksar beside a paved road, under a hard blue sky with a low sand ridge behind. A Saharan oasis settlement, not a coastal town.",
       ],
       [
         "assistant",
-        "Best estimate: El Goléa, central Algeria. Confidence 72%.",
+        "The red-and-white kerb striping, pole-mounted lighting, and asphalt standard are Maghreb road conventions, and the lean is Algerian.",
       ],
+      [
+        "assistant",
+        "The ksar form plus a deep-desert setting (no relief, no coast) points to the central Algerian oases around El Goléa.",
+      ],
+      ["assistant", "Best estimate: El Goléa, Algeria. Confidence 72%."],
       ["user", "What ruled out Morocco or Tunisia?"],
       [
         "assistant",
-        "The ksar form and deep-desert setting fit Algeria's central oases; Moroccan kasbahs run earthier red and Tunisia's southern towns sit nearer the coast.",
+        "Moroccan kasbahs run an earthier red and sit against the Atlas foothills; Tunisia's southern towns are nearer the coast. The whitewash and flat horizon fit Algeria, though it's a lower-confidence call at 72%.",
+      ],
+      ["user", "Timimoun is red-earth though, right?"],
+      [
+        "assistant",
+        "It is, and Timimoun is my second guess, but its buildings run a deeper ochre than the whitewashed frame here, so El Goléa edges it.",
       ],
     ]),
   },
@@ -343,6 +410,12 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "Jagged granite spires rise over windswept golden grassland with a turquoise glacial lake below. The horn-shaped peaks and guanaco-grazed steppe are signatures of Torres del Paine in Chilean Patagonia.",
         mapillary_images: ["/demo/patagonia-1.jpg"],
+        clues: [
+          { sign: "Sheer granite towers", implies: "Southern Patagonia" },
+          { sign: "Treeless golden steppe", implies: "Windswept plateau" },
+          { sign: "Milky-blue glacial lake", implies: "Glacier-fed basin" },
+          { sign: "Three-horn 'Torres' silhouette", implies: "Chilean national park" },
+        ],
       },
       {
         latitude: -49.3,
@@ -364,16 +437,29 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       },
     ],
     messages: chat([
-      ["assistant", "Matching peak silhouette, vegetation, and water colour."],
+      ["assistant", "Matching the peak silhouette, the vegetation, and the water colour."],
       [
         "assistant",
-        "Sheer granite towers over treeless steppe with milky-blue glacial lakes is unmistakably southern Patagonia.",
+        "Sheer granite towers rise straight out of treeless golden steppe, with a milky-blue glacial lake below. That trio is unmistakably southern Patagonia.",
+      ],
+      [
+        "assistant",
+        "The grazed, windswept grassland and the glacier-fed lake colour rule out the wetter, forested parts of the range.",
+      ],
+      [
+        "assistant",
+        "The distinctive three-horn 'Torres' profile is the signature of Torres del Paine.",
       ],
       ["assistant", "Best estimate: Torres del Paine, Chile. Confidence 85%."],
       ["user", "Chilean or Argentine side?"],
       [
         "assistant",
-        "Chilean. The three-tower 'Torres' profile and the lake's position place the viewpoint inside the Chilean national park rather than near El Chaltén.",
+        "Chilean. The three-tower profile and the lake's position place the viewpoint inside the Chilean park rather than across the border near El Chaltén.",
+      ],
+      ["user", "How is this different from Fitz Roy?"],
+      [
+        "assistant",
+        "Fitz Roy (El Chaltén, Argentina) is a sharper single spire cluster; the broad three-horn massif and the foreground lake here are Paine, so Fitz Roy is a lower-ranked alternate.",
       ],
     ]),
   },
@@ -387,6 +473,12 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "Yellow tactile warning tiles along the platform edge, riveted steel I-beam columns, and the track and third-rail layout identify the New York City subway. The platform construction points to an original IRT Lexington Avenue line station in Manhattan.",
         mapillary_images: ["/demo/nyc-1.jpg"],
+        clues: [
+          { sign: "Yellow tactile edge tiles", implies: "NYC subway platform" },
+          { sign: "Riveted steel I-beam columns", implies: "IRT-era construction" },
+          { sign: "Cut-and-cover track layout", implies: "Original Lexington line" },
+          { sign: "Narrow column spacing", implies: "Manhattan local stop" },
+        ],
       },
       {
         latitude: 40.758,
@@ -408,19 +500,29 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       },
     ],
     messages: chat([
-      ["assistant", "Inspecting tile, column type, and signage typography."],
+      ["assistant", "Inspecting the tiling, the column type, and the track layout."],
       [
         "assistant",
-        "Yellow cast-iron tactile edge tiles, riveted steel columns, and the cut-and-cover track layout are the NYC subway's IRT-era build.",
+        "Yellow cast-iron tactile tiles run along the platform edge, the columns are riveted steel I-beams, and the tracks sit in a shallow cut-and-cover box. That's the New York City subway.",
       ],
       [
         "assistant",
-        "Best estimate: IRT Lexington Avenue line, Manhattan. Confidence 79%.",
+        "Riveted steel columns at that spacing are the early IRT build rather than the later, wider IND or BMT lines.",
       ],
+      [
+        "assistant",
+        "Putting that together points to the original IRT Lexington Avenue line in Manhattan.",
+      ],
+      ["assistant", "Best estimate: IRT Lexington Ave, NYC. Confidence 79%."],
       ["user", "Which station, roughly?"],
       [
         "assistant",
-        "The platform width and column spacing suggest a Grand Central area local stop, though restoration across the line keeps this to a station group, not an exact platform.",
+        "The platform width and column spacing suggest a Grand Central-area local stop, but restoration across the line keeps this to a station group rather than an exact platform.",
+      ],
+      ["user", "Could it be the BMT Broadway line?"],
+      [
+        "assistant",
+        "BMT platforms are wider with different column spacing, so it's my second guess but a step behind the IRT read.",
       ],
     ]),
   },
