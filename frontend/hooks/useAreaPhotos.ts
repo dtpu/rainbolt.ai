@@ -6,6 +6,8 @@ export interface AreaPhoto {
   thumb: string;
   full: string;
   title: string;
+  lat?: number;
+  lng?: number;
 }
 
 interface CommonsImageInfo {
@@ -14,9 +16,14 @@ interface CommonsImageInfo {
   descriptionurl?: string;
   mime?: string;
 }
+interface CommonsCoord {
+  lat?: number;
+  lon?: number;
+}
 interface CommonsPage {
   title?: string;
   imageinfo?: CommonsImageInfo[];
+  coordinates?: CommonsCoord[];
 }
 
 /**
@@ -39,7 +46,7 @@ export function useAreaPhotos(lat?: number, lng?: number, limit = 8) {
     const url =
       `https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*` +
       `&generator=geosearch&ggscoord=${lat}|${lng}&ggsradius=10000&ggslimit=${limit}` +
-      `&ggsnamespace=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=320`;
+      `&ggsnamespace=6&prop=imageinfo|coordinates&iiprop=url|mime&iiurlwidth=320`;
 
     fetch(url)
       .then((r) => r.json())
@@ -47,9 +54,9 @@ export function useAreaPhotos(lat?: number, lng?: number, limit = 8) {
         if (cancelled) return;
         const pages: CommonsPage[] = d?.query?.pages ? Object.values(d.query.pages) : [];
         const imgs = pages
-          .map((p) => ({ ii: p.imageinfo?.[0], title: p.title ?? "" }))
+          .map((p) => ({ ii: p.imageinfo?.[0], title: p.title ?? "", co: p.coordinates?.[0] }))
           .filter(
-            (x): x is { ii: CommonsImageInfo; title: string } =>
+            (x): x is { ii: CommonsImageInfo; title: string; co: CommonsCoord | undefined } =>
               !!x.ii?.thumburl &&
               !!x.ii.mime?.startsWith("image/") &&
               !x.ii.mime.includes("svg"),
@@ -58,6 +65,8 @@ export function useAreaPhotos(lat?: number, lng?: number, limit = 8) {
             thumb: x.ii.thumburl!,
             full: x.ii.descriptionurl || x.ii.url || x.ii.thumburl!,
             title: x.title.replace(/^File:/, "").replace(/\.\w+$/, ""),
+            lat: x.co?.lat,
+            lng: x.co?.lon,
           }));
         setPhotos(imgs);
       })

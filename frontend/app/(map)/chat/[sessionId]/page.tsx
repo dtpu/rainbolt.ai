@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+
+// Leaflet touches window at import, so load the map client-only.
+const EvidenceMap = dynamic(() => import("@/components/chat/EvidenceMap").then((m) => m.EvidenceMap), { ssr: false });
 import {
   ArrowLeft, ExternalLink, Home, ImagePlus,
   Loader2, Map as MapIcon, MessageSquare, Plus, X,
@@ -52,11 +56,12 @@ export default function ChatPage() {
 
   const [tab, setTab] = useState<Tab>("chat");
   const [media, setMedia] = useState<"map" | "street" | "photos">("map");
+  const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
 
   useChatSession(sessionId);
 
-  // Back to the light Map view when switching candidates (street view is heavy).
-  useEffect(() => { setMedia("map"); }, [currentMarker, sessionId]);
+  // Back to the Map view (and clear the picked Street View point) on candidate/session change.
+  useEffect(() => { setMedia("map"); setPicked(null); }, [currentMarker, sessionId]);
 
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
@@ -262,24 +267,48 @@ export default function ChatPage() {
                   ) : (
                     <p className="py-8 text-center text-xs text-fg-muted/50">No nearby photos found</p>
                   )
+                ) : media === "map" ? (
+                  <>
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
+                      <EvidenceMap
+                        candidates={markers.map((m, i) => ({ name: m.name, lat: m.latitude, lng: m.longitude, index: i }))}
+                        references={areaPhotos.flatMap((p) => (p.lat != null && p.lng != null ? [{ lat: p.lat, lng: p.lng, thumb: p.thumb, title: p.title }] : []))}
+                        activeIndex={currentMarker}
+                        picked={picked}
+                        onSelectCandidate={setCurrentMarker}
+                        onPickPoint={(lat, lng) => { setPicked({ lat, lng }); setMedia("street"); }}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-fg-muted/60">
+                      Click anywhere on the map to drop into Street View there.
+                    </p>
+                  </>
                 ) : (
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
-                    <iframe
-                      key={`${media}-${marker.latitude},${marker.longitude}`}
-                      title={marker.name}
-                      src={media === "street"
-                        ? streetEmbed(marker.latitude, marker.longitude)
-                        : mapEmbed(marker.latitude, marker.longitude)}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      className="h-full w-full border-0"
-                    />
-                  </div>
+                  <>
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
+                      <iframe
+                        key={`sv-${picked?.lat ?? marker.latitude},${picked?.lng ?? marker.longitude}`}
+                        title={`${marker.name} street view`}
+                        src={streetEmbed(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="h-full w-full border-0"
+                      />
+                    </div>
+                    {picked && (
+                      <button
+                        onClick={() => { setPicked(null); setMedia("map"); }}
+                        className="mt-1.5 text-[11px] text-fg-muted/70 underline-offset-2 hover:text-fg hover:underline"
+                      >
+                        ← Back to the map
+                      </button>
+                    )}
+                  </>
                 )}
 
                 <a
                   href={media === "street"
-                    ? streetViewUrl(marker.latitude, marker.longitude)
+                    ? streetViewUrl(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)
                     : mapsUrl(marker.latitude, marker.longitude)}
                   target="_blank"
                   rel="noopener noreferrer"
