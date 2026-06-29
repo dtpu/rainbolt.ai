@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { ArrowRight, Play } from "lucide-react";
 import { Navbar } from "@/components/ui/Navbar";
 import EarthScene from "@/components/globe/Globe";
+import { DecorLayer } from "@/components/decor/DecorLayer";
+import { LANDING_DECOR } from "@/lib/decor/layouts";
 
 import "./glow.css";
 
@@ -103,6 +105,9 @@ export default function Home() {
         <div className="vignette" />
       </div>
 
+      {/* Decor at the page root so the editor can float above content. */}
+      <DecorLayer items={LANDING_DECOR} storageKey="landing" cameraSync />
+
       {/* Navigation */}
       <Navbar currentSection={currentSection} />
 
@@ -124,7 +129,7 @@ export default function Home() {
               </h1>
               <p className="text-[1.4rem] text-white/80 text-left max-w-xl">
                 Powered by{" "}
-                <span className="text-[1.6rem] font-bold text-white">
+                <span className="font-mono text-[1.6rem] font-bold tabular-nums text-white">
                   {formatNumber(photoCount)}
                 </span>{" "}
                 geotagged photos and expert geolocation strategies, we turn

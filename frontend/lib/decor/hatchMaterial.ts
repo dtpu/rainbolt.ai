@@ -27,20 +27,19 @@ export function loadHatchTextures() {
   return { hatchTex, paperTex };
 }
 
-export function createHatchMaterial(dpr: number, opacity = 1) {
+export function createHatchMaterial(dpr: number) {
   const { hatchTex, paperTex } = loadHatchTextures();
   const L1 = new THREE.Vector3(0.5, 0.85, 0.7).normalize();
 
+  // Opaque + depth-writing so props are solid and near surfaces correctly
+  // occlude far ones (e.g. a planet hides the back of its own ring).
   const material = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
     uniforms: {
       hatchTex: { value: hatchTex },
       paperTex: { value: paperTex },
       uL1: { value: L1 },
       uTime: { value: 0 },
       uHscale: { value: 300.0 * dpr },
-      uOpacity: { value: opacity },
     },
     vertexShader: `
       varying vec3 vN;
@@ -52,7 +51,7 @@ export function createHatchMaterial(dpr: number, opacity = 1) {
       precision highp float;
       uniform sampler2D hatchTex, paperTex;
       uniform vec3  uL1;
-      uniform float uTime, uHscale, uOpacity;
+      uniform float uTime, uHscale;
       varying vec3  vN;
       void main(){
         vec3 N = normalize(vN);
@@ -70,7 +69,7 @@ export function createHatchMaterial(dpr: number, opacity = 1) {
         float m1 = m0 * mix(1.0, hx.g, i1);
         float m2 = m1 * mix(1.0, hx.b, i2);
         vec3 paper = vec3(0.93) * mix(vec3(1.0), texture2D(paperTex, gl_FragCoord.xy / 620.0).rgb, 0.12);
-        gl_FragColor = vec4(mix(vec3(0.04), paper, clamp(m2, 0.0, 1.0)), uOpacity);
+        gl_FragColor = vec4(mix(vec3(0.04), paper, clamp(m2, 0.0, 1.0)), 1.0);
       }`,
   });
 

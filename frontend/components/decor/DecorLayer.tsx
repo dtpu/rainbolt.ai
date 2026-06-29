@@ -7,12 +7,15 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { createHatchMaterial } from "@/lib/decor/hatchMaterial";
 import { makeBody, BODY_TYPES, type BodyType } from "@/lib/decor/makeBody";
 import type { DecorItem } from "@/lib/decor/layouts";
+import { landingCamera } from "@/lib/decor/cameraSync";
 import { SketchFilter } from "./SketchFilter";
 
 interface DecorLayerProps {
   items: DecorItem[];
   /** When set, an in-app editor (URL `?decor`) persists edits under this key. */
   storageKey?: string;
+  /** Mirror the landing EarthScene camera so props share its 3D space + scroll. */
+  cameraSync?: boolean;
 }
 
 const MODELS = [
@@ -39,8 +42,10 @@ interface Holder {
  * Add `?decor` to the URL to drag props around, scroll to resize, add/remove
  * shapes, and copy the layout back into `lib/decor/layouts.ts`.
  */
-export function DecorLayer({ items, storageKey }: DecorLayerProps) {
+export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const cameraSyncRef = useRef(cameraSync);
+  cameraSyncRef.current = cameraSync;
 
   const [editing, setEditing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -82,7 +87,7 @@ export function DecorLayer({ items, storageKey }: DecorLayerProps) {
       "width:100%;height:100%;display:block;filter:url(#decor-sketch)";
     mount.appendChild(renderer.domElement);
 
-    const material = createHatchMaterial(dpr, 0.82);
+    const material = createHatchMaterial(dpr);
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder); // models are meshopt-compressed
 
@@ -192,7 +197,10 @@ export function DecorLayer({ items, storageKey }: DecorLayerProps) {
       select(hld);
       if (hld) {
         dragging = true;
-        plane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 0, 1), hld.group.position);
+        // Drag on a plane that faces the camera (works at any camera angle).
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        plane.setFromNormalAndCoplanarPoint(camDir.negate(), hld.group.position);
         raycaster.setFromCamera(pointer, camera);
         raycaster.ray.intersectPlane(plane, hit);
         dragOffset.copy(hit).sub(hld.group.position);
@@ -204,12 +212,12 @@ export function DecorLayer({ items, storageKey }: DecorLayerProps) {
       setPointer(e);
       raycaster.setFromCamera(pointer, camera);
       if (raycaster.ray.intersectPlane(plane, hit)) {
-        const x = hit.x - dragOffset.x;
-        const y = hit.y - dragOffset.y;
-        selected.group.position.x = x;
-        selected.group.position.y = y;
-        selected.baseY = y;
-        selected.item.position = [x, y, selected.item.position[2]];
+        // Move within the camera-facing plane (all 3 axes) so the prop tracks
+        // the cursor at any camera angle, not just a head-on view.
+        hit.sub(dragOffset);
+        selected.group.position.copy(hit);
+        selected.baseY = hit.y;
+        selected.item.position = [hit.x, hit.y, hit.z];
         selectBox.setFromObject(selected.group);
       }
     };
@@ -268,9 +276,24 @@ export function DecorLayer({ items, storageKey }: DecorLayerProps) {
       addItem: (spec) => {
         const id = `${spec}-${Math.round(performance.now()) % 100000}`;
         const model = MODELS.find((m) => m.label === spec)?.url;
+        // Spawn on-screen: at the centroid of existing props, or in front of
+        // the camera if there are none yet.
+        const spawn = new THREE.Vector3();
+        if (holders.length) {
+          for (const h of holders) spawn.add(h.group.position);
+          spawn.multiplyScalar(1 / holders.length);
+        } else {
+          camera.getWorldDirection(spawn);
+          spawn.multiplyScalar(8).add(camera.position);
+        }
+        const pos: [number, number, number] = [
+          +spawn.x.toFixed(2),
+          +spawn.y.toFixed(2),
+          +spawn.z.toFixed(2),
+        ];
         const item: DecorItem = model
-          ? { id, model, position: [0, 0, 0], scale: 0.4 }
-          : { id, shape: spec as BodyType, position: [0, 0, 0], scale: 0.4 };
+          ? { id, model, position: pos, scale: 0.5 }
+          : { id, shape: spec as BodyType, position: pos, scale: 0.5 };
         working.push(item);
         buildOne(item, holders.length);
         persist();
@@ -313,6 +336,17 @@ export function DecorLayer({ items, storageKey }: DecorLayerProps) {
     const animate = () => {
       raf = requestAnimationFrame(animate);
       if (document.hidden) return; // don't burn cycles on a hidden tab
+
+      // Share the landing globe's camera so props sit in its 3D space + scroll.
+      if (cameraSyncRef.current && landingCamera.active) {
+        camera.position.copy(landingCamera.position);
+        camera.quaternion.copy(landingCamera.quaternion);
+        if (camera.fov !== landingCamera.fov) {
+          camera.fov = landingCamera.fov;
+          camera.updateProjectionMatrix();
+        }
+      }
+
       const t = clock.getElapsedTime();
       material.userData.update(t);
       for (const hld of holders) {
@@ -367,7 +401,17 @@ export function DecorLayer({ items, storageKey }: DecorLayerProps) {
   return (
     <>
       <SketchFilter />
-      <div ref={mountRef} className="pointer-events-none absolute inset-0 z-[5]" />
+      <div
+        ref={mountRef}
+        className={
+          cameraSync
+            ? // Landing: fixed at the page root, behind content (z-0); while
+              // editing it floats above content (z-90) but below the navbar.
+              `pointer-events-none fixed inset-0 ${editing ? "z-[90]" : "z-0"}`
+            : // Learning / chat: fills its globe container.
+              "pointer-events-none absolute inset-0 z-[5]"
+        }
+      />
 
       {editing && (
         <div className="pointer-events-auto fixed bottom-5 left-1/2 z-[300] flex -translate-x-1/2 items-center gap-2 rounded-xl border border-white/[0.1] bg-space-900/95 px-3 py-2 text-xs text-fg shadow-2xl backdrop-blur-md">

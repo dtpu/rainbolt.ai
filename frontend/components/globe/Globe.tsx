@@ -6,6 +6,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import getStarfield from "../../utils/getStarfield";
 import { latLongToVector3 } from "../../utils/coordinates";
+import { landingCamera } from "../../lib/decor/cameraSync";
 
 interface Location {
   lat: number;
@@ -637,6 +638,12 @@ intensity = pow(intensity, 1.5);
 
       handleRaycast();
       orbitCtrl.update();
+
+      // Publish the camera so the decor overlay can share this exact 3D space.
+      landingCamera.active = true;
+      landingCamera.position.copy(camera.position);
+      landingCamera.quaternion.copy(camera.quaternion);
+      landingCamera.fov = camera.fov;
     }
     animate();
 
@@ -682,6 +689,7 @@ intensity = pow(intensity, 1.5);
         }
       }
 
+      landingCamera.active = false;
       renderer.dispose();
       rendererRef.current = null;
       sceneRef.current = null;
