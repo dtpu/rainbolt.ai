@@ -67,43 +67,62 @@ export default function WorldGlobe() {
       }),
     ));
 
-    // Point-cloud earth with a per-point random so the dots can reconfigure on zoom.
-    const pointsGeo = new THREE.IcosahedronGeometry(1.01, 50);
-    {
-      const pn = pointsGeo.attributes.position.count;
-      const rnd = new Float32Array(pn);
-      for (let i = 0; i < pn; i++) rnd[i] = Math.random();
-      pointsGeo.setAttribute("aRand", new THREE.BufferAttribute(rnd, 1));
-    }
-    const pointsMat = new THREE.ShaderMaterial({
+    // Point-cloud earth. Two layers: a base grid always on, and a denser layer
+    // that fades in as you zoom (density LOD). Both share a shader that does the
+    // zoom reconfigure (scatter + relief) and a "homing" data pulse toward the
+    // active guess (glow + expanding rings).
+    const POINT_VERT = `
+      uniform float size, uZoom, uZoomVel, uTime, uActive; uniform vec3 uTarget;
+      uniform sampler2D elevTexture; attribute float aRand;
+      varying vec2 vUv; varying float vVisible; varying float vGlow;
+      void main(){ vUv=uv;
+        float elv=texture2D(elevTexture,uv).r; vec3 nn=normalize(normal);
+        float relief = elv * (0.03 + uZoom*0.20);                          // terrain rises as you zoom in
+        float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0035;               // always-on gentle shimmer
+        float scatter = uZoomVel * (0.20 + aRand*0.55) * sin(uTime*17.0 + aRand*6.2831); // reconfigure while zooming
+        float d = length(nn - uTarget);                                    // chord distance to active guess
+        float g = exp(-d*d*7.0);                                           // glow near the guess
+        float ring = smoothstep(0.10, 0.0, abs(d - fract(uTime*0.33)*1.7)) * step(d, 1.7); // expanding rings
+        vGlow = uActive * (g*(0.5 + 0.35*sin(uTime*4.0)) + ring*0.3);
+        vec3 p = position + nn * (relief + flow + scatter + vGlow*0.02);
+        vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
+        vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
+        gl_PointSize=size*(1.0 + uZoom*0.7 + uZoomVel*0.8 + vGlow*0.6); gl_Position=projectionMatrix*mvPos; }`;
+    const POINT_FRAG = `
+      uniform sampler2D alphaTexture, otherTexture; uniform float uZoom, uDense;
+      varying vec2 vUv; varying float vVisible; varying float vGlow;
+      void main(){ if(floor(vVisible+0.1)==0.0) discard;
+        float a=(1.0-texture2D(alphaTexture,vUv).r)*0.6;
+        a *= mix(1.0, clamp((uZoom-0.45)*2.2, 0.0, 1.0), uDense);          // dense layer fades in near
+        vec3 c=texture2D(otherTexture,vUv).rgb;
+        c *= 1.0 + vGlow*1.1;                                              // brighten toward the guess
+        gl_FragColor=vec4(c, a + vGlow*0.2); }`;
+    const makePointsMat = (dense: boolean) => new THREE.ShaderMaterial({
       uniforms: {
-        size: { value: 5.0 },
+        size: { value: dense ? 4.0 : 5.0 },
         otherTexture: { value: otherMap }, elevTexture: { value: elevMap }, alphaTexture: { value: alphaMap },
         uZoom: { value: 0 }, uZoomVel: { value: 0 }, uTime: { value: 0 },
+        uTarget: { value: new THREE.Vector3(0, 0, 1) }, uActive: { value: 0 }, uDense: { value: dense ? 1 : 0 },
       },
-      vertexShader: `
-        uniform float size, uZoom, uZoomVel, uTime; uniform sampler2D elevTexture;
-        attribute float aRand;
-        varying vec2 vUv; varying float vVisible;
-        void main(){ vUv=uv;
-          float elv=texture2D(elevTexture,uv).r; vec3 nn=normalize(normal);
-          float relief = elv * (0.03 + uZoom*0.20);                       // terrain rises as you zoom in
-          float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0035;           // always-on gentle shimmer
-          float scatter = uZoomVel * (0.20 + aRand*0.55) * sin(uTime*17.0 + aRand*6.2831); // reconfigure while zooming
-          vec3 p = position + nn * (relief + flow + scatter);
-          vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
-          vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
-          gl_PointSize=size*(1.0 + uZoom*0.7 + uZoomVel*0.8); gl_Position=projectionMatrix*mvPos; }`,
-      fragmentShader: `
-        uniform sampler2D alphaTexture, otherTexture;
-        varying vec2 vUv; varying float vVisible;
-        void main(){ if(floor(vVisible+0.1)==0.0) discard;
-          float a=(1.0-texture2D(alphaTexture,vUv).r)*0.6; vec3 c=texture2D(otherTexture,vUv).rgb;
-          gl_FragColor=vec4(c,a); }`,
+      vertexShader: POINT_VERT, fragmentShader: POINT_FRAG,
       transparent: true, depthWrite: false, blending: THREE.NormalBlending,
     });
+    const makePointsGeo = (detail: number) => {
+      const g = new THREE.IcosahedronGeometry(1.01, detail);
+      const pn = g.attributes.position.count;
+      const rnd = new Float32Array(pn);
+      for (let i = 0; i < pn; i++) rnd[i] = Math.random();
+      g.setAttribute("aRand", new THREE.BufferAttribute(rnd, 1));
+      return g;
+    };
+    const baseMat = makePointsMat(false);
+    const denseMat = makePointsMat(true);
+    const pointMats = [baseMat, denseMat];
+    contentGroup.add(new THREE.Points(makePointsGeo(50), baseMat));
+    const densePoints = new THREE.Points(makePointsGeo(72), denseMat);
+    densePoints.visible = false;
+    contentGroup.add(densePoints);
     void colorMap;
-    contentGroup.add(new THREE.Points(pointsGeo, pointsMat));
     contentGroup.add(getAtmosphere({ color: "#6b9cc4", size: 1.16, intensity: 1.15, power: 3.0 }));
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x080820, 2));
@@ -187,6 +206,16 @@ export default function WorldGlobe() {
           }
         });
       }
+      // point the data pulse at the active guess (rings + glow home in on it)
+      const s = useGlobeStore.getState();
+      const am = activeId != null ? s.markers.find((m) => m.id === activeId) : null;
+      if (am) {
+        const [tx, ty, tz] = latLongToVector3(am.lat, am.lng, 1);
+        const v = new THREE.Vector3(tx, ty, tz).normalize();
+        for (const m of pointMats) { m.uniforms.uTarget.value.copy(v); m.uniforms.uActive.value = 1; }
+      } else {
+        for (const m of pointMats) m.uniforms.uActive.value = 0;
+      }
     };
 
     // ---- camera targets ----
@@ -265,11 +294,14 @@ export default function WorldGlobe() {
       // Drive the dot reconfigure: zoom level + how fast we're zooming.
       const zoom = Math.max(0, Math.min(1, (5 - camera.position.z) / 2.8));
       const vel = Math.min(1, Math.abs(camera.position.z - prevZ) * 16);
-      const pu = pointsMat.uniforms;
-      pu.uZoom.value += (zoom - pu.uZoom.value) * 0.15;
-      // peak-hold so the reconfigure pops on zoom and eases out smoothly
-      pu.uZoomVel.value = Math.max(vel, pu.uZoomVel.value * 0.92);
-      pu.uTime.value = t;
+      for (const m of pointMats) {
+        const u = m.uniforms;
+        u.uZoom.value += (zoom - u.uZoom.value) * 0.15;
+        // peak-hold so the reconfigure pops on zoom and eases out smoothly
+        u.uZoomVel.value = Math.max(vel, u.uZoomVel.value * 0.92);
+        u.uTime.value = t;
+      }
+      densePoints.visible = baseMat.uniforms.uZoom.value > 0.5; // density LOD: dense layer only when zoomed in
 
       if (frame % 3 === 0 && !isDragging) {
         const hit = pickPin();
