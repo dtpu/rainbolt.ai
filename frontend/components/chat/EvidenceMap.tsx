@@ -65,29 +65,32 @@ export function EvidenceMap({ candidates, references, activeIndex, onSelectCandi
     return () => { clearTimeout(t); ro.disconnect(); map.remove(); mapRef.current = null; };
   }, []);
 
-  // markers + convergence lines
+  // markers (candidates + honest "nearby geotagged photos" references)
   useEffect(() => {
     const map = mapRef.current, lg = dataRef.current;
     if (!map || !lg) return;
-    map.invalidateSize();
     lg.clearLayers();
-    const active = candidates[activeIndex];
+    pickRef.current?.clearLayers(); // drop a stale "you clicked here" marker
+    map.closePopup();
 
-    // references + faint lines converging on the active guess
     for (const r of references) {
       if (r.lat == null || r.lng == null) continue;
-      if (active) {
-        L.polyline([[r.lat, r.lng], [active.lat, active.lng]], { color: "#e8b44f", weight: 1, opacity: 0.18 }).addTo(lg);
-      }
-      L.circleMarker([r.lat, r.lng], { radius: 4, color: "#e8b44f", weight: 1, fillColor: "#e8b44f", fillOpacity: 0.5 })
-        .bindPopup(`<img src="${r.thumb}" style="width:130px;display:block;border-radius:4px"/><div style="font:500 11px/1.3 sans-serif;margin-top:4px;max-width:130px">${r.title}</div>`)
-        .addTo(lg);
+      const box = document.createElement("div");
+      const img = document.createElement("img");
+      img.src = r.thumb; img.style.cssText = "width:130px;display:block;border-radius:4px";
+      const cap = document.createElement("div");
+      cap.textContent = r.title; // textContent => no HTML injection
+      cap.style.cssText = "font:500 11px/1.3 sans-serif;margin-top:4px;max-width:130px";
+      box.append(img, cap);
+      L.circleMarker([r.lat, r.lng], { radius: 4, color: "#0b0e17", weight: 1, fillColor: "#9aa7bd", fillOpacity: 0.6 })
+        .bindPopup(box).addTo(lg);
     }
     candidates.forEach((c) => {
-      const col = pinColor(c.index);
       const on = c.index === activeIndex;
-      L.circleMarker([c.lat, c.lng], { radius: on ? 10 : 7, color: "#0b0e17", weight: 2, fillColor: col, fillOpacity: 0.97 })
-        .bindTooltip(`${c.index + 1}. ${c.name}`, { direction: "top", offset: [0, -6] })
+      const tip = document.createElement("span");
+      tip.textContent = `${c.index + 1}. ${c.name}`;
+      L.circleMarker([c.lat, c.lng], { radius: on ? 10 : 7, color: "#0b0e17", weight: 2, fillColor: pinColor(c.index), fillOpacity: 0.97 })
+        .bindTooltip(tip, { direction: "top", offset: [0, -6] })
         .on("click", (e) => { L.DomEvent.stopPropagation(e); selCb.current(c.index); })
         .addTo(lg);
     });
@@ -99,6 +102,9 @@ export function EvidenceMap({ candidates, references, activeIndex, onSelectCandi
     if (!map || candidates.length === 0) return;
     const sig = candidates.map((c) => `${c.lat.toFixed(4)},${c.lng.toFixed(4)}`).join("|");
     if (sig === sigRef.current) return;
+    // Claim the current active synchronously so the pan effect (same commit)
+    // doesn't also recenter off the framed all-candidates view.
+    lastActive.current = activeIndex;
     const id = requestAnimationFrame(() => {
       sigRef.current = sig; // mark done only once it actually runs (survives re-render churn)
       map.invalidateSize();
@@ -107,7 +113,6 @@ export function EvidenceMap({ candidates, references, activeIndex, onSelectCandi
       } else {
         map.setView([candidates[0].lat, candidates[0].lng], 13, { animate: false });
       }
-      lastActive.current = activeIndex;
     });
     return () => cancelAnimationFrame(id);
   }, [candidates]);
@@ -116,8 +121,10 @@ export function EvidenceMap({ candidates, references, activeIndex, onSelectCandi
   useEffect(() => {
     const map = mapRef.current, a = candidates[activeIndex];
     if (!map || !a || lastActive.current === activeIndex) return;
-    lastActive.current = activeIndex;
-    const id = requestAnimationFrame(() => map.panTo([a.lat, a.lng], { animate: true }));
+    const id = requestAnimationFrame(() => {
+      lastActive.current = activeIndex; // commit inside rAF so re-render churn can't drop the pan
+      map.panTo([a.lat, a.lng], { animate: true });
+    });
     return () => cancelAnimationFrame(id);
   }, [activeIndex, candidates]);
 

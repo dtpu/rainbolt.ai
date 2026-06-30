@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -65,6 +65,16 @@ export default function ChatPage() {
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
   const areaPlaces = useAreaPlaces(marker?.latitude, marker?.longitude);
+
+  // Stable identities so the Leaflet map doesn't tear down + rebuild every render.
+  const mapCandidates = useMemo(
+    () => markers.map((m, i) => ({ name: m.name, lat: m.latitude, lng: m.longitude, index: i })),
+    [markers],
+  );
+  const mapReferences = useMemo(
+    () => areaPhotos.flatMap((p) => (p.lat != null && p.lng != null ? [{ lat: p.lat, lng: p.lng, thumb: p.thumb, title: p.title }] : [])),
+    [areaPhotos],
+  );
 
   // Feed map-style place labels: the candidate names (always) + nearby landmarks.
   useEffect(() => {
@@ -270,15 +280,17 @@ export default function ChatPage() {
                   <>
                     <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
                       <EvidenceMap
-                        candidates={markers.map((m, i) => ({ name: m.name, lat: m.latitude, lng: m.longitude, index: i }))}
-                        references={areaPhotos.flatMap((p) => (p.lat != null && p.lng != null ? [{ lat: p.lat, lng: p.lng, thumb: p.thumb, title: p.title }] : []))}
+                        candidates={mapCandidates}
+                        references={mapReferences}
                         activeIndex={currentMarker}
                         onSelectCandidate={setCurrentMarker}
                       />
                     </div>
-                    <p className="mt-1.5 text-[11px] text-fg-muted/60">
-                      Click a pin to compare candidates · click anywhere to zoom in (Street View link in the popup).
-                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-fg-muted/70">
+                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: pinColor(currentMarker) }} /> Candidate guesses</span>
+                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#9aa7bd]" /> Nearby geotagged photos</span>
+                      <span className="text-fg-muted/45">Click a pin to compare · click the map to zoom in</span>
+                    </div>
                   </>
                 ) : (
                   <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
