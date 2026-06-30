@@ -97,6 +97,8 @@ export default function ChatPage() {
         id: String(i), lat: m.latitude, lng: m.longitude, confidence: m.accuracy * 100,
       })),
       arcs: [],
+      panLeft: 340,  // result sidebar
+      panRight: 360, // chat panel
       mode: "located",
       onHover: undefined,
       onPick: (id) => setCurrentRef.current(Number(id)),

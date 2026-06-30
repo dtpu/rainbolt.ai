@@ -88,6 +88,8 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
       markers,
       arcs,
       labels: placed.map((p) => ({ name: p.place.name || p.session.title, lat: p.place.lat, lng: p.place.lng, rank: 0 })),
+      panLeft: 0,
+      panRight: 340, // the rail
       mode: "constellation",
       onHover: (id) => hoverRef.current(id),
       onPick: (id) => selectRef.current(id),

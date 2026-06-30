@@ -41,6 +41,9 @@ interface GlobeStore {
   focusIndex: number | null;
   /** Highlighted marker id (hover/selection). */
   activeId: string | null;
+  /** Opaque side-panel widths (px) so the globe centers in the VISIBLE gap, not the full screen. */
+  panLeft: number;
+  panRight: number;
   /** "constellation": many pins + arcs, free orbit + hover. "located": zoom to one. */
   mode: "constellation" | "located";
   /** Horizontal fraction (0-1) the focused marker should sit at on screen, to
@@ -61,6 +64,8 @@ const INITIAL = {
   zoomedIn: false,
   focusIndex: null as number | null,
   activeId: null as string | null,
+  panLeft: 0,
+  panRight: 0,
   mode: "constellation" as const,
   focusBiasX: 0.5,
   onPick: undefined,

@@ -297,6 +297,7 @@ export default function WorldGlobe() {
     let hoveredId: string | null = null;
     let downId: string | null = null;
     let frame = 0, raf = 0;
+    let viewOffX = 0; // smoothed horizontal view-offset so the globe centers in the visible gap
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -326,6 +327,16 @@ export default function WorldGlobe() {
       stars.rotation.y += 0.0002;
       stars.update(t);
       shooting.update(dt);
+
+      // Centre the globe in the visible gap between side panels (not the full screen).
+      {
+        const st = useGlobeStore.getState();
+        const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+        const target = (st.panRight - st.panLeft) / 2; // +x shifts content left (toward an open left area)
+        viewOffX += (target - viewOffX) * 0.12;
+        if (Math.abs(viewOffX) > 0.5) camera.setViewOffset(w, h, viewOffX, 0, w, h);
+        else camera.clearViewOffset();
+      }
 
       if (flyTarget.active) {
         spinGroup.rotation.y += (flyTarget.rotY - spinGroup.rotation.y) * 0.16;
