@@ -123,3 +123,15 @@ body {
 
 @keyframes vt-fade-in  { from { opacity: 0; } }
 @keyframes vt-fade-out { to   { opacity: 0; } }
+
+/* Leaflet zoom controls: our base styles override Leaflet's line-height, so the
+   +/- glyphs sit off-centre. Flex-center them and theme them to the app. */
+.leaflet-bar a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.leaflet-touch .leaflet-bar a {
+  font-size: 18px;
+}

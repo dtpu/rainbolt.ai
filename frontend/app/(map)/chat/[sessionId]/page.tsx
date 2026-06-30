@@ -56,11 +56,12 @@ export default function ChatPage() {
 
   const [tab, setTab] = useState<Tab>("chat");
   const [media, setMedia] = useState<"map" | "street" | "photos">("map");
+  const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
 
   useChatSession(sessionId);
 
-  // Back to the Map view on candidate/session change (street view is heavy).
-  useEffect(() => { setMedia("map"); }, [currentMarker, sessionId]);
+  // Back to the Map view (clear picked spot) on candidate/session change.
+  useEffect(() => { setMedia("map"); setPicked(null); }, [currentMarker, sessionId]);
 
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
@@ -161,10 +162,6 @@ export default function ChatPage() {
             <div className="px-4 py-4">
               {/* selected guess header */}
               <div className="mb-1 flex items-center gap-1.5">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/30"
-                  style={{ backgroundColor: pinColor(currentMarker), boxShadow: `0 0 7px ${pinColor(currentMarker)}` }}
-                />
                 <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
                   Best guess
                 </span>
@@ -283,31 +280,39 @@ export default function ChatPage() {
                         candidates={mapCandidates}
                         references={mapReferences}
                         activeIndex={currentMarker}
+                        picked={picked}
                         onSelectCandidate={setCurrentMarker}
+                        onPickPoint={(lat, lng) => { setPicked({ lat, lng }); setMedia("street"); }}
                       />
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-fg-muted/70">
-                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: pinColor(currentMarker) }} /> Candidate guesses</span>
-                      <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#9aa7bd]" /> Nearby geotagged photos</span>
-                      <span className="text-fg-muted/45">Click a pin to compare · click the map to zoom in</span>
-                    </div>
+                    <p className="mt-2 text-[11px] text-fg-muted/65">
+                      Click a candidate to compare · click anywhere on the map to open Street View there.
+                    </p>
                   </>
                 ) : (
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
-                    <iframe
-                      key={`sv-${marker.latitude},${marker.longitude}`}
-                      title={`${marker.name} street view`}
-                      src={streetEmbed(marker.latitude, marker.longitude)}
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full border-0"
-                    />
-                  </div>
+                  <>
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
+                      <iframe
+                        key={`sv-${picked?.lat ?? marker.latitude},${picked?.lng ?? marker.longitude}`}
+                        title={`${marker.name} street view`}
+                        src={streetEmbed(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="h-full w-full border-0"
+                      />
+                    </div>
+                    <button
+                      onClick={() => { setPicked(null); setMedia("map"); }}
+                      className="mt-2 text-[11px] text-fg-muted/70 underline-offset-2 transition-colors hover:text-fg hover:underline"
+                    >
+                      ← Back to the map
+                    </button>
+                  </>
                 )}
 
                 <a
                   href={media === "street"
-                    ? streetViewUrl(marker.latitude, marker.longitude)
+                    ? streetViewUrl(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)
                     : mapsUrl(marker.latitude, marker.longitude)}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -417,11 +422,9 @@ function GuessRow({
         active ? "bg-white/[0.06]" : "hover:bg-white/[0.035]"
       }`}
     >
-      <span
-        className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/30"
-        style={{ backgroundColor: pinColor(rank - 1), boxShadow: active ? `0 0 7px ${pinColor(rank - 1)}` : "none" }}
-        title={`Pin ${rank}`}
-      />
+      <span className="w-4 shrink-0 text-center text-xs font-semibold tabular-nums" style={{ color: pinColor(rank - 1) }}>
+        {rank}
+      </span>
       <div className="min-w-0 flex-1">
         <p className={`truncate text-[13px] ${active ? "font-medium text-fg" : "text-fg/80"}`}>{marker.name}</p>
         <div className="mt-1 h-[2px] w-full overflow-hidden rounded-full bg-white/[0.07]">

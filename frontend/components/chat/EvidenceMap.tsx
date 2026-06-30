@@ -12,11 +12,10 @@ interface Props {
   candidates: MapCandidate[];
   references: MapReference[];
   activeIndex: number;
+  picked: { lat: number; lng: number } | null;
   onSelectCandidate: (i: number) => void;
+  onPickPoint: (lat: number, lng: number) => void;
 }
-
-const panoUrl = (lat: number, lng: number) =>
-  `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
 
 /**
  * Interactive 2D evidence map:
@@ -27,12 +26,13 @@ const panoUrl = (lat: number, lng: number) =>
  *  - click anywhere to zoom the 2D map into that exact spot, with a Street View
  *    link for the point.
  */
-export function EvidenceMap({ candidates, references, activeIndex, onSelectCandidate }: Props) {
+export function EvidenceMap({ candidates, references, activeIndex, picked, onSelectCandidate, onPickPoint }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const dataRef = useRef<L.LayerGroup | null>(null);
   const pickRef = useRef<L.LayerGroup | null>(null);
   const selCb = useRef(onSelectCandidate); selCb.current = onSelectCandidate;
+  const pickCb = useRef(onPickPoint); pickCb.current = onPickPoint;
   const sigRef = useRef("");
   const lastActive = useRef(-1);
 
@@ -46,17 +46,8 @@ export function EvidenceMap({ candidates, references, activeIndex, onSelectCandi
     map.setView([20, 0], 2);
     dataRef.current = L.layerGroup().addTo(map);
     pickRef.current = L.layerGroup().addTo(map);
-    map.on("click", (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      const pg = pickRef.current!;
-      pg.clearLayers();
-      L.circleMarker([lat, lng], { radius: 6, color: "#ffffff", weight: 2, fillColor: "#ffffff", fillOpacity: 0.25 }).addTo(pg);
-      map.setView([lat, lng], Math.min(map.getZoom() + 2, 17), { animate: true });
-      L.popup({ offset: [0, -2], closeButton: true })
-        .setLatLng([lat, lng])
-        .setContent(`<a href="${panoUrl(lat, lng)}" target="_blank" rel="noopener noreferrer" style="font:600 12px/1.2 ui-sans-serif,system-ui,sans-serif;color:#2b6cb0;text-decoration:none">Open Street View here &#8599;</a>`)
-        .openOn(map);
-    });
+    // Click anywhere -> open Street View at that exact spot (handled by the page).
+    map.on("click", (e: L.LeafletMouseEvent) => pickCb.current(e.latlng.lat, e.latlng.lng));
     mapRef.current = map;
     const fix = () => map.invalidateSize();
     const t = setTimeout(fix, 150);
@@ -127,6 +118,16 @@ export function EvidenceMap({ candidates, references, activeIndex, onSelectCandi
     });
     return () => cancelAnimationFrame(id);
   }, [activeIndex, candidates]);
+
+  // marker for the spot whose Street View is currently shown
+  useEffect(() => {
+    const pg = pickRef.current;
+    if (!pg) return;
+    pg.clearLayers();
+    if (picked) {
+      L.circleMarker([picked.lat, picked.lng], { radius: 6, color: "#ffffff", weight: 2, fillColor: "#ffffff", fillOpacity: 0.3 }).addTo(pg);
+    }
+  }, [picked]);
 
   return <div ref={elRef} className="h-full w-full" />;
 }
