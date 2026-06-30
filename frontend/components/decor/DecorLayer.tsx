@@ -72,7 +72,10 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
 
     const w = mount.clientWidth || 1;
     const h = mount.clientHeight || 1;
-    const dpr = Math.min(window.devicePixelRatio, 2);
+    // Soft hatched decoration: low, resolution-capped DPR keeps this second
+    // WebGL layer cheap (it doesn't need to be sharp).
+    const dprFor = (cw: number, ch: number) => Math.min(window.devicePixelRatio, 1.25, 1500 / Math.max(cw, ch, 1));
+    const dpr = dprFor(w, h);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
@@ -333,9 +336,13 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
     const clock = new THREE.Clock();
     const easeOut = (k: number) => 1 - Math.pow(1 - k, 3);
     let raf = 0;
+    let lastDraw = -1;
     const animate = () => {
       raf = requestAnimationFrame(animate);
       if (document.hidden) return; // don't burn cycles on a hidden tab
+      const t = clock.getElapsedTime();
+      if (t - lastDraw < 0.033) return; // ~30fps cap: this is just decoration
+      lastDraw = t;
 
       // Share the landing globe's camera so props sit in its 3D space + scroll.
       if (cameraSyncRef.current && landingCamera.active) {
@@ -347,7 +354,6 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
         }
       }
 
-      const t = clock.getElapsedTime();
       material.userData.update(t);
       for (const hld of holders) {
         // Props (incl. async-loaded models) scale in from nothing once ready.
@@ -368,13 +374,14 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
     const noise = document.getElementById("decor-sketch-noise");
     const reseed = window.setInterval(() => {
       noise?.setAttribute("seed", String(1 + Math.floor(Math.random() * 90)));
-    }, 110);
+    }, 200);
 
     const ro = new ResizeObserver(() => {
       const nw = mount.clientWidth || 1;
       const nh = mount.clientHeight || 1;
       camera.aspect = nw / nh;
       camera.updateProjectionMatrix();
+      renderer.setPixelRatio(dprFor(nw, nh));
       renderer.setSize(nw, nh);
     });
     ro.observe(mount);

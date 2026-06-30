@@ -44,9 +44,11 @@ export default function WorldGlobe() {
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    // Cap DPR *and* the absolute backing resolution so a maximized 4K window
+    // doesn't render an 8-megapixel point cloud every frame.
+    const pixelRatioFor = (w: number, h: number) => Math.min(window.devicePixelRatio, 1.5, 2560 / Math.max(w, h, 1));
     renderer.setSize(width, height);
-    // Full-viewport globe: cap DPR so HiDPI screens don't render 4x the pixels.
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(pixelRatioFor(width, height));
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.style.cssText = "width:100%;height:100%;display:block";
     mount.appendChild(renderer.domElement);
@@ -436,7 +438,9 @@ export default function WorldGlobe() {
 
     const ro = new ResizeObserver(() => {
       const w = mount.clientWidth || 1, h = mount.clientHeight || 1;
-      camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+      renderer.setPixelRatio(pixelRatioFor(w, h));
+      renderer.setSize(w, h);
     });
     ro.observe(mount);
 
