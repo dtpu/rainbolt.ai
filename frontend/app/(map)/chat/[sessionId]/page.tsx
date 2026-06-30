@@ -29,8 +29,6 @@ const coordLabel = (lat: number, lng: number) =>
 
 const mapsUrl = (lat: number, lng: number) =>
   `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-const mapEmbed = (lat: number, lng: number) =>
-  `https://www.google.com/maps?q=${lat},${lng}&z=10&output=embed`;
 // Legacy keyless Street View embed - actual on-the-ground Google photos.
 const streetEmbed = (lat: number, lng: number) =>
   `https://www.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=12,0,0,0,0&output=svembed`;
@@ -488,26 +486,17 @@ function PlacesTab({
           const pct = Math.round(m.accuracy * 100);
           return (
             <div key={i} className="overflow-hidden rounded-xl border border-white/[0.07] bg-space-900">
-              <div className="relative aspect-video w-full bg-space-950">
-                <iframe
-                  title={m.name}
-                  src={mapEmbed(m.latitude, m.longitude)}
-                  loading="lazy"
-                  className="h-full w-full border-0"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-                <span className="pointer-events-none absolute left-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-white/80 backdrop-blur-sm">
-                  #{i + 1}
-                </span>
-              </div>
               <div className="p-3">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="shrink-0 font-mono text-xs font-semibold tabular-nums" style={{ color: pinColor(i) }}>
+                    #{i + 1}
+                  </span>
                   <h3 className="truncate text-sm font-medium text-fg">{m.name}</h3>
-                  <span className="shrink-0 font-mono text-[11px] tabular-nums" style={{ color: confColor(m.accuracy) }}>
+                  <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums" style={{ color: confColor(m.accuracy) }}>
                     {pct}%
                   </span>
                 </div>
-                <p className="mt-0.5 font-mono text-[10px] tabular-nums text-fg-muted/50">
+                <p className="mt-1 font-mono text-[10px] tabular-nums text-fg-muted/50">
                   {coordLabel(m.latitude, m.longitude)}
                 </p>
                 <div className="mt-2.5 flex items-center gap-2">

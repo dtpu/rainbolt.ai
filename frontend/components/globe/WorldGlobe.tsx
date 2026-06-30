@@ -310,6 +310,13 @@ export default function WorldGlobe() {
       return obj.userData?.id ? { id: obj.userData.id, index: obj.userData.index } : null;
     };
 
+    // Reused per-frame scratch for the label pass (avoid per-frame allocations).
+    const _camDir = new THREE.Vector3();
+    const _world = new THREE.Vector3();
+    const _n = new THREE.Vector3();
+    const labelCand: { l: LabelEl; sx: number; sy: number; op: number; rank: number }[] = [];
+    const labelShown: { sx: number; sy: number }[] = [];
+
     const animate = () => {
       raf = requestAnimationFrame(animate);
       if (document.hidden) return;
@@ -360,24 +367,25 @@ export default function WorldGlobe() {
       // the places spread apart on screen).
       if (labelEls.length) {
         const lw = renderer.domElement.clientWidth, lh = renderer.domElement.clientHeight;
-        const camDir = camera.position.clone().normalize();
-        const cand: { l: LabelEl; sx: number; sy: number; op: number; rank: number }[] = [];
+        _camDir.copy(camera.position).normalize();
+        labelCand.length = 0;
         for (const l of labelEls) {
-          const world = l.pos.clone().applyMatrix4(spinGroup.matrixWorld);
-          const facing = world.clone().normalize().dot(camDir);          // >0 = front of globe
+          _world.copy(l.pos).applyMatrix4(spinGroup.matrixWorld);
+          const facing = _n.copy(_world).normalize().dot(_camDir);        // >0 = front of globe
           const zoomShow = Math.max(0, Math.min(1, (zoom - (0.05 + l.rank * 0.6)) * 6)); // main places early, landmarks on zoom
           const occ = Math.max(0, Math.min(1, (facing - 0.12) * 5));
           const op = zoomShow * occ;
           if (op < 0.02) { if (l.el.style.opacity !== "0") l.el.style.opacity = "0"; continue; }
-          const ndc = world.project(camera);
-          cand.push({ l, sx: (ndc.x * 0.5 + 0.5) * lw, sy: (-ndc.y * 0.5 + 0.5) * lh, op, rank: l.rank });
+          _world.project(camera);
+          labelCand.push({ l, sx: (_world.x * 0.5 + 0.5) * lw, sy: (-_world.y * 0.5 + 0.5) * lh, op, rank: l.rank });
         }
-        cand.sort((a, b) => a.rank - b.rank || b.op - a.op);             // priority: important first
-        const shown: { sx: number; sy: number }[] = [];
-        for (const c of cand) {
-          const clash = shown.some((s) => Math.abs(c.sx - s.sx) < 78 && Math.abs(c.sy - s.sy) < 20);
+        labelCand.sort((a, b) => a.rank - b.rank || b.op - a.op);        // priority: important first
+        labelShown.length = 0;
+        for (const c of labelCand) {
+          let clash = false;
+          for (const s of labelShown) { if (Math.abs(c.sx - s.sx) < 78 && Math.abs(c.sy - s.sy) < 20) { clash = true; break; } }
           if (clash) { c.l.el.style.opacity = "0"; continue; }
-          shown.push({ sx: c.sx, sy: c.sy });
+          labelShown.push({ sx: c.sx, sy: c.sy });
           c.l.el.style.transform = `translate(${c.sx.toFixed(1)}px,${c.sy.toFixed(1)}px) translate(8px,-50%)`;
           c.l.el.style.opacity = c.op.toFixed(2);
         }
