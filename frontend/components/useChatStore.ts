@@ -24,6 +24,8 @@ export type Marker = {
   mapillary_images?: string[];
   /** Visual evidence the guess was built from: "clue -> what it implies". */
   clues?: GeoClue[];
+  /** False for remote spots with no Google Street View coverage (hides the tab). */
+  streetView?: boolean;
 };
 
 type ChatState = {

@@ -24,12 +24,13 @@ export function useAreaPlaces(lat?: number, lng?: number, radius = 10000, limit 
       return;
     }
     let cancelled = false;
+    const ctrl = new AbortController();
 
     const url =
       `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*` +
       `&list=geosearch&gscoord=${lat}|${lng}&gsradius=${radius}&gslimit=${limit}`;
 
-    fetch(url)
+    fetch(url, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
@@ -50,6 +51,7 @@ export function useAreaPlaces(lat?: number, lng?: number, radius = 10000, limit 
 
     return () => {
       cancelled = true;
+      ctrl.abort();
     };
   }, [lat, lng, radius, limit]);
 

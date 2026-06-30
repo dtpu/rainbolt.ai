@@ -5,8 +5,6 @@ import { useChatStore } from "@/components/useChatStore";
 import { DEMO_SESSION_CONTENT } from "@/lib/demo-constellation";
 
 export function useChatSession(sessionId: string) {
-  const uploadedImageUrl = useChatStore((state) => state.uploadedImageUrl);
-
   useEffect(() => {
     // Guest demo sessions are read-only and backend-free: seed the example
     // marker + chat straight into the store instead of opening a socket.
@@ -32,7 +30,7 @@ export function useChatSession(sessionId: string) {
         console.error("Failed to connect WebSocket:", err);
       });
     }
-  }, [sessionId, uploadedImageUrl]);
+  }, [sessionId]);
 
   useEffect(() => {
     return () => {

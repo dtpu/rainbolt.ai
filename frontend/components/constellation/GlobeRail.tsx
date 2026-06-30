@@ -11,6 +11,7 @@ import { Reticle } from "@/components/ui/Reticle";
 import { DecorLayer } from "@/components/decor/DecorLayer";
 import { LEARNING_DECOR } from "@/lib/decor/layouts";
 import { useGlobeStore, type WorldMarker, type WorldArc } from "@/lib/globe/store";
+import { confColor } from "@/lib/globe/palette";
 
 interface PlacedSession { session: GlobeSessionWithData; place: SessionPlace; }
 
@@ -341,7 +342,7 @@ const RailCard = forwardRef<
   const on = active || navigating;
   const acc = DEMO_SESSION_CONTENT[session.id]?.markers?.[0]?.accuracy;
   const pct = acc != null ? Math.round(acc * 100) : null;
-  const confColor = acc == null ? "" : acc >= 0.75 ? "#4ade80" : acc >= 0.5 ? "#e8b44f" : "#e5373e";
+  const confCol = acc == null ? "" : confColor(acc);
   const lat = `${Math.abs(place.lat).toFixed(2)}°${place.lat >= 0 ? "N" : "S"}`;
   const lng = `${Math.abs(place.lng).toFixed(2)}°${place.lng >= 0 ? "E" : "W"}`;
 
@@ -397,7 +398,7 @@ const RailCard = forwardRef<
         <div className="flex items-center justify-between gap-2">
           <h3 className="truncate text-sm font-medium text-fg">{session.title}</h3>
           {pct != null && (
-            <span className="shrink-0 font-mono text-[10px] tabular-nums" style={{ color: confColor }}>
+            <span className="shrink-0 font-mono text-[10px] tabular-nums" style={{ color: confCol }}>
               {pct}%
             </span>
           )}

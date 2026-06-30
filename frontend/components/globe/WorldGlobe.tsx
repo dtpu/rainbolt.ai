@@ -118,7 +118,7 @@ export default function WorldGlobe() {
       varying vec2 vUv; varying float vVisible; varying float vGlow;
       void main(){ if(floor(vVisible+0.1)==0.0) discard;
         float a=(1.0-texture2D(alphaTexture,vUv).r)*0.6;
-        a *= mix(1.0, clamp((uZoom-0.12)*1.6, 0.0, 1.0), uDense);          // dense layer fades in as you zoom
+        a *= mix(1.0, clamp((uZoom-0.32)*2.2, 0.0, 1.0), uDense);          // dense layer fades in only on real zoom-in
         vec3 c=texture2D(otherTexture,vUv).rgb;
         c *= 1.0 + vGlow*0.55;                                             // subtle brighten toward the guess
         gl_FragColor=vec4(c, a + vGlow*0.12); }`;
@@ -342,7 +342,7 @@ export default function WorldGlobe() {
         u.uZoomVel.value = Math.max(vel, u.uZoomVel.value * 0.9);
         u.uTime.value = t;
       }
-      densePoints.visible = baseMat.uniforms.uZoom.value > 0.1; // density LOD: dense detail fades in as you zoom
+      densePoints.visible = baseMat.uniforms.uZoom.value > 0.32; // density LOD: off at rest, on only when zoomed in
 
       if (frame % 3 === 0 && !isDragging) {
         const hit = pickPin();
@@ -432,6 +432,16 @@ export default function WorldGlobe() {
       for (const l of labelEls) l.el.remove();
       if (mount.contains(labelLayer)) mount.removeChild(labelLayer);
       if (mount.contains(el)) mount.removeChild(el);
+      // Free GPU resources so cross-route-group navigation doesn't leak contexts.
+      scene.traverse((o) => {
+        const m = o as THREE.Mesh | THREE.Points;
+        if ((m as THREE.Mesh).geometry) (m as THREE.Mesh).geometry.dispose();
+        const mat = (m as THREE.Mesh).material;
+        if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
+        else if (mat) mat.dispose();
+      });
+      [starSprite, otherMap, colorMap, elevMap, alphaMap].forEach((t) => t.dispose());
+      renderer.forceContextLoss();
       renderer.dispose();
     };
   }, []);

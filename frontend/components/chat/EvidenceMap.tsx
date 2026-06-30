@@ -19,12 +19,10 @@ interface Props {
 
 /**
  * Interactive 2D evidence map:
- *  - candidate guesses (colour-matched to globe pins); fit-bounds spreads
+ *  - candidate guesses (colour-matched to the globe pins); fit-bounds spreads
  *    same-city candidates into distinct, clickable points (the overlap fix);
- *  - nearby geo-referenced photos with faint lines converging on the active
- *    guess - a visual of retrieval/triangulation (the RAG-style visual);
- *  - click anywhere to zoom the 2D map into that exact spot, with a Street View
- *    link for the point.
+ *  - nearby geotagged photos (Wikimedia Commons) as neutral reference dots;
+ *  - click anywhere to open Street View at that exact spot.
  */
 export function EvidenceMap({ candidates, references, activeIndex, picked, onSelectCandidate, onPickPoint }: Props) {
   const elRef = useRef<HTMLDivElement>(null);

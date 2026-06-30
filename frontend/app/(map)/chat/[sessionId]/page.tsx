@@ -22,10 +22,7 @@ import { useChatSession } from "@/hooks/useChatSession";
 import { useAreaPhotos } from "@/hooks/useAreaPhotos";
 import { useAreaPlaces } from "@/hooks/useAreaPlaces";
 import { useGlobeStore } from "@/lib/globe/store";
-import { pinColor } from "@/lib/globe/palette";
-
-const confColor = (acc: number) =>
-  acc >= 0.75 ? "#4ade80" : acc >= 0.5 ? "#e8b44f" : "#e5373e";
+import { pinColor, confColor } from "@/lib/globe/palette";
 
 const coordLabel = (lat: number, lng: number) =>
   `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? "N" : "S"} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? "E" : "W"}`;
@@ -57,13 +54,23 @@ export default function ChatPage() {
   const [tab, setTab] = useState<Tab>("chat");
   const [media, setMedia] = useState<"map" | "street" | "photos">("map");
   const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useChatSession(sessionId);
 
   // Back to the Map view (clear picked spot) on candidate/session change.
   useEffect(() => { setMedia("map"); setPicked(null); }, [currentMarker, sessionId]);
 
+  // Unknown id / backend down: surface an error instead of an endless spinner.
+  useEffect(() => {
+    setLoadFailed(false);
+    if (markers.length > 0) return;
+    const t = setTimeout(() => { if (useChatStore.getState().markers.length === 0) setLoadFailed(true); }, 8000);
+    return () => clearTimeout(t);
+  }, [sessionId, markers.length]);
+
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
+  const hasStreetView = marker?.streetView !== false;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
   const areaPlaces = useAreaPlaces(marker?.latitude, marker?.longitude);
 
@@ -228,7 +235,7 @@ export default function ChatPage() {
                 <div className="mb-2.5 flex gap-1 rounded-lg bg-white/[0.04] p-0.5 text-[11px] font-medium">
                   {([
                     ["map", "Map"],
-                    ["street", "Street view"],
+                    ...(hasStreetView ? [["street", "Street view"] as const] : []),
                     ["photos", `Photos${areaPhotos.length ? ` ${areaPhotos.length}` : ""}`],
                   ] as const).map(([k, label]) => (
                     <button
@@ -282,11 +289,14 @@ export default function ChatPage() {
                         activeIndex={currentMarker}
                         picked={picked}
                         onSelectCandidate={setCurrentMarker}
-                        onPickPoint={(lat, lng) => { setPicked({ lat, lng }); setMedia("street"); }}
+                        onPickPoint={(lat, lng) => {
+                          if (hasStreetView) { setPicked({ lat, lng }); setMedia("street"); }
+                          else window.open(mapsUrl(lat, lng), "_blank", "noopener");
+                        }}
                       />
                     </div>
                     <p className="mt-2 text-[11px] text-fg-muted/65">
-                      Click a candidate to compare · click anywhere on the map to open Street View there.
+                      Click a candidate to compare · click the map to {hasStreetView ? "open Street View there" : "open it in Google Maps"}.
                     </p>
                   </>
                 ) : (
@@ -331,6 +341,22 @@ export default function ChatPage() {
                   <p className="text-[13px] leading-relaxed text-fg/70">{marker.facts}</p>
                 </div>
               )}
+            </div>
+          ) : loadFailed ? (
+            <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+              <MapIcon className="h-6 w-6 text-fg-muted/40" />
+              <div>
+                <p className="text-sm font-medium text-fg">This session couldn&apos;t be loaded</p>
+                <p className="mt-1 text-xs leading-relaxed text-fg-muted/60">
+                  It may have expired, or the analysis service is offline. Try a sample from the globe.
+                </p>
+              </div>
+              <Link
+                href="/learning"
+                className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-space-950 transition-colors hover:bg-white/90"
+              >
+                Back to the globe
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 px-4 py-16 text-center">

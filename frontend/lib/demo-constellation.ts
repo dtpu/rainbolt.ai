@@ -347,6 +347,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "A paved road skirts a Saharan oasis settlement: date palms, a whitewashed mud-brick ksar, and a low sand ridge under a hard blue sky. The pole lighting, red-and-white kerb striping, and architecture place it in the central Algerian Sahara near El Goléa.",
         mapillary_images: ["/demo/sahara-1.jpg"],
+        streetView: false,
         clues: [
           { sign: "Date palms around a whitewashed ksar", implies: "Saharan oasis town" },
           { sign: "Red-and-white kerb striping", implies: "Maghreb road standard" },
@@ -410,6 +411,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         facts:
           "Jagged granite spires rise over windswept golden grassland with a turquoise glacial lake below. The horn-shaped peaks and guanaco-grazed steppe are signatures of Torres del Paine in Chilean Patagonia.",
         mapillary_images: ["/demo/patagonia-1.jpg"],
+        streetView: false,
         clues: [
           { sign: "Sheer granite towers", implies: "Southern Patagonia" },
           { sign: "Treeless golden steppe", implies: "Windswept plateau" },

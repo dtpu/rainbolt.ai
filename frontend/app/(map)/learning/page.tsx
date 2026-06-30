@@ -36,10 +36,6 @@ export default function LearningPage() {
   );
 
   useEffect(() => {
-    router.prefetch("/chat/preview");
-  }, [router]);
-
-  useEffect(() => {
     if (isLoading) return;
     if (typeof window !== "undefined") {
       const tour = new URLSearchParams(window.location.search).get("tour");

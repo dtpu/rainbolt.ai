@@ -41,6 +41,7 @@ export function useAreaPhotos(lat?: number, lng?: number, limit = 8) {
       return;
     }
     let cancelled = false;
+    const ctrl = new AbortController();
     setLoading(true);
 
     const url =
@@ -48,7 +49,7 @@ export function useAreaPhotos(lat?: number, lng?: number, limit = 8) {
       `&generator=geosearch&ggscoord=${lat}|${lng}&ggsradius=10000&ggslimit=${limit}` +
       `&ggsnamespace=6&prop=imageinfo|coordinates&iiprop=url|mime&iiurlwidth=320`;
 
-    fetch(url)
+    fetch(url, { signal: ctrl.signal })
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
@@ -79,6 +80,7 @@ export function useAreaPhotos(lat?: number, lng?: number, limit = 8) {
 
     return () => {
       cancelled = true;
+      ctrl.abort();
     };
   }, [lat, lng, limit]);
 
