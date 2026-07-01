@@ -31,6 +31,8 @@ export function EvidenceMap({ candidates, references, activeIndex, picked, onSel
   const pickRef = useRef<L.LayerGroup | null>(null);
   const selCb = useRef(onSelectCandidate); selCb.current = onSelectCandidate;
   const pickCb = useRef(onPickPoint); pickCb.current = onPickPoint;
+  const snapRef = useRef<{ lat: number; lng: number }[]>([]);
+  snapRef.current = [...candidates, ...references];
   const sigRef = useRef("");
   const lastActive = useRef(-1);
 
@@ -44,8 +46,18 @@ export function EvidenceMap({ candidates, references, activeIndex, picked, onSel
     map.setView([20, 0], 2);
     dataRef.current = L.layerGroup().addTo(map);
     pickRef.current = L.layerGroup().addTo(map);
-    // Click anywhere -> open Street View at that exact spot (handled by the page).
-    map.on("click", (e: L.LeafletMouseEvent) => pickCb.current(e.latlng.lat, e.latlng.lng));
+    // Click anywhere -> Street View. Snap to the nearest candidate/photo within
+    // ~250m so a near-miss lands on a real, covered spot instead of a rooftop.
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      let best: { lat: number; lng: number } | null = null, bestD = Infinity;
+      for (const p of snapRef.current) {
+        const d = map.distance([lat, lng], [p.lat, p.lng]);
+        if (d < bestD) { bestD = d; best = p; }
+      }
+      if (best && bestD < 250) pickCb.current(best.lat, best.lng);
+      else pickCb.current(lat, lng);
+    });
     mapRef.current = map;
     const fix = () => map.invalidateSize();
     const t = setTimeout(fix, 150);
