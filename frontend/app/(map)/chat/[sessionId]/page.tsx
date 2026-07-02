@@ -253,7 +253,7 @@ export default function ChatPage() {
                   {([
                     ["map", "Map"],
                     ...(hasStreetView ? [["street", "Street view"] as const] : []),
-                    ["photos", `Photos${areaPhotos.length ? ` ${areaPhotos.length}` : ""}`],
+                    ["photos", "Photos"],
                   ] as const).map(([k, label]) => (
                     <button
                       key={k}
