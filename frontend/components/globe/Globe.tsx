@@ -5,6 +5,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import getStarfield from "../../utils/getStarfield";
+import getConstellations from "../../utils/getConstellations";
+import getShootingStars from "../../utils/getShootingStars";
 import { latLongToVector3 } from "../../utils/coordinates";
 import { landingCamera } from "../../lib/decor/cameraSync";
 
@@ -514,6 +516,14 @@ intensity = pow(intensity, 1.5);
     const stars = getStarfield({ numStars: 4500, sprite: starSprite });
     scene.add(stars);
 
+    // Ambient depth between the corner props: faint constellation figures,
+    // the odd shooting star, twinkling stars. Texture, not objects.
+    const ambientClock = new THREE.Clock();
+    const constellations = getConstellations({ count: 9, radius: 28 });
+    scene.add(constellations);
+    const shooting = getShootingStars({ count: 2 });
+    scene.add(shooting);
+
     function handleRaycast() {
       raycaster.setFromCamera(pointerPos, camera);
       const intersects = raycaster.intersectObjects([globe], false);
@@ -593,6 +603,12 @@ intensity = pow(intensity, 1.5);
           waterlooLabelRef.current.style.display = "none";
         }
       }
+
+      const ambientDt = ambientClock.getDelta(); // before reading elapsedTime, or dt collapses to 0
+      const ambientT = ambientClock.elapsedTime;
+      stars.update(ambientT);
+      constellations.update(ambientT);
+      shooting.update(ambientDt);
 
       renderer.render(scene, camera);
 

@@ -100,6 +100,15 @@ export default function Home() {
     <div className="relative h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
       {/* Background Elements */}
       <div className="fixed inset-0 z-0">
+        {/* Faint nebula tint so the space between props isn't flat black */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 55% 45% at 22% 30%, rgba(143,184,216,0.06), transparent 70%)," +
+              "radial-gradient(ellipse 50% 40% at 80% 68%, rgba(232,180,79,0.045), transparent 70%)",
+          }}
+        />
         <EarthScene markers={[]} currentSection={currentSection} />
         {/* Vignette Effect */}
         <div className="vignette" />
