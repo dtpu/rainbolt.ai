@@ -154,44 +154,61 @@ export default function ChatPage() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* dossier header: analyzed photo with the verdict overlaid */}
           {uploadedImageUrl && (
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-space-900">
+            <div className="relative aspect-[16/10] w-full overflow-hidden bg-space-900">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={uploadedImageUrl} alt="Analyzed photo" className="h-full w-full object-cover" />
               <span className="absolute left-2.5 top-2.5 rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
                 Analyzed photo
               </span>
               <Reticle />
+              {marker && (
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-space-950 via-space-950/70 to-transparent px-4 pb-3 pt-10">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/70">Best guess</p>
+                  <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
+                  <div className="mt-1.5 flex items-center gap-2.5">
+                    <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                      {coordLabel(marker.latitude, marker.longitude)}
+                    </span>
+                    <span className="ml-auto flex items-center gap-1.5">
+                      <span className="h-[3px] w-14 overflow-hidden rounded-full bg-white/[0.14]">
+                        <span
+                          className="block h-full rounded-full"
+                          style={{ width: `${Math.round(marker.accuracy * 100)}%`, backgroundColor: confColor(marker.accuracy) }}
+                        />
+                      </span>
+                      <span className="text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
+                        {Math.round(marker.accuracy * 100)}%
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {marker ? (
             <div className="px-4 py-4">
-              {/* selected guess header */}
-              <div className="mb-1 flex items-center gap-1.5">
-                <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-                  Best guess
-                </span>
-              </div>
-              <h1 className="text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
-              <p className="mt-0.5 text-xs tabular-nums text-fg-muted">
-                {coordLabel(marker.latitude, marker.longitude)}
-              </p>
-              <div className="mt-3 flex items-center gap-2.5">
-                <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/[0.08]">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${Math.round(marker.accuracy * 100)}%`, backgroundColor: confColor(marker.accuracy) }}
-                  />
+              {/* text header when there is no photo to overlay */}
+              {!uploadedImageUrl && (
+                <div className="mb-5">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">Best guess</p>
+                  <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
+                  <div className="mt-2 flex items-center gap-2.5">
+                    <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                      {coordLabel(marker.latitude, marker.longitude)}
+                    </span>
+                    <span className="ml-auto text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
+                      {Math.round(marker.accuracy * 100)}%
+                    </span>
+                  </div>
                 </div>
-                <span className="shrink-0 text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
-                  {Math.round(marker.accuracy * 100)}%
-                </span>
-              </div>
+              )}
 
               {/* key clues / evidence */}
               {marker.clues && marker.clues.length > 0 && (
-                <div className="mt-5 border-t border-white/[0.06] pt-4">
+                <div className="pt-1">
                   <p className="mb-2.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
                     Key clues
                   </p>

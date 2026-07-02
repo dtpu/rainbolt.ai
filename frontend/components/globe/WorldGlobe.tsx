@@ -154,7 +154,9 @@ export default function WorldGlobe() {
     const denseMat = makePointsMat(true);
     const pointMats = [baseMat, denseMat];
     contentGroup.add(new THREE.Points(makePointsGeo(50), baseMat));
-    const densePoints = new THREE.Points(makePointsGeo(72), denseMat);
+    // Detail 56 keeps the close-up density (jitter hides the coarser lattice)
+    // at ~40% fewer vertices than 72 - the located page renders this every frame.
+    const densePoints = new THREE.Points(makePointsGeo(56), denseMat);
     densePoints.visible = false;
     contentGroup.add(densePoints);
     void colorMap;
