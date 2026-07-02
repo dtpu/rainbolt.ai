@@ -112,6 +112,18 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
     scene.add(selectBox);
     let selected: Holder | null = null;
 
+    // Dim props render as dark, faint silhouettes sunk into the background
+    // instead of the bright hatched look.
+    const matFor = (item: DecorItem): THREE.Material =>
+      item.dim
+        ? new THREE.MeshBasicMaterial({
+            color: 0x627596, // ghost blue-grey; on black it lands as a dark shape, not invisible
+            transparent: true,
+            opacity: Math.min(1, Math.max(0.05, item.dim)),
+            depthWrite: false,
+          })
+        : material;
+
     const buildOne = (item: DecorItem, i: number) => {
       const group = new THREE.Group();
       group.position.set(...item.position);
@@ -121,13 +133,14 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
 
       const holder: Holder = { item, group, baseY: item.position[1], phase: i * 1.7 };
       holders.push(holder);
+      const mat = matFor(item);
 
       if (item.model) {
         loader.load(
           item.model,
           (gltf) => {
             gltf.scene.traverse((o) => {
-              if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = material;
+              if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = mat;
             });
             const box = new THREE.Box3().setFromObject(gltf.scene);
             const ctr = box.getCenter(new THREE.Vector3());
@@ -141,10 +154,10 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
             holder.spinObj = spinObj;
           },
           undefined,
-          () => { const m = makeBody("asteroid", 1, material); group.add(m); holder.spinObj = m; },
+          () => { const m = makeBody("asteroid", 1, mat); group.add(m); holder.spinObj = m; },
         );
       } else {
-        const m = makeBody((item.shape ?? "asteroid") as BodyType, 1, material);
+        const m = makeBody((item.shape ?? "asteroid") as BodyType, 1, mat);
         group.add(m);
         holder.spinObj = m;
       }
@@ -254,6 +267,19 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
         case "]": r.z += step; break;
         case "Delete":
         case "Backspace": api.current?.deleteSelected(); e.preventDefault(); return;
+        case "f": case "F": {
+          // toggle faint background-silhouette mode on the selected prop
+          const it = selected.item;
+          it.dim = it.dim ? undefined : 0.3;
+          const idx = holders.indexOf(selected);
+          scene.remove(selected.group);
+          holders.splice(idx, 1);
+          buildOne(it, idx);
+          select(holders[holders.length - 1]);
+          persist();
+          e.preventDefault();
+          return;
+        }
         default: handled = false;
       }
       if (handled) {
@@ -321,6 +347,7 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
           if (it.rotation) parts.push(`rotation: [${it.rotation.map((n) => +n.toFixed(2)).join(", ")}]`);
           if (it.spin != null) parts.push(`spin: ${it.spin}`);
           if (it.bob != null) parts.push(`bob: ${it.bob}`);
+          if (it.dim != null) parts.push(`dim: ${it.dim}`);
           return `  { ${parts.join(", ")} },`;
         });
         const text = `[\n${lines.join("\n")}\n]`;
@@ -424,7 +451,7 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
         <div className="pointer-events-auto fixed bottom-5 left-1/2 z-[300] flex -translate-x-1/2 items-center gap-2 rounded-xl border border-white/[0.1] bg-space-900/95 px-3 py-2 text-xs text-fg shadow-2xl backdrop-blur-md">
           <span className="font-semibold">Decor</span>
           <span className="text-fg-muted/60">
-            {selectedId ? "drag · scroll size · arrows + [ ] rotate · ⌫ delete" : "click a prop to select"}
+            {selectedId ? "drag · scroll size · arrows + [ ] rotate · F faint · ⌫ delete" : "click a prop to select"}
           </span>
           <span className="mx-1 h-4 w-px bg-white/10" />
           <select

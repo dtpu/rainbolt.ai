@@ -115,7 +115,7 @@ export default function Home() {
       </div>
 
       {/* Decor at the page root so the editor can float above content. */}
-      <DecorLayer items={LANDING_DECOR} storageKey="landing" cameraSync />
+      <DecorLayer items={LANDING_DECOR} storageKey="landing-v2" cameraSync />
 
       {/* Navigation */}
       <Navbar currentSection={currentSection} />

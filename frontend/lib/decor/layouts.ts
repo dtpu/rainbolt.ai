@@ -17,6 +17,8 @@ export interface DecorItem {
   spin?: number;
   /** Gentle in-place bob amplitude (default 0.05). */
   bob?: number;
+  /** Render as a dark, faint background silhouette (0-1 = how visible). */
+  dim?: number;
 }
 
 // Small props tucked into the corners so they frame the globe without crowding
@@ -45,4 +47,7 @@ export const LANDING_DECOR: DecorItem[] = [
   { id: "star-tl", shape: "star", position: [-5.85, -0.64, -1.25], scale: 0.255, spin: 0.12, bob: 0.05 },
   { id: "star-bl", shape: "star", position: [-6.77, -0.67, 2.12], scale: 0.201, spin: 0.16, bob: 0.05 },
   { id: "aster-br", shape: "asteroid", position: [-6.79, 0.63, 2.2], scale: 0.147, spin: 0.25, bob: 0.07 },
+  // Faint silhouettes sunk deep behind the scene - shapes in the dark, not props.
+  { id: "ufo-bg", model: "/models/ufo.glb", position: [-7.15, 1.45, -4.4], scale: 1.5, rotation: [0.35, -0.5, 0.1], spin: 0.06, bob: 0.03, dim: 0.4 },
+  { id: "rocket-bg", model: "/models/rocket.glb", position: [-7.4, -1.15, -4.6], scale: 1.35, rotation: [0.2, 0.7, -0.35], spin: 0.05, bob: 0.03, dim: 0.32 },
 ];
