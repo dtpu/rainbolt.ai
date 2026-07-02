@@ -69,7 +69,7 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
   }, [pendingOpenId]);
 
   // Open: navigate (the globe is already focused on this session, so the next
-  // page just keeps flying — a continuation, not a remount).
+  // page just keeps flying - a continuation, not a remount).
   const handleOpen = useCallback((id: string) => {
     if (pendingOpenId) return;
     if (timerRef.current) clearTimeout(timerRef.current);

@@ -86,13 +86,14 @@ export default function WorldGlobe() {
     spinGroup.add(contentGroup);
     scene.add(spinGroup);
 
-    contentGroup.add(new THREE.Mesh(
-      new THREE.IcosahedronGeometry(1, 12),
-      new THREE.MeshStandardMaterial({
-        color: 0x0099ff, wireframe: true, displacementMap: elevMap,
-        displacementScale: 0.04, transparent: true, opacity: 0.6, metalness: 0.3, roughness: 0.7,
-      }),
-    ));
+    // Wireframe shell reads well from afar but its triangles overwhelm close-ups,
+    // so its opacity is faded down with zoom in the animate loop.
+    const wireMat = new THREE.MeshStandardMaterial({
+      color: 0x0099ff, wireframe: true, displacementMap: elevMap,
+      displacementScale: 0.04, transparent: true, opacity: 0.6, metalness: 0.3, roughness: 0.7,
+    });
+    const wireMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 12), wireMat);
+    contentGroup.add(wireMesh);
 
     // Point-cloud earth. Two layers: a base grid always on, and a denser layer
     // that fades in as you zoom (density LOD). Both share a shader that does the
@@ -107,11 +108,18 @@ export default function WorldGlobe() {
         float relief = elv * (0.02 + uZoom*0.10);                          // gentle terrain as you zoom in
         float flow = sin(uTime*1.6 + aRand*6.2831) * 0.0025;               // always-on faint shimmer
         float scatter = uZoomVel * 0.03 * sin(uTime*10.0 + aRand*6.2831);  // barely-there motion while zooming
+        // break the icosahedral lattice: jitter each dot tangentially so close
+        // zooms read as organic stippling, not a machine grid
+        float r1 = fract(sin(aRand*127.1)*43758.5453) - 0.5;
+        float r2 = fract(sin(aRand*311.7)*43758.5453) - 0.5;
+        vec3 t1 = normalize(cross(nn, vec3(0.0,1.0,0.0)) + vec3(1e-4));
+        vec3 t2 = cross(nn, t1);
+        vec3 jit = (t1*r1 + t2*r2) * 0.012;
         float d = length(nn - uTarget);                                    // chord distance to active guess
         float g = exp(-d*d*7.0);                                           // glow near the guess
         float ring = smoothstep(0.09, 0.0, abs(d - fract(uTime*0.30)*1.7)) * step(d, 1.7); // expanding rings
         vGlow = uActive * (g*(0.30 + 0.18*sin(uTime*3.0)) + ring*0.14);
-        vec3 p = position + nn * (relief + flow + scatter + vGlow*0.010);
+        vec3 p = position + jit + nn * (relief + flow + scatter + vGlow*0.010);
         vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
         vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
         gl_PointSize=size*(1.0 + uZoom*0.18); gl_Position=projectionMatrix*mvPos; }`;
@@ -363,6 +371,8 @@ export default function WorldGlobe() {
         u.uTime.value = t;
       }
       densePoints.visible = baseMat.uniforms.uZoom.value > 0.32; // density LOD: off at rest, on only when zoomed in
+      wireMat.opacity = 0.6 * Math.max(0, 1 - baseMat.uniforms.uZoom.value * 1.2); // triangles fade with zoom
+      wireMesh.visible = wireMat.opacity > 0.02; // and fully off up close
 
       if (frame % 3 === 0 && !isDragging) {
         const hit = pickPin();
