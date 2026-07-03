@@ -13,7 +13,7 @@ AI-powered geolocation: upload a photo and the system predicts where it was take
 
 ![Example reasoning: the model's thinking streamed over the retrieved evidence, with the predicted location on the globe](images/ex1.png)
 
-![Constellation view: past sessions mapped as linked stars you can drag, connect, and revisit](images/canvas.png)
+![Your world: past sessions pinned and linked on an interactive globe, with a session rail to jump back in](images/canvas.png)
 
 This document is the developer and operator guide. For the original project story, see the [Devpost submission](https://devpost.com/software/rainbolt-ai).
 
