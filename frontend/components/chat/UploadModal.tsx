@@ -107,14 +107,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     onClose();
   };
 
-  // Try a ready-made example instead of uploading your own photo.
-  const openSample = (id: string) => {
-    handleClose();
-    if (typeof document !== "undefined" && "startViewTransition" in document) {
-      (document as Document & { startViewTransition: (cb: () => void) => void })
-        .startViewTransition(() => router.push(`/chat/${id}`));
-    } else {
-      router.push(`/chat/${id}`);
+  // Load a sample photo into the form. From here it runs the REAL pipeline
+  // like any upload - the prefilled demo conversations belong only to the
+  // existing pins on the globe, never to a session the user starts.
+  const loadSample = async (s: (typeof SAMPLES)[number]) => {
+    if (!s.thumb || uploading) return;
+    setError(null);
+    try {
+      const res = await fetch(s.thumb);
+      const blob = await res.blob();
+      const name = s.thumb.split("/").pop() || "sample.jpg";
+      handleFile(new File([blob], name, { type: blob.type || "image/jpeg" }));
+      if (!title.trim()) setTitle(s.title);
+    } catch {
+      setError("Couldn't load the sample image.");
     }
   };
 
@@ -201,7 +207,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               {SAMPLES.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => openSample(s.id)}
+                  onClick={() => loadSample(s)}
                   title={s.title}
                   className="group relative aspect-square overflow-hidden rounded-lg border border-white/[0.08] bg-space-900 transition-colors hover:border-white/25"
                 >
