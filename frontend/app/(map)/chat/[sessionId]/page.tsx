@@ -10,22 +10,21 @@ import { motion } from "framer-motion";
 const EvidenceMap = dynamic(() => import("@/components/chat/EvidenceMap").then((m) => m.EvidenceMap), { ssr: false });
 import {
   ArrowLeft, ExternalLink, Home, ImagePlus,
-  Loader2, Map as MapIcon, MessageSquare, Plus, X,
+  Loader2, Map as MapIcon, Maximize2, MessageSquare, Plus, Target, X,
 } from "lucide-react";
 import { ChatHistory } from "@/components/chat/ChatHistory";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { MarkerNav } from "@/components/chat/MarkerNav";
 import { Reticle } from "@/components/ui/Reticle";
-import { DesktopOnlyNotice } from "@/components/chat/DesktopOnlyNotice";
 import { useChatStore, type Marker } from "@/components/useChatStore";
 import { useChatSession } from "@/hooks/useChatSession";
-import { useAreaPhotos } from "@/hooks/useAreaPhotos";
+import { useAreaPhotos, type AreaPhoto } from "@/hooks/useAreaPhotos";
 import { useAreaPlaces } from "@/hooks/useAreaPlaces";
 import { useGlobeStore } from "@/lib/globe/store";
 import { pinColor, confColor } from "@/lib/globe/palette";
 
 const coordLabel = (lat: number, lng: number) =>
-  `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? "N" : "S"} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? "E" : "W"}`;
+  `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? "N" : "S"} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? "E" : "W"}`;
 
 const mapsUrl = (lat: number, lng: number) =>
   `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
@@ -35,7 +34,7 @@ const streetEmbed = (lat: number, lng: number) =>
 const streetViewUrl = (lat: number, lng: number) =>
   `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
 
-type Tab = "chat" | "photos" | "places";
+type Tab = "chat" | "photos" | "places" | "result";
 
 export default function ChatPage() {
   const params    = useParams();
@@ -50,14 +49,27 @@ export default function ChatPage() {
   const previousMarker   = useChatStore((s) => s.previousMarker);
 
   const [tab, setTab] = useState<Tab>("chat");
-  const [media, setMedia] = useState<"map" | "street" | "photos">("map");
-  const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // Full-screen viewer for the analyzed photo (openable from chat + dossier).
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // Phones get a single full-width panel with the dossier as an extra tab;
+  // tracked in state (not just CSS) so the dossier (Leaflet map, Street View
+  // iframe) is only ever mounted once.
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  // The Result tab only exists on phones; fall back if the viewport grows.
+  useEffect(() => {
+    if (isDesktop && tab === "result") setTab("chat");
+  }, [isDesktop, tab]);
 
   useChatSession(sessionId);
-
-  // Back to the Map view (clear picked spot) on candidate/session change.
-  useEffect(() => { setMedia("map"); setPicked(null); }, [currentMarker, sessionId]);
 
   // Unknown id / backend down: surface an error instead of an endless spinner.
   useEffect(() => {
@@ -134,15 +146,34 @@ export default function ChatPage() {
   const handleBack = () => router.back();
 
   const TABS: { id: Tab; label: string; icon: typeof MessageSquare }[] = [
+    ...(isDesktop ? [] : [{ id: "result" as const, label: "Result", icon: Target }]),
     { id: "chat", label: "Chat", icon: MessageSquare },
     { id: "photos", label: "Photos", icon: ImagePlus },
     { id: "places", label: "Places", icon: MapIcon },
   ];
 
+  const resultPanel = (
+    <ResultPanel
+      sessionId={sessionId}
+      uploadedImageUrl={uploadedImageUrl}
+      marker={marker}
+      markers={markers}
+      currentMarker={currentMarker}
+      setCurrentMarker={setCurrentMarker}
+      loadFailed={loadFailed}
+      hasStreetView={hasStreetView}
+      areaPhotos={areaPhotos}
+      photosLoading={photosLoading}
+      mapCandidates={mapCandidates}
+      mapReferences={mapReferences}
+      onViewPhoto={setLightbox}
+    />
+  );
+
   return (
     <div className="pointer-events-none relative z-10 flex h-screen text-fg">
-      {/* ── Left: result + ranked guesses ──────────────────────────────── */}
-      <aside className="pointer-events-auto flex w-[340px] shrink-0 flex-col border-r border-white/[0.08] bg-space-950">
+      {/* ── Left: result + ranked guesses (desktop only) ─────────────────── */}
+      <aside className="pointer-events-auto hidden w-[340px] shrink-0 flex-col border-r border-white/[0.08] bg-space-950 md:flex">
         <div className="flex h-14 shrink-0 items-center border-b border-white/[0.07] px-3">
           <button
             onClick={handleBack}
@@ -153,239 +184,11 @@ export default function ChatPage() {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {/* dossier header: analyzed photo with the verdict overlaid */}
-          {uploadedImageUrl && (
-            <div className="relative aspect-[16/10] w-full overflow-hidden bg-space-900">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={uploadedImageUrl} alt="Analyzed photo" className="h-full w-full object-cover" />
-              <span className="absolute left-2.5 top-2.5 rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
-                Analyzed photo
-              </span>
-              <Reticle />
-              {marker && (
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-space-950 via-space-950/70 to-transparent px-4 pb-3 pt-10">
-                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/70">Best guess</p>
-                  <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
-                  <div className="mt-1.5 flex items-center gap-2.5">
-                    <span className="font-mono text-[11px] tabular-nums text-fg-muted">
-                      {coordLabel(marker.latitude, marker.longitude)}
-                    </span>
-                    <span className="ml-auto flex items-center gap-1.5">
-                      <span className="h-[3px] w-14 overflow-hidden rounded-full bg-white/[0.14]">
-                        <span
-                          className="block h-full rounded-full"
-                          style={{ width: `${Math.round(marker.accuracy * 100)}%`, backgroundColor: confColor(marker.accuracy) }}
-                        />
-                      </span>
-                      <span className="text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
-                        {Math.round(marker.accuracy * 100)}%
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {marker ? (
-            <div className="px-4 py-4">
-              {/* text header when there is no photo to overlay */}
-              {!uploadedImageUrl && (
-                <div className="mb-5">
-                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">Best guess</p>
-                  <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
-                  <div className="mt-2 flex items-center gap-2.5">
-                    <span className="font-mono text-[11px] tabular-nums text-fg-muted">
-                      {coordLabel(marker.latitude, marker.longitude)}
-                    </span>
-                    <span className="ml-auto text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
-                      {Math.round(marker.accuracy * 100)}%
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* key clues / evidence */}
-              {marker.clues && marker.clues.length > 0 && (
-                <div className="pt-1">
-                  <p className="mb-2.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-                    Key clues
-                  </p>
-                  <ul className="space-y-2.5">
-                    {marker.clues.map((c, i) => (
-                      <li key={i} className="flex gap-2.5 text-[13px] leading-snug">
-                        <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-fg-muted/50" />
-                        <span className="min-w-0">
-                          <span className="text-fg/85">{c.sign}</span>
-                          <span className="px-1 font-mono text-fg-muted/40">→</span>
-                          <span className="text-fg-muted">{c.implies}</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* ranked candidates */}
-              {markers.length > 1 && (
-                <div className="mt-5">
-                  <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-                    {markers.length} candidates
-                  </p>
-                  <div className="space-y-1">
-                    {markers.map((m, i) => (
-                      <GuessRow
-                        key={i}
-                        rank={i + 1}
-                        marker={m}
-                        active={i === currentMarker}
-                        onClick={() => setCurrentMarker(i)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* one media viewer: map / street view / nearby photos */}
-              <div className="mt-5 border-t border-white/[0.06] pt-4">
-                <div className="mb-2.5 flex gap-1 rounded-lg bg-white/[0.04] p-0.5 text-[11px] font-medium">
-                  {([
-                    ["map", "Map"],
-                    ...(hasStreetView ? [["street", "Street view"] as const] : []),
-                    ["photos", "Photos"],
-                  ] as const).map(([k, label]) => (
-                    <button
-                      key={k}
-                      onClick={() => setMedia(k)}
-                      className={`flex-1 rounded-md px-2 py-1 transition-colors ${
-                        media === k ? "bg-white/[0.1] text-fg" : "text-fg-muted hover:text-fg"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                {media === "photos" ? (
-                  photosLoading ? (
-                    <div className="flex h-28 items-center justify-center">
-                      <Loader2 className="h-4 w-4 animate-spin text-fg-muted/40" />
-                    </div>
-                  ) : areaPhotos.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {areaPhotos.slice(0, 6).map((p, i) => (
-                        <a
-                          key={i}
-                          href={p.full}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={p.title}
-                          className="group relative aspect-square overflow-hidden rounded-md border border-white/[0.07] bg-space-900"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={p.thumb}
-                            alt={p.title}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                            onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="py-8 text-center text-xs text-fg-muted/50">No nearby photos found</p>
-                  )
-                ) : media === "map" ? (
-                  <>
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
-                      <EvidenceMap
-                        candidates={mapCandidates}
-                        references={mapReferences}
-                        activeIndex={currentMarker}
-                        picked={picked}
-                        onSelectCandidate={setCurrentMarker}
-                        onPickPoint={(lat, lng) => {
-                          if (hasStreetView) { setPicked({ lat, lng }); setMedia("street"); }
-                          else window.open(mapsUrl(lat, lng), "_blank", "noopener");
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-[11px] text-fg-muted/65">
-                      Click a candidate to compare · click the map to {hasStreetView ? "open Street View there" : "open it in Google Maps"}.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
-                      <iframe
-                        key={`sv-${picked?.lat ?? marker.latitude},${picked?.lng ?? marker.longitude}`}
-                        title={`${marker.name} street view`}
-                        src={streetEmbed(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        className="h-full w-full border-0"
-                      />
-                    </div>
-                    <button
-                      onClick={() => { setPicked(null); setMedia("map"); }}
-                      className="mt-2 text-[11px] text-fg-muted/70 underline-offset-2 transition-colors hover:text-fg hover:underline"
-                    >
-                      ← Back to the map
-                    </button>
-                  </>
-                )}
-
-                <a
-                  href={media === "street"
-                    ? streetViewUrl(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)
-                    : mapsUrl(marker.latitude, marker.longitude)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2.5 flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  {media === "street" ? "Open Street View" : "Open in Google Maps"}
-                </a>
-              </div>
-
-              {marker.facts && (
-                <div className="mt-5 border-t border-white/[0.06] pt-4">
-                  <p className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-                    Why here
-                  </p>
-                  <p className="text-[13px] leading-relaxed text-fg/70">{marker.facts}</p>
-                </div>
-              )}
-            </div>
-          ) : loadFailed ? (
-            <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-              <MapIcon className="h-6 w-6 text-fg-muted/40" />
-              <div>
-                <p className="text-sm font-medium text-fg">This session couldn&apos;t be loaded</p>
-                <p className="mt-1 text-xs leading-relaxed text-fg-muted/60">
-                  It may have expired, or the analysis service is offline. Try a sample from the globe.
-                </p>
-              </div>
-              <Link
-                href="/learning"
-                className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-space-950 transition-colors hover:bg-white/90"
-              >
-                Back to the globe
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 px-4 py-16 text-center">
-              <Loader2 className="h-5 w-5 animate-spin text-fg-muted/40" />
-              <p className="text-sm text-fg-muted/60">Pinpointing the location…</p>
-            </div>
-          )}
-        </div>
+        {isDesktop && resultPanel}
       </aside>
 
       {/* ── Center: transparent + click-through so the globe behind is interactive ── */}
-      <div className="pointer-events-none relative min-w-0 flex-1 overflow-hidden">
+      <div className="pointer-events-none relative hidden min-w-0 flex-1 overflow-hidden md:block">
         {markers.length > 1 && (
           <MarkerNav
             currentMarker={currentMarker}
@@ -396,10 +199,19 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* ── Right: tabbed panel ────────────────────────────────────────── */}
-      <aside className="pointer-events-auto flex w-[360px] shrink-0 flex-col border-l border-white/[0.08] bg-space-950">
+      {/* ── Right: tabbed panel (the whole screen on phones) ─────────────── */}
+      <aside className="pointer-events-auto flex w-full shrink-0 flex-col bg-space-950 md:w-[360px] md:border-l md:border-white/[0.08]">
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
-          <span className="text-sm font-semibold text-fg">Rainbolt AI</span>
+          <span className="flex items-center gap-1 text-sm font-semibold text-fg">
+            <button
+              onClick={handleBack}
+              aria-label="Back"
+              className="-ml-2 mr-1 rounded-md p-1.5 text-fg-muted transition-colors hover:bg-white/[0.05] hover:text-fg md:hidden"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            Rainbolt AI
+          </span>
           <Link
             href="/"
             className="rounded-md p-1.5 text-fg-muted transition-colors hover:bg-white/[0.05] hover:text-fg"
@@ -436,8 +248,27 @@ export default function ChatPage() {
         </div>
 
         {/* tab content */}
+        {tab === "result" && !isDesktop && resultPanel}
         {tab === "chat" && (
           <>
+            {/* The photo under discussion, one tap away from full screen. */}
+            {uploadedImageUrl && (
+              <button
+                onClick={() => setLightbox(uploadedImageUrl)}
+                className="group flex shrink-0 items-center gap-2.5 border-b border-white/[0.06] px-4 py-2 text-left transition-colors hover:bg-white/[0.03]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={uploadedImageUrl}
+                  alt="Analyzed photo"
+                  className="h-8 w-8 rounded-md object-cover ring-1 ring-white/10"
+                />
+                <span className="flex-1 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                  Analyzed photo
+                </span>
+                <Maximize2 className="h-3.5 w-3.5 text-fg-muted/50 transition-colors group-hover:text-fg" />
+              </button>
+            )}
             <ChatHistory />
             <ChatComposer />
           </>
@@ -448,7 +279,289 @@ export default function ChatPage() {
         )}
       </aside>
 
-      <DesktopOnlyNotice />
+      {/* Full-screen photo viewer. z sits above Leaflet's internal panes
+          (~1000), which escape their container's stacking context. */}
+      {lightbox && (
+        <div
+          className="pointer-events-auto fixed inset-0 z-[1200] flex cursor-zoom-out items-center justify-center bg-black/90 p-4 backdrop-blur-sm md:p-10"
+          onClick={() => setLightbox(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="Analyzed photo" className="max-h-full max-w-full rounded-lg shadow-2xl" />
+          <button
+            aria-label="Close"
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white/80 transition-colors hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Result dossier: analyzed photo, clues, candidates, map/street/photos ──
+// One component so the desktop sidebar and the phone "Result" tab render the
+// exact same content (only ever mounted in one place at a time).
+function ResultPanel({
+  sessionId, uploadedImageUrl, marker, markers, currentMarker, setCurrentMarker,
+  loadFailed, hasStreetView, areaPhotos, photosLoading, mapCandidates, mapReferences,
+  onViewPhoto,
+}: {
+  sessionId: string;
+  uploadedImageUrl: string | null;
+  marker: Marker | null;
+  markers: Marker[];
+  currentMarker: number;
+  setCurrentMarker: (i: number) => void;
+  loadFailed: boolean;
+  hasStreetView: boolean;
+  areaPhotos: AreaPhoto[];
+  photosLoading: boolean;
+  mapCandidates: { name: string; lat: number; lng: number; index: number }[];
+  mapReferences: { lat: number; lng: number; thumb: string; title: string }[];
+  onViewPhoto: (src: string) => void;
+}) {
+  const [media, setMedia] = useState<"map" | "street" | "photos">("map");
+  const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Back to the Map view (clear picked spot) on candidate/session change.
+  useEffect(() => { setMedia("map"); setPicked(null); }, [currentMarker, sessionId]);
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      {/* dossier header: analyzed photo with the verdict overlaid */}
+      {uploadedImageUrl && (
+        <div className="relative aspect-[16/10] w-full overflow-hidden bg-space-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={uploadedImageUrl}
+            alt="Analyzed photo"
+            onClick={() => onViewPhoto(uploadedImageUrl)}
+            className="h-full w-full cursor-zoom-in object-cover"
+          />
+          <span className="absolute left-2.5 top-2.5 rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
+            Analyzed photo
+          </span>
+          <Reticle />
+          {marker && (
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-space-950 via-space-950/70 to-transparent px-4 pb-3 pt-10">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/70">Best guess</p>
+              <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
+              <div className="mt-1.5 flex items-center gap-2.5">
+                <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                  {coordLabel(marker.latitude, marker.longitude)}
+                </span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="h-[3px] w-14 overflow-hidden rounded-full bg-white/[0.14]">
+                    <span
+                      className="block h-full rounded-full"
+                      style={{ width: `${Math.round(marker.accuracy * 100)}%`, backgroundColor: confColor(marker.accuracy) }}
+                    />
+                  </span>
+                  <span className="text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
+                    {Math.round(marker.accuracy * 100)}%
+                  </span>
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {marker ? (
+        <div className="px-4 py-4">
+          {/* text header when there is no photo to overlay */}
+          {!uploadedImageUrl && (
+            <div className="mb-5">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">Best guess</p>
+              <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
+              <div className="mt-2 flex items-center gap-2.5">
+                <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                  {coordLabel(marker.latitude, marker.longitude)}
+                </span>
+                <span className="ml-auto text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
+                  {Math.round(marker.accuracy * 100)}%
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* key clues / evidence */}
+          {marker.clues && marker.clues.length > 0 && (
+            <div className="pt-1">
+              <p className="mb-2.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                Key clues
+              </p>
+              <ul className="space-y-2.5">
+                {marker.clues.map((c, i) => (
+                  <li key={i} className="flex gap-2.5 text-[13px] leading-snug">
+                    <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-fg-muted/50" />
+                    <span className="min-w-0">
+                      <span className="text-fg/85">{c.sign}</span>
+                      <span className="px-1 font-mono text-fg-muted/40">→</span>
+                      <span className="text-fg-muted">{c.implies}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* ranked candidates */}
+          {markers.length > 1 && (
+            <div className="mt-5">
+              <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                {markers.length} candidates
+              </p>
+              <div className="space-y-1">
+                {markers.map((m, i) => (
+                  <GuessRow
+                    key={i}
+                    rank={i + 1}
+                    marker={m}
+                    active={i === currentMarker}
+                    onClick={() => setCurrentMarker(i)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* one media viewer: map / street view / nearby photos */}
+          <div className="mt-5 border-t border-white/[0.06] pt-4">
+            <div className="mb-2.5 flex gap-1 rounded-lg bg-white/[0.04] p-0.5 text-[11px] font-medium">
+              {([
+                ["map", "Map"],
+                ...(hasStreetView ? [["street", "Street view"] as const] : []),
+                ["photos", "Photos"],
+              ] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setMedia(k)}
+                  className={`flex-1 rounded-md px-2 py-1 transition-colors ${
+                    media === k ? "bg-white/[0.1] text-fg" : "text-fg-muted hover:text-fg"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {media === "photos" ? (
+              photosLoading ? (
+                <div className="flex h-28 items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin text-fg-muted/40" />
+                </div>
+              ) : areaPhotos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {areaPhotos.slice(0, 6).map((p, i) => (
+                    <a
+                      key={i}
+                      href={p.full}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={p.title}
+                      className="group relative aspect-square overflow-hidden rounded-md border border-white/[0.07] bg-space-900"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.thumb}
+                        alt={p.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+                      />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-8 text-center text-xs text-fg-muted/50">No nearby photos found</p>
+              )
+            ) : media === "map" ? (
+              <>
+                <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
+                  <EvidenceMap
+                    candidates={mapCandidates}
+                    references={mapReferences}
+                    activeIndex={currentMarker}
+                    picked={picked}
+                    onSelectCandidate={setCurrentMarker}
+                    onPickPoint={(lat, lng) => {
+                      if (hasStreetView) { setPicked({ lat, lng }); setMedia("street"); }
+                      else window.open(mapsUrl(lat, lng), "_blank", "noopener");
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-[11px] text-fg-muted/65">
+                  Click a candidate to compare · click the map to {hasStreetView ? "open Street View there" : "open it in Google Maps"}.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/[0.07] bg-space-900">
+                  <iframe
+                    key={`sv-${picked?.lat ?? marker.latitude},${picked?.lng ?? marker.longitude}`}
+                    title={`${marker.name} street view`}
+                    src={streetEmbed(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full border-0"
+                  />
+                </div>
+                <button
+                  onClick={() => { setPicked(null); setMedia("map"); }}
+                  className="mt-2 text-[11px] text-fg-muted/70 underline-offset-2 transition-colors hover:text-fg hover:underline"
+                >
+                  ← Back to the map
+                </button>
+              </>
+            )}
+
+            <a
+              href={media === "street"
+                ? streetViewUrl(picked?.lat ?? marker.latitude, picked?.lng ?? marker.longitude)
+                : mapsUrl(marker.latitude, marker.longitude)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2.5 flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {media === "street" ? "Open Street View" : "Open in Google Maps"}
+            </a>
+          </div>
+
+          {marker.facts && (
+            <div className="mt-5 border-t border-white/[0.06] pt-4">
+              <p className="mb-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+                Why here
+              </p>
+              <p className="text-[13px] leading-relaxed text-fg/70">{marker.facts}</p>
+            </div>
+          )}
+        </div>
+      ) : loadFailed ? (
+        <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+          <MapIcon className="h-6 w-6 text-fg-muted/40" />
+          <div>
+            <p className="text-sm font-medium text-fg">This session couldn&apos;t be loaded</p>
+            <p className="mt-1 text-xs leading-relaxed text-fg-muted/60">
+              It may have expired, or the analysis service is offline. Try a sample from the globe.
+            </p>
+          </div>
+          <Link
+            href="/learning"
+            className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-space-950 transition-colors hover:bg-white/90"
+          >
+            Back to the globe
+          </Link>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-2 px-4 py-16 text-center">
+          <Loader2 className="h-5 w-5 animate-spin text-fg-muted/40" />
+          <p className="text-sm text-fg-muted/60">Pinpointing the location…</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -607,4 +720,3 @@ function PhotosTab({ analyzed }: { analyzed: string | null }) {
     </div>
   );
 }
-
