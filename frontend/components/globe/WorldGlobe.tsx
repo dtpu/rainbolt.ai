@@ -274,7 +274,13 @@ export default function WorldGlobe() {
       if (s.focusIndex != null && s.markers[s.focusIndex]) {
         const m = s.markers[s.focusIndex];
         const r = pinRotation(m.lat, m.lng);
-        flyTarget.rotY = r.rotY; flyTarget.rotX = r.rotX; flyTarget.active = true;
+        // Idle spin and drags wind rotation.y through whole turns while the
+        // pin target stays in [-pi, pi]; lift the target into the turn the
+        // globe is currently on so the fly-to takes the shortest arc instead
+        // of unwinding every accumulated 360.
+        const TAU = Math.PI * 2;
+        flyTarget.rotY = r.rotY + Math.round((spinGroup.rotation.y - r.rotY) / TAU) * TAU;
+        flyTarget.rotX = r.rotX; flyTarget.active = true;
         targetZ = ZOOM_IN;
       } else {
         flyTarget.active = false;
@@ -310,6 +316,7 @@ export default function WorldGlobe() {
     let downId: string | null = null;
     let frame = 0, raf = 0;
     let viewOffX = 0; // smoothed horizontal view-offset so the globe centers in the visible gap
+    let viewOffY = 0; // vertical twin, for the phone bottom sheet
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -345,8 +352,10 @@ export default function WorldGlobe() {
         const st = useGlobeStore.getState();
         const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
         const target = (st.panRight - st.panLeft) / 2; // +x shifts content left (toward an open left area)
+        const targetY = st.panBottom / 2;              // +y shifts content up (above a bottom sheet)
         viewOffX += (target - viewOffX) * 0.12;
-        if (Math.abs(viewOffX) > 0.5) camera.setViewOffset(w, h, viewOffX, 0, w, h);
+        viewOffY += (targetY - viewOffY) * 0.12;
+        if (Math.abs(viewOffX) > 0.5 || Math.abs(viewOffY) > 0.5) camera.setViewOffset(w, h, viewOffX, viewOffY, w, h);
         else camera.clearViewOffset();
       }
 
@@ -356,8 +365,17 @@ export default function WorldGlobe() {
       } else if (!isDragging && hoveredId === null) {
         spinGroup.rotation.y += 0.0009;
       }
+      // The zoom targets are tuned for a landscape canvas where the globe is
+      // framed against the height. On phones the visible area (narrow, and
+      // shortened by the bottom sheet) is width-bound instead, so push the
+      // camera out proportionally to keep the whole globe in frame.
+      const st2 = useGlobeStore.getState();
+      const ch = renderer.domElement.clientHeight || 1;
+      const cw = renderer.domElement.clientWidth || 1;
+      const visMin = Math.min(cw, Math.max(1, ch - st2.panBottom));
+      const fitScale = Math.max(1, (ch / visMin) * 0.98);
       const prevZ = camera.position.z;
-      camera.position.z += (targetZ - camera.position.z) * 0.22; // snappy, google-maps-style zoom
+      camera.position.z += (targetZ * fitScale - camera.position.z) * 0.22; // snappy, google-maps-style zoom
 
       // Keep markers a constant on-screen size (scale with distance, not perspective).
       const pinScale = camera.position.z / ZOOM_OUT;
@@ -418,12 +436,31 @@ export default function WorldGlobe() {
     };
     animate();
 
-    const setPointer = (e: MouseEvent) => {
+    const setPointer = (e: PointerEvent) => {
       const r = renderer.domElement.getBoundingClientRect();
       pointer.set(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * -2 + 1);
     };
-    const onMove = (e: MouseEvent) => {
+    // Pointer events cover mouse AND touch (drag to spin, tap to pick). Two
+    // touch pointers at once turn into a pinch that drives the zoom target.
+    const touches = new Map<number, { x: number; y: number }>();
+    let pinchDist = 0;
+    const touchDist = () => {
+      const [a, b] = [...touches.values()];
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    };
+    const onMove = (e: PointerEvent) => {
       setPointer(e);
+      if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size === 2) {
+        const d = touchDist();
+        if (pinchDist > 0) {
+          targetZ = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZ - (d - pinchDist) * 0.02));
+          flyTarget.active = false;
+        }
+        pinchDist = d;
+        isDragging = false;
+        return;
+      }
       if (isDragging) {
         const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
         if (Math.abs(dx) + Math.abs(dy) > 2) { moved = true; flyTarget.active = false; }
@@ -432,8 +469,16 @@ export default function WorldGlobe() {
         prev = { x: e.clientX, y: e.clientY };
       }
     };
-    const onDown = (e: MouseEvent) => { setPointer(e); downId = pickPin()?.id ?? null; isDragging = true; moved = false; prev = { x: e.clientX, y: e.clientY }; };
-    const onUp = () => {
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size >= 2) { pinchDist = 0; isDragging = false; return; }
+      setPointer(e);
+      downId = pickPin()?.id ?? null; isDragging = true; moved = false; prev = { x: e.clientX, y: e.clientY };
+    };
+    const onUp = (e: PointerEvent) => {
+      touches.delete(e.pointerId);
+      pinchDist = 0;
+      if (touches.size > 0) return; // still mid-pinch with the other finger down
       if (!moved && downId) {
         const hit = pickPin();
         if (hit && hit.id === downId) useGlobeStore.getState().onPick?.(hit.id, hit.index);
@@ -443,9 +488,11 @@ export default function WorldGlobe() {
     const onWheel = (e: WheelEvent) => { e.preventDefault(); targetZ = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, targetZ + e.deltaY * 0.004)); flyTarget.active = false; };
 
     const el = renderer.domElement;
-    el.addEventListener("mousemove", onMove);
-    el.addEventListener("mousedown", onDown);
-    window.addEventListener("mouseup", onUp);
+    el.style.touchAction = "none"; // the globe owns its touch gestures
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     el.addEventListener("wheel", onWheel, { passive: false });
 
     const ro = new ResizeObserver(() => {
@@ -460,9 +507,10 @@ export default function WorldGlobe() {
       cancelAnimationFrame(raf);
       unsub();
       ro.disconnect();
-      el.removeEventListener("mousemove", onMove);
-      el.removeEventListener("mousedown", onDown);
-      window.removeEventListener("mouseup", onUp);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       el.removeEventListener("wheel", onWheel);
       for (const l of labelEls) l.el.remove();
       if (mount.contains(labelLayer)) mount.removeChild(labelLayer);
