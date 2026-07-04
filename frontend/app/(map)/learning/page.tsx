@@ -38,7 +38,9 @@ export default function LearningPage() {
   useEffect(() => {
     if (isLoading) return;
     if (typeof window !== "undefined") {
-      const tour = new URLSearchParams(window.location.search).get("tour");
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("decor")) return; // decor editor needs the screen
+      const tour = params.get("tour");
       if (tour === "off") return; // escape hatch (e.g. screenshots / previews)
       if (tour !== null) {
         setShowHowTo(true);

@@ -84,12 +84,16 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
 
   // Push this page's data + interaction handlers into the shared globe.
   useEffect(() => {
+    // Phones: the rail is a bottom sheet, not a side panel, so the globe
+    // keeps the full width and doesn't need a horizontal offset.
+    const railAside = typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
     useGlobeStore.getState().configure({
       markers,
       arcs,
       labels: placed.map((p) => ({ name: p.place.name || p.session.title, lat: p.place.lat, lng: p.place.lng, rank: 0 })),
       panLeft: 0,
-      panRight: 340, // the rail
+      panRight: railAside ? 340 : 0, // the rail
+      panBottom: railAside ? 0 : Math.round(window.innerHeight * 0.46), // the bottom sheet
       mode: "constellation",
       onHover: (id) => hoverRef.current(id),
       onPick: (id) => selectRef.current(id),
@@ -116,7 +120,8 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
   const selectedEntry = selectedId ? placed.find(p => p.session.id === selectedId) : null;
 
   return (
-    <div className="pointer-events-none relative z-10 flex h-screen w-full overflow-hidden">
+    // Phones stack: globe on top, the rail as a full-width bottom sheet.
+    <div className="pointer-events-none relative z-10 flex h-screen w-full flex-col overflow-hidden md:flex-row">
       {/* Globe area - transparent + click-through so the globe behind is interactive */}
       <div className="pointer-events-none relative min-w-0 flex-1 overflow-hidden">
         <Link
@@ -129,7 +134,7 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
           <span className="text-lg font-semibold tracking-tight">rainbolt.ai</span>
         </Link>
         <div
-          className="pointer-events-none absolute bottom-8 left-8 z-20 transition-all duration-700"
+          className="pointer-events-none absolute bottom-4 left-6 z-20 transition-all duration-700 md:bottom-8 md:left-8"
           style={{
             textShadow: "0 2px 16px rgba(5,7,15,0.95)",
             opacity: entered ? 1 : 0,
@@ -148,7 +153,10 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
           </p>
         </div>
 
-        <DecorLayer items={LEARNING_DECOR} storageKey="learning" />
+        {/* Decor assumes a wide sky; skip it (and its WebGL cost) on phones. */}
+        <div className="hidden md:block">
+          <DecorLayer items={LEARNING_DECOR} storageKey="learning" />
+        </div>
 
         {/* Floating session preview - opens to the left of the globe */}
         {selectedEntry && !pendingOpenId && (
@@ -164,11 +172,11 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
 
       {/* Rail */}
       <aside
-        className="pointer-events-auto flex w-[340px] shrink-0 flex-col overflow-hidden border-l border-white/[0.08] bg-space-950 transition-all duration-500"
+        className="pointer-events-auto flex h-[46%] w-full shrink-0 flex-col overflow-hidden rounded-t-2xl border-t border-white/[0.08] bg-space-950 transition-all duration-500 md:h-auto md:w-[340px] md:rounded-none md:border-l md:border-t-0"
         style={{ opacity: entered ? 1 : 0, transform: entered ? "translateX(0)" : "translateX(16px)" }}
       >
         {/* Account header */}
-        <div className="flex h-[68px] shrink-0 items-center justify-end border-b border-white/[0.06] px-4">
+        <div className="flex h-14 shrink-0 items-center justify-end border-b border-white/[0.06] px-4 md:h-[68px]">
           <LoginComponent />
         </div>
 
@@ -255,7 +263,7 @@ function SessionPreview({
     : "#e5373e";
 
   return (
-    <div className="pointer-events-auto absolute left-6 top-1/2 z-30 flex w-[300px] -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-space-900/95 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left-2 duration-200">
+    <div className="pointer-events-auto absolute left-1/2 top-1/2 z-30 flex w-[calc(100%-2.5rem)] max-w-[300px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-space-900/95 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left-2 duration-200 md:left-6 md:w-[300px] md:translate-x-0">
       {/* Hero image */}
       {place.thumb && (
         <div className="relative aspect-video w-full overflow-hidden">
