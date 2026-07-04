@@ -27,35 +27,51 @@ export function loadHatchTextures() {
   return { hatchTex, paperTex };
 }
 
-export function createHatchMaterial(dpr: number) {
+export function createHatchMaterial(dpr: number, alpha = 1) {
   const { hatchTex, paperTex } = loadHatchTextures();
   const L1 = new THREE.Vector3(0.5, 0.85, 0.7).normalize();
 
   // Opaque + depth-writing so props are solid and near surfaces correctly
-  // occlude far ones (e.g. a planet hides the back of its own ring).
+  // occlude far ones (e.g. a planet hides the back of its own ring). With
+  // alpha < 1 the same look renders as a see-through "ghost" prop instead.
   const material = new THREE.ShaderMaterial({
+    transparent: alpha < 1,
+    depthWrite: alpha >= 1,
     uniforms: {
       hatchTex: { value: hatchTex },
       paperTex: { value: paperTex },
       uL1: { value: L1 },
       uTime: { value: 0 },
+      uAlpha: { value: alpha },
       uHscale: { value: 300.0 * dpr },
     },
     vertexShader: `
       varying vec3 vN;
+      varying vec3 vP;
       void main(){
-        vN = normalize(mat3(modelMatrix) * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        // View-space normal: the hatch light rides with the camera, so props
+        // read lit from any view (the landing camera orbits; a world-space
+        // light left it staring at their shadow side).
+        vN = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vP = mv.xyz;
+        gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
       precision highp float;
       uniform sampler2D hatchTex, paperTex;
       uniform vec3  uL1;
-      uniform float uTime, uHscale;
+      uniform float uTime, uHscale, uAlpha;
       varying vec3  vN;
+      varying vec3  vP;
       void main(){
         vec3 N = normalize(vN);
-        float ndl = max(dot(N, normalize(uL1)), 0.0);
+        // Headlight with a fixed up-right bias: lighting follows each
+        // fragment's own view ray, so props at the frustum's edge stay lit
+        // (a fixed view-space light read whole edge props as shadow), while
+        // the uL1 bias keeps the shading directional rather than flat.
+        vec3 V = normalize(-vP);
+        float ndl = max(dot(N, normalize(V + normalize(uL1) * 0.55)), 0.0);
         float shade = clamp(ndl * 0.85 + 0.18, 0.0, 1.0);
         float t = 1.0 - shade;
         // BOIL: each frame samples a different region + rotation of the sheet.
@@ -69,7 +85,7 @@ export function createHatchMaterial(dpr: number) {
         float m1 = m0 * mix(1.0, hx.g, i1);
         float m2 = m1 * mix(1.0, hx.b, i2);
         vec3 paper = vec3(0.93) * mix(vec3(1.0), texture2D(paperTex, gl_FragCoord.xy / 620.0).rgb, 0.12);
-        gl_FragColor = vec4(mix(vec3(0.04), paper, clamp(m2, 0.0, 1.0)), 1.0);
+        gl_FragColor = vec4(mix(vec3(0.04), paper, clamp(m2, 0.0, 1.0)), uAlpha);
       }`,
   });
 
