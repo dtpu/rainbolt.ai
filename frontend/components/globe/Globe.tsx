@@ -72,7 +72,10 @@ export default function EarthScene({
     camera.position.set(7, 0, 4);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Transparent canvas so the CSS nebula/aurora layers behind it show
+    // through the empty sky (the scene draws its own stars).
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
     // Cap pixel ratio: on retina/HiDPI screens an uncapped ratio (2+) renders the
     // full-screen globe at 4x+ the pixels, which is the main source of lag. 1.5 is

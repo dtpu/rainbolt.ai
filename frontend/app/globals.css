@@ -135,3 +135,55 @@ body {
 .leaflet-touch .leaflet-bar a {
   font-size: 18px;
 }
+
+/* Landing aurora: two huge blurred colour ribbons drifting through the empty
+   middle of the hero sky. Pure decoration - kept dim and slow so they read as
+   atmosphere, not an object. */
+.aurora-ribbon {
+  pointer-events: none;
+  position: absolute;
+  left: -20%;
+  width: 140%;
+  filter: blur(48px);
+  will-change: transform, opacity;
+}
+.aurora-a {
+  top: 36%;
+  height: 220px;
+  transform: rotate(-12deg);
+  background: linear-gradient(
+    100deg,
+    transparent 8%,
+    rgba(143, 184, 216, 0.14) 32%,
+    rgba(94, 234, 212, 0.08) 58%,
+    transparent 88%
+  );
+  animation: aurora-drift-a 26s ease-in-out infinite alternate;
+}
+.aurora-b {
+  top: 54%;
+  height: 170px;
+  transform: rotate(7deg);
+  background: linear-gradient(
+    95deg,
+    transparent 10%,
+    rgba(232, 180, 79, 0.085) 38%,
+    rgba(167, 139, 250, 0.07) 64%,
+    transparent 90%
+  );
+  animation: aurora-drift-b 34s ease-in-out infinite alternate;
+  animation-delay: -12s;
+}
+@keyframes aurora-drift-a {
+  from { transform: rotate(-12deg) translate3d(-3%, 0, 0); opacity: 0.65; }
+  50%  { opacity: 1; }
+  to   { transform: rotate(-10deg) translate3d(3%, -14px, 0); opacity: 0.75; }
+}
+@keyframes aurora-drift-b {
+  from { transform: rotate(7deg) translate3d(2.5%, 0, 0); opacity: 0.6; }
+  50%  { opacity: 1; }
+  to   { transform: rotate(5deg) translate3d(-2.5%, 12px, 0); opacity: 0.7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-ribbon { animation: none; }
+}

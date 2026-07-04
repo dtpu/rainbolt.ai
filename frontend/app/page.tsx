@@ -14,6 +14,10 @@ export default function Home() {
   const [photoCount, setPhotoCount] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
   const heroSectionRef = useRef<HTMLElement>(null);
+  // Decor props are hero scenery; with ?decor (placement editor) they stay put.
+  const [decorEditing] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("decor"),
+  );
 
   const handleIntersection = (entries: IntersectionObserverEntry[]) => {
     entries.forEach((entry) => {
@@ -97,25 +101,50 @@ export default function Home() {
   }, [hasAnimated]); // Include hasAnimated to prevent stale closure
 
   return (
-    <div className="relative h-screen overflow-y-auto snap-y snap-mandatory scroll-smooth">
-      {/* Background Elements */}
-      <div className="fixed inset-0 z-0">
+    // Section snapping is desktop-only: on phones the sections grow past one
+    // screen, and mandatory snap would trap the scroll mid-section.
+    <div className="relative h-screen overflow-y-auto scroll-smooth md:snap-y md:snap-mandatory">
+      {/* Background Elements (solid dark base - the WebGL canvas above it is
+          transparent so the nebula/aurora layers can show through) */}
+      <div className="fixed inset-0 z-0 bg-space-950">
         {/* Faint nebula tint so the space between props isn't flat black */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
             background:
               "radial-gradient(ellipse 55% 45% at 22% 30%, rgba(143,184,216,0.06), transparent 70%)," +
+              "radial-gradient(ellipse 40% 32% at 48% 46%, rgba(143,184,216,0.05), transparent 70%)," +
               "radial-gradient(ellipse 50% 40% at 80% 68%, rgba(232,180,79,0.045), transparent 70%)",
           }}
         />
+        {/* Slow aurora ribbons through the middle of the sky - colour and
+            motion for the empty centre without adding any objects */}
+        <div className="aurora-ribbon aurora-a" />
+        <div className="aurora-ribbon aurora-b" />
         <EarthScene markers={[]} currentSection={currentSection} />
         {/* Vignette Effect */}
         <div className="vignette" />
       </div>
 
-      {/* Decor at the page root so the editor can float above content. */}
-      <DecorLayer items={LANDING_DECOR} storageKey="landing-v2" cameraSync />
+      {/* Decor at the page root so the editor can float above content. The
+          props belong to the hero sky - scrolling on, the whole layer scales
+          up from the viewport centre so every prop flies off radially past
+          the viewer (and flies back in when you return to the top). */}
+      {decorEditing ? (
+        <DecorLayer items={LANDING_DECOR} storageKey="landing-v3" cameraSync />
+      ) : (
+        // NB: the wrapper must be fixed inset-0 itself - its transform makes
+        // it the containing block for the layer's fixed-positioned canvas.
+        // Hidden on phones: the corner placements assume a wide viewport, and
+        // the second WebGL layer is a real cost on mobile GPUs.
+        <div
+          className={`pointer-events-none fixed inset-0 z-0 hidden transform-gpu transition-all duration-1000 ease-in-out md:block ${
+            currentSection === 0 ? "scale-100 opacity-100" : "scale-150 opacity-0"
+          }`}
+        >
+          <DecorLayer items={LANDING_DECOR} storageKey="landing-v3" cameraSync />
+        </div>
+      )}
 
       {/* Navigation */}
       <Navbar currentSection={currentSection} />
@@ -124,21 +153,21 @@ export default function Home() {
       <section
         ref={heroSectionRef}
         data-section-id="0"
-        className="relative h-screen snap-start"
+        className="relative h-screen md:snap-start"
       >
         <div className="absolute inset-0 pointer-events-none" />
         <div className="absolute inset-0 flex items-center z-[60]">
           <div className="container mx-auto">
             <div className="max-w-3xl px-4">
-              <h1 className="text-6xl md:text-7xl font-bold mb-8 leading-[1.05] tracking-tight text-left text-white">
+              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 md:mb-8 leading-[1.1] md:leading-[1.05] tracking-tight text-left text-white">
                 Bolt around the world with{" "}
                 <span className="bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 bg-clip-text text-transparent">
                   rainbolt.ai
                 </span>
               </h1>
-              <p className="text-[1.4rem] text-white/80 text-left max-w-xl">
+              <p className="text-lg md:text-[1.4rem] text-white/80 text-left max-w-xl">
                 Powered by{" "}
-                <span className="font-mono text-[1.6rem] font-bold tabular-nums text-white">
+                <span className="font-mono text-xl md:text-[1.6rem] font-bold tabular-nums text-white">
                   {formatNumber(photoCount)}
                 </span>{" "}
                 geotagged photos and expert geolocation strategies, we turn
@@ -170,14 +199,16 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
+      {/* On phones each section's content flows and grows past one screen, so
+          the absolute-centering (and the fixed section height) is md-only. */}
       <section
         id="features"
         data-section-id="1"
-        className="relative h-screen snap-start"
+        className="relative md:h-screen md:snap-start"
       >
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex min-h-screen items-center justify-center py-24 md:absolute md:inset-0 md:min-h-0 md:py-0">
           <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold text-white mb-16 text-center [text-shadow:0_0_5px_rgba(255,255,255,0.3)]">
+            <h2 className="text-4xl font-bold text-white mb-10 md:mb-16 text-center [text-shadow:0_0_5px_rgba(255,255,255,0.3)]">
               Features
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
@@ -255,10 +286,10 @@ export default function Home() {
       <section
         id="about"
         data-section-id="2"
-        className="relative h-screen snap-start"
+        className="relative md:h-screen md:snap-start"
       >
-        <div className="absolute inset-0 flex items-center justify-end pr-12">
-          <div className="max-w-2xl bg-white/10 backdrop-blur-md rounded-lg p-8 border border-white/20 space-y-4 overflow-y-auto max-h-[80vh]">
+        <div className="flex min-h-screen items-center justify-center px-4 py-24 md:absolute md:inset-0 md:min-h-0 md:justify-end md:px-0 md:py-0 md:pr-12">
+          <div className="max-w-2xl bg-white/10 backdrop-blur-md rounded-lg p-6 md:p-8 border border-white/20 space-y-4 overflow-y-auto max-h-none md:max-h-[80vh]">
             <h2 className="text-2xl font-bold text-white mb-4">
               About{" "}
               <span className="bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 bg-clip-text text-transparent">
@@ -330,15 +361,15 @@ export default function Home() {
       <section
         id="team"
         data-section-id="3"
-        className="relative h-screen snap-start"
+        className="relative md:h-screen md:snap-start"
       >
-        <div className="absolute inset-0 flex items-center justify-start pl-16 w-full">
-          <div className="flex flex-col items-start w-full">
-            <h2 className="text-5xl font-bold text-white mb-12">
+        <div className="flex min-h-screen items-center justify-center px-4 py-24 md:absolute md:inset-0 md:min-h-0 md:justify-start md:px-0 md:py-0 md:pl-16">
+          <div className="flex flex-col items-center md:items-start w-full">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 md:mb-12">
               Meet Our Team
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center w-52">
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
+              <div className="p-4 md:p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center md:w-52">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
                   <img
                     src="/IMG_0628.jpg"
@@ -349,7 +380,7 @@ export default function Home() {
                 <h3 className="text-xl font-bold text-white mb-2">Daniel Pu</h3>
                 <p className="text-white/80">UW CS</p>
               </div>
-              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
+              <div className="p-4 md:p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
                   <img
                     src="/IMG_0623.jpg"
@@ -360,7 +391,7 @@ export default function Home() {
                 <h3 className="text-xl font-bold text-white mb-2">Evan Yang</h3>
                 <p className="text-white/80">UW SYDE</p>
               </div>
-              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
+              <div className="p-4 md:p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
                   <img
                     src="/IMG_0627.jpg"
@@ -373,7 +404,7 @@ export default function Home() {
                 </h3>
                 <p className="text-white/80">UW CFM</p>
               </div>
-              <div className="p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
+              <div className="p-4 md:p-6 bg-white/5 rounded-lg backdrop-blur-sm text-center">
                 <div className="w-20 h-20 rounded-full bg-white/10 mx-auto mb-4 overflow-hidden">
                   <img
                     src="/IMG_0625.jpg"
@@ -395,7 +426,7 @@ export default function Home() {
       <section
         id="contact"
         data-section-id="4"
-        className="relative h-screen snap-start"
+        className="relative md:h-screen md:snap-start"
       >
         {/* Star Constellations Background */}
         <div className="absolute inset-0 z-0 pointer-events-none">
@@ -536,9 +567,9 @@ export default function Home() {
           </svg>
         </div>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 z-10">
+        <div className="relative flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-24 z-10 md:absolute md:inset-0 md:min-h-0 md:px-0 md:py-0">
           <h2
-            className={`text-5xl font-bold text-white [text-shadow:0_0_5px_rgba(255,255,255,0.3)] ${currentSection === 4 ? "animate-slide-in" : "opacity-0"}`}
+            className={`text-4xl md:text-5xl font-bold text-white [text-shadow:0_0_5px_rgba(255,255,255,0.3)] ${currentSection === 4 ? "animate-slide-in" : "opacity-0"}`}
           >
             Tech Stack
           </h2>
