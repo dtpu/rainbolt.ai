@@ -52,12 +52,22 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
   const [addType, setAddType] = useState<string>("planet");
   const [, forceTick] = useState(0);
 
+  // Position sliders travel around where the prop sat when selected; snapshot
+  // that origin so the ranges don't re-center under the thumb mid-drag.
+  const posBase = useRef<[number, number, number] | null>(null);
+  useEffect(() => {
+    const it = api.current?.getSelected();
+    posBase.current = it ? ([...it.position] as [number, number, number]) : null;
+  }, [selectedId]);
+
   // Imperative handles the React toolbar calls into.
   const api = useRef<{
     addItem: (spec: string) => void;
     deleteSelected: () => void;
     copyLayout: () => void;
     resetLayout: () => void;
+    getSelected: () => DecorItem | null;
+    updateSelected: (patch: Partial<DecorItem>) => void;
   } | null>(null);
 
   useEffect(() => {
@@ -94,9 +104,10 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder); // models are meshopt-compressed
 
-    // Working set of items: from localStorage in edit mode, else the props.
+    // Working set of items: a layout saved from the editor wins over the baked
+    // props, in or out of edit mode, so the page always matches the editor.
     let working: DecorItem[] = items.map((it) => ({ ...it }));
-    if (isEdit && storageKey) {
+    if (storageKey) {
       try {
         const saved = localStorage.getItem(`decor-layout-${storageKey}`);
         if (saved) working = JSON.parse(saved);
@@ -112,17 +123,15 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
     scene.add(selectBox);
     let selected: Holder | null = null;
 
-    // Dim props render as dark, faint silhouettes sunk into the background
-    // instead of the bright hatched look.
-    const matFor = (item: DecorItem): THREE.Material =>
-      item.dim
-        ? new THREE.MeshBasicMaterial({
-            color: 0x627596, // ghost blue-grey; on black it lands as a dark shape, not invisible
-            transparent: true,
-            opacity: Math.min(1, Math.max(0.05, item.dim)),
-            depthWrite: false,
-          })
-        : material;
+    // Dim props keep the normal hatched look but render see-through: same
+    // shader with alpha, so they read as ghost props rather than blue shadows.
+    const ghostMats: THREE.ShaderMaterial[] = [];
+    const matFor = (item: DecorItem): THREE.Material => {
+      if (!item.dim) return material;
+      const m = createHatchMaterial(dpr, Math.min(1, Math.max(0.05, item.dim)));
+      ghostMats.push(m);
+      return m;
+    };
 
     const buildOne = (item: DecorItem, i: number) => {
       const group = new THREE.Group();
@@ -140,7 +149,18 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
           item.model,
           (gltf) => {
             gltf.scene.traverse((o) => {
-              if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = mat;
+              if ((o as THREE.Mesh).isMesh) {
+                const mesh = o as THREE.Mesh;
+                // The hatch shader needs facets: a GLB's smooth normals shade
+                // as one continuous mid-gray gradient, which the shader turns
+                // into stripes over the whole surface. Flat face normals give
+                // the big white planes + inked shadow faces the procedural
+                // props have.
+                let g = mesh.geometry as THREE.BufferGeometry;
+                if (g.index) g = mesh.geometry = g.toNonIndexed();
+                g.computeVertexNormals();
+                mesh.material = mat;
+              }
             });
             const box = new THREE.Box3().setFromObject(gltf.scene);
             const ctr = box.getCenter(new THREE.Vector3());
@@ -238,13 +258,15 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
       }
     };
     const onUp = () => {
-      if (dragging) { dragging = false; persist(); }
+      if (dragging) { dragging = false; persist(); forceTick((n) => n + 1); } // refresh slider values
     };
     const onWheel = (e: WheelEvent) => {
       if (!isEdit || !selected) return;
       e.preventDefault();
       const f = Math.exp(-e.deltaY * 0.0012);
-      const s = Math.max(0.05, Math.min(3, selected.item.scale * f));
+      // Cap high enough that a prop can dwarf the viewport - a giant rim or
+      // ring edge poking into frame is a legitimate composition.
+      const s = Math.max(0.05, Math.min(60, selected.item.scale * f));
       selected.item.scale = +s.toFixed(3);
       selectBox.setFromObject(selected.group);
       persist();
@@ -346,6 +368,7 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
           parts.push(`scale: ${it.scale}`);
           if (it.rotation) parts.push(`rotation: [${it.rotation.map((n) => +n.toFixed(2)).join(", ")}]`);
           if (it.spin != null) parts.push(`spin: ${it.spin}`);
+          if (it.spinAxis != null) parts.push(`spinAxis: ${JSON.stringify(it.spinAxis)}`);
           if (it.bob != null) parts.push(`bob: ${it.bob}`);
           if (it.dim != null) parts.push(`dim: ${it.dim}`);
           return `  { ${parts.join(", ")} },`;
@@ -357,6 +380,20 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
       resetLayout: () => {
         if (storageKey) localStorage.removeItem(`decor-layout-${storageKey}`);
         window.location.reload();
+      },
+      getSelected: () => selected?.item ?? null,
+      // Slider-driven edits: write the patch into the item and mirror it onto
+      // the three.js objects (the animate loop owns y-bob + spin, so position
+      // goes through baseY and rotation sits on the outer group).
+      updateSelected: (patch) => {
+        if (!selected) return;
+        Object.assign(selected.item, patch);
+        const it = selected.item;
+        selected.group.position.set(...it.position);
+        selected.baseY = it.position[1];
+        if (it.rotation) selected.group.rotation.set(...it.rotation);
+        selectBox.setFromObject(selected.group);
+        persist();
       },
     };
 
@@ -382,6 +419,7 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
       }
 
       material.userData.update(t);
+      for (const g of ghostMats) g.userData.update(t);
       for (const hld of holders) {
         // Props (incl. async-loaded models) scale in from nothing once ready.
         if (hld.spinObj && hld.born === undefined) hld.born = t;
@@ -389,8 +427,16 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
         hld.group.scale.setScalar(hld.item.scale * easeOut(k));
         hld.group.position.y = hld.baseY + Math.sin(t * 0.6 + hld.phase) * (hld.item.bob ?? 0.05);
         if (hld.spinObj) {
-          hld.spinObj.rotation.y = t * (hld.item.spin ?? 0.15);
-          hld.spinObj.rotation.x = Math.sin(t * 0.25 + hld.phase) * 0.2;
+          const axis = hld.item.spinAxis ?? "y";
+          hld.spinObj.rotation.set(0, 0, 0);
+          if (axis !== "none") {
+            hld.spinObj.rotation[axis] = t * (hld.item.spin ?? 0.15);
+            // The gentle x-wobble is part of the legacy default-y look only;
+            // an explicit axis choice means "exactly this motion".
+            if (hld.item.spinAxis === undefined) {
+              hld.spinObj.rotation.x = Math.sin(t * 0.25 + hld.phase) * 0.2;
+            }
+          }
         }
       }
       if (selected) selectBox.setFromObject(selected.group);
@@ -484,6 +530,107 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
           </button>
         </div>
       )}
+
+      {/* Per-prop inspector: slider-driven transform/rotation + spin axis. */}
+      {editing && selectedId && (() => {
+        const it = api.current?.getSelected();
+        if (!it) return null;
+        const rot = it.rotation ?? ([0, 0, 0] as [number, number, number]);
+        const base = posBase.current ?? it.position;
+        const upd = (patch: Partial<DecorItem>) => {
+          api.current?.updateSelected(patch);
+          forceTick((n) => n + 1);
+        };
+        // Log-scaled slider so tiny props keep precision while 60x giants fit.
+        const S_MIN = 0.05, S_MAX = 60;
+        const toT = (v: number) => Math.log(v / S_MIN) / Math.log(S_MAX / S_MIN);
+        const fromT = (t: number) => +(S_MIN * Math.pow(S_MAX / S_MIN, t)).toFixed(3);
+        const AXES = ["x", "y", "z"] as const;
+        return (
+          <div className="pointer-events-auto fixed right-4 top-24 z-[300] w-64 space-y-3 rounded-xl border border-white/[0.1] bg-space-900/95 p-3.5 text-xs text-fg shadow-2xl backdrop-blur-md">
+            <p className="truncate font-semibold">{it.id}</p>
+
+            <label className="block">
+              <span className="mb-1 flex justify-between text-fg-muted">
+                <span>Scale</span>
+                <span className="font-mono">{it.scale}</span>
+              </span>
+              <input
+                type="range" min={0} max={1} step={0.001} value={toT(it.scale)}
+                onChange={(e) => upd({ scale: fromT(+e.target.value) })}
+                className="w-full accent-sky-400"
+              />
+            </label>
+
+            <div>
+              <p className="mb-1 text-fg-muted">Position</p>
+              {AXES.map((ax, i) => (
+                <label key={ax} className="mb-1 flex items-center gap-2">
+                  <span className="w-3 font-mono uppercase text-fg-muted/70">{ax}</span>
+                  <input
+                    type="range" min={base[i] - 4} max={base[i] + 4} step={0.01} value={it.position[i]}
+                    onChange={(e) => {
+                      const p = [...it.position] as [number, number, number];
+                      p[i] = +e.target.value;
+                      upd({ position: p });
+                    }}
+                    className="w-full accent-sky-400"
+                  />
+                  <span className="w-11 text-right font-mono text-fg-muted">{it.position[i].toFixed(2)}</span>
+                </label>
+              ))}
+            </div>
+
+            <div>
+              <p className="mb-1 text-fg-muted">Rotation</p>
+              {AXES.map((ax, i) => (
+                <label key={ax} className="mb-1 flex items-center gap-2">
+                  <span className="w-3 font-mono uppercase text-fg-muted/70">{ax}</span>
+                  <input
+                    type="range" min={-Math.PI} max={Math.PI} step={0.01} value={rot[i]}
+                    onChange={(e) => {
+                      const r = [...rot] as [number, number, number];
+                      r[i] = +e.target.value;
+                      upd({ rotation: r });
+                    }}
+                    className="w-full accent-sky-400"
+                  />
+                  <span className="w-11 text-right font-mono text-fg-muted">{rot[i].toFixed(2)}</span>
+                </label>
+              ))}
+            </div>
+
+            <div>
+              <p className="mb-1 text-fg-muted">Spin</p>
+              <div className="mb-1.5 flex gap-1">
+                {(["none", "x", "y", "z"] as const).map((ax) => (
+                  <button
+                    key={ax}
+                    onClick={() => upd({ spinAxis: ax })}
+                    className={`flex-1 rounded-md px-1.5 py-1 font-medium uppercase transition-colors ${
+                      (it.spinAxis ?? "y") === ax
+                        ? "bg-white/[0.14] text-fg"
+                        : "bg-white/[0.04] text-fg-muted hover:text-fg"
+                    }`}
+                  >
+                    {ax}
+                  </button>
+                ))}
+              </div>
+              <label className="flex items-center gap-2">
+                <span className="text-fg-muted/70">speed</span>
+                <input
+                  type="range" min={0} max={1} step={0.01} value={it.spin ?? 0.15}
+                  disabled={(it.spinAxis ?? "y") === "none"}
+                  onChange={(e) => upd({ spin: +e.target.value })}
+                  className="w-full accent-sky-400 disabled:opacity-30"
+                />
+                <span className="w-11 text-right font-mono text-fg-muted">{(it.spin ?? 0.15).toFixed(2)}</span>
+              </label>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
