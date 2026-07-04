@@ -8,7 +8,7 @@ import { ChatMessage } from "./ChatMessage";
 import { useChatStore } from "../useChatStore";
 
 export function ChatHistory() {
-  const { messages, sending, thinking } = useChatStore();
+  const { messages, sending, thinking, markers } = useChatStore();
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -45,7 +45,7 @@ export function ChatHistory() {
           onScroll={handleScroll}
           className="h-full px-3 py-4"
         >
-          {messages.length === 0 && (
+          {messages.length === 0 && !thinking && (
             <div className="flex h-full items-center justify-center">
               <p className="text-xs text-white/20">Upload an image to get started</p>
             </div>
@@ -60,6 +60,7 @@ export function ChatHistory() {
                 ts={msg.ts}
                 type={msg.type}
                 image={msg.image}
+                evidence={msg.evidenceIndex != null ? markers[msg.evidenceIndex] : undefined}
               />
             ))}
 

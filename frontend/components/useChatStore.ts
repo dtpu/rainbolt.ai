@@ -11,6 +11,9 @@ export type Message = {
   type?: "status" | "normal";
   /** Optional attached image (e.g. a reference photo added from the Similar tab). */
   image?: string;
+  /** Index into `markers`: renders a photo-evidence strip (nearby sourced
+   *  photos + map link for that candidate) under the message. */
+  evidenceIndex?: number;
 };
 
 export type GeoClue = { sign: string; implies: string };
@@ -173,6 +176,21 @@ function handleSocketMessage(event: MessageEvent, { get, set }: StoreApi) {
 
       const currentMarkers = get().markers;
       set({ markers: [...currentMarkers, ...newMarkers] });
+
+      // Show the work: attach nearby sourced photos for the top new candidate
+      // so the guess is checkable in-chat, not just a name on the globe.
+      if (newMarkers.length > 0) {
+        const st = get();
+        const evidenceMsg: Message = {
+          id: `evidence-${Date.now()}`,
+          role: "assistant",
+          text: `Reference imagery near ${newMarkers[0].name}:`,
+          ts: Date.now(),
+          type: "normal",
+          evidenceIndex: currentMarkers.length,
+        };
+        set({ messages: [...st.messages, evidenceMsg] });
+      }
     } catch (e) {
       console.error("Failed to parse coordinates:", e, "Raw data:", data.text);
     }
@@ -477,6 +495,7 @@ export const useChatStore = create<ChatState>()(
             text: msg.text,
             ts: msg.ts,
             type: msg.type,
+            evidenceIndex: msg.evidenceIndex,
           })),
           sessionId: state.sessionId,
           uploadedImageUrl: state.uploadedImageUrl,

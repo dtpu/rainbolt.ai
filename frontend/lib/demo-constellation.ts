@@ -138,13 +138,18 @@ export interface DemoSessionContent {
 }
 
 const BASE_TS = 1718200000000;
-const chat = (lines: Array<["user" | "assistant", string]>): Message[] =>
-  lines.map(([role, text], i) => ({
+// Optional third element = marker index: the message renders a sourced
+// photo-evidence strip (Wikimedia photos near that candidate + map link).
+const chat = (
+  lines: Array<["user" | "assistant", string] | ["user" | "assistant", string, number]>,
+): Message[] =>
+  lines.map(([role, text, evidenceIndex], i) => ({
     id: `demo-msg-${i}`,
     role,
     text,
     ts: BASE_TS + i * 60000,
     type: "normal",
+    ...(evidenceIndex != null ? { evidenceIndex } : {}),
   }));
 
 const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
@@ -198,16 +203,18 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         "assistant",
         "A raised JR rail embankment closes off the far end of the lane. In Tokyo, a lantern alley hard against the Yamanote tracks is a strong signature.",
       ],
-      ["assistant", "Best estimate: Nonbei Yokocho, Shibuya. Confidence 93%."],
+      ["assistant", "Best estimate: Nonbei Yokocho, Shibuya. Confidence 93%.", 0],
       ["user", "What ruled out Shinjuku's Golden Gai?"],
       [
         "assistant",
         "Golden Gai sits away from the tracks and its facades are narrower and more uniform. The visible rail embankment and the lantern style here match Nonbei Yokocho, which runs right beside the Yamanote line.",
+        2,
       ],
       ["user", "Could it be Omoide Yokocho?"],
       [
         "assistant",
         "It's the closest alternate and shares the look, but Omoide Yokocho is a yakitori lane on the west side of Shinjuku station; the embankment geometry and lantern spacing fit Nonbei better, so I keep it second.",
+        1,
       ],
     ]),
   },
@@ -261,16 +268,18 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         "assistant",
         "A preserved sloped approach rising to a pagoda is the Kiyomizu-dera route through Higashiyama in Kyoto.",
       ],
-      ["assistant", "Best estimate: Higashiyama, Kyoto. Confidence 88%."],
+      ["assistant", "Best estimate: Higashiyama, Kyoto. Confidence 88%.", 0],
       ["user", "Could this be Nara instead?"],
       [
         "assistant",
         "Nara's old town (Naramachi) is flatter and its temple roofs differ. The steady climb toward a three-story pagoda is specific to the Kiyomizu approach, so Nara stays a distant third.",
+        2,
       ],
       ["user", "Sannenzaka or the main approach?"],
       [
         "assistant",
         "Sannenzaka is the neighbouring stepped slope and a strong second; the shopfront spacing and the lack of formal steps here lean toward the main Higashiyama lane.",
+        1,
       ],
     ]),
   },
@@ -324,16 +333,18 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         "assistant",
         "The waterfall placement on the far wall and the tight switchback profile match the Geiranger area specifically.",
       ],
-      ["assistant", "Best estimate: Geiranger, Norway. Confidence 81%."],
+      ["assistant", "Best estimate: Geiranger, Norway. Confidence 81%.", 0],
       ["user", "How confident on Geiranger vs Nærøyfjord?"],
       [
         "assistant",
         "Moderate, which is why it's 81%. Nærøyfjord is a narrower UNESCO twin that shares the walls and water, but its road and waterfall layout differ from the frame. Geiranger fits best; Nærøyfjord is runner-up.",
+        1,
       ],
       ["user", "Why not Lysefjord?"],
       [
         "assistant",
         "Lysefjord's cliffs are more sheer and it lacks the visible switchback road in frame, so it sits well behind the other two.",
+        2,
       ],
     ]),
   },
@@ -388,7 +399,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         "assistant",
         "The ksar form plus a deep-desert setting (no relief, no coast) points to the central Algerian oases around El Goléa.",
       ],
-      ["assistant", "Best estimate: El Goléa, Algeria. Confidence 72%."],
+      ["assistant", "Best estimate: El Goléa, Algeria. Confidence 72%.", 0],
       ["user", "What ruled out Morocco or Tunisia?"],
       [
         "assistant",
@@ -398,6 +409,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       [
         "assistant",
         "It is, and Timimoun is my second guess, but its buildings run a deeper ochre than the whitewashed frame here, so El Goléa edges it.",
+        1,
       ],
     ]),
   },
@@ -452,16 +464,18 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         "assistant",
         "The distinctive three-horn 'Torres' profile is the signature of Torres del Paine.",
       ],
-      ["assistant", "Best estimate: Torres del Paine, Chile. Confidence 85%."],
+      ["assistant", "Best estimate: Torres del Paine, Chile. Confidence 85%.", 0],
       ["user", "Chilean or Argentine side?"],
       [
         "assistant",
         "Chilean. The three-tower profile and the lake's position place the viewpoint inside the Chilean park rather than across the border near El Chaltén.",
+        1,
       ],
       ["user", "How is this different from Fitz Roy?"],
       [
         "assistant",
         "Fitz Roy (El Chaltén, Argentina) is a sharper single spire cluster; the broad three-horn massif and the foreground lake here are Paine, so Fitz Roy is a lower-ranked alternate.",
+        2,
       ],
     ]),
   },
@@ -515,7 +529,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         "assistant",
         "Putting that together points to the original IRT Lexington Avenue line in Manhattan.",
       ],
-      ["assistant", "Best estimate: IRT Lexington Ave, NYC. Confidence 79%."],
+      ["assistant", "Best estimate: IRT Lexington Ave, NYC. Confidence 79%.", 0],
       ["user", "Which station, roughly?"],
       [
         "assistant",
@@ -525,6 +539,7 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
       [
         "assistant",
         "BMT platforms are wider with different column spacing, so it's my second guess but a step behind the IRT read.",
+        1,
       ],
     ]),
   },
