@@ -24,17 +24,19 @@ export function Navbar({ variant = "default", onNewSession }: NavbarProps) {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100]">
-      <div className="container mx-auto grid grid-cols-3 items-center px-4 py-6">
+      {/* Phones: a simple two-ended row (the 3-col grid needs more width
+          than a phone has and the middle links are hidden there anyway). */}
+      <div className="container mx-auto flex items-center justify-between px-4 py-4 md:grid md:grid-cols-3 md:py-6">
         <Link
           href="/"
-          className="col-start-1 flex items-center gap-2.5 justify-self-start text-white transition-opacity hover:opacity-80"
+          className="col-start-1 flex items-center gap-2 md:gap-2.5 justify-self-start text-white transition-opacity hover:opacity-80"
         >
           <img
             src="/rainbolt_logo.png"
             alt="rainbolt.ai"
-            className="h-14 w-auto object-contain"
+            className="h-10 md:h-14 w-auto object-contain"
           />
-          <span className="text-3xl font-bold tracking-tight">rainbolt.ai</span>
+          <span className="text-2xl md:text-3xl font-bold tracking-tight">rainbolt.ai</span>
         </Link>
 
         {variant !== "learning" && (
@@ -51,7 +53,7 @@ export function Navbar({ variant = "default", onNewSession }: NavbarProps) {
           </div>
         )}
 
-        <div className="col-start-3 flex items-center justify-self-end gap-3">
+        <div className="col-start-3 flex items-center justify-self-end gap-1.5 md:gap-3">
           <LoginComponent />
           {onNewSession && (
             <button
