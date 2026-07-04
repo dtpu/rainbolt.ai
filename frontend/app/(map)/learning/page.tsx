@@ -94,7 +94,9 @@ export default function LearningPage() {
         isOpen={showUpload}
         onClose={() => setShowUpload(false)}
         onCreateSession={async (t: string) => {
-          if (!firebaseUserId) throw new Error("Please sign in first");
+          // Guests carry an anonymous Firebase id, so check the real account:
+          // without it Firestore rejects the write with a raw permission error.
+          if (isGuest || !firebaseUserId) throw new Error("Sign in (top right) to start your own session.");
           return createNewSession(t);
         }}
       />
