@@ -7,7 +7,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { createHatchMaterial } from "@/lib/decor/hatchMaterial";
 import { makeBody, BODY_TYPES, type BodyType } from "@/lib/decor/makeBody";
 import type { DecorItem } from "@/lib/decor/layouts";
-import { landingCamera } from "@/lib/decor/cameraSync";
+import { landingCamera, worldGlobeZoom } from "@/lib/decor/cameraSync";
 import { SketchFilter } from "./SketchFilter";
 
 interface DecorLayerProps {
@@ -416,6 +416,13 @@ export function DecorLayer({ items, storageKey, cameraSync }: DecorLayerProps) {
           camera.fov = landingCamera.fov;
           camera.updateProjectionMatrix();
         }
+      } else {
+        // Dolly with the WorldGlobe's zoom so the props belong to the scene:
+        // flying to a session pushes them larger and outward (real perspective
+        // parallax - nearer props sweep faster) instead of staying glued to
+        // the screen. Slightly over-driven (^1.2) since they're foreground.
+        const zTarget = Math.min(6, Math.max(1.4, 4 * Math.pow(worldGlobeZoom.norm, 1.2)));
+        camera.position.z += (zTarget - camera.position.z) * 0.14;
       }
 
       material.userData.update(t);

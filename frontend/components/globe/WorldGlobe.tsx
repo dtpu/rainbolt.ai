@@ -8,6 +8,7 @@ import getShootingStars from "../../utils/getShootingStars";
 import { latLongToVector3 } from "../../utils/coordinates";
 import { useGlobeStore, type WorldMarker, type WorldArc } from "@/lib/globe/store";
 import { pinColor } from "@/lib/globe/palette";
+import { worldGlobeZoom } from "@/lib/decor/cameraSync";
 
 const ARC_COLOR = new THREE.Color("#8fb8d8");
 const MARKER_RADIUS = 1.02;
@@ -379,6 +380,8 @@ export default function WorldGlobe() {
       const fitScale = Math.max(1, (ch / visMin) * 0.98);
       const prevZ = camera.position.z;
       camera.position.z += (targetZ * fitScale - camera.position.z) * 0.22; // snappy, google-maps-style zoom
+      // Let the decor layer ride along with the zoom (1 = resting overview).
+      worldGlobeZoom.norm = camera.position.z / (ZOOM_OUT * fitScale);
 
       // Keep markers a constant on-screen size (scale with distance, not perspective).
       const pinScale = camera.position.z / ZOOM_OUT;

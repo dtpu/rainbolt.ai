@@ -13,3 +13,12 @@ export const landingCamera = {
   quaternion: new THREE.Quaternion(),
   fov: 45,
 };
+
+/**
+ * Live zoom of the persistent WorldGlobe camera (learning/session pages),
+ * normalised so 1 = resting overview and <1 = flown in on a location.
+ * The DecorLayer dollies its own camera with this so the foreground props
+ * zoom and parallax together with the globe instead of sticking to the
+ * screen like wallpaper.
+ */
+export const worldGlobeZoom = { norm: 1 };
