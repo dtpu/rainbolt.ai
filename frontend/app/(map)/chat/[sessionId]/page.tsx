@@ -90,10 +90,17 @@ export default function ChatPage() {
   useChatSession(sessionId);
 
   // Unknown id / backend down: surface an error instead of an endless spinner.
+  // Generous timeout - a scaled-to-zero cloud backend cold-starts (CLIP model
+  // load) and quota retries can push the first result past 30s. If ANY
+  // message has streamed in, the pipeline is alive: never flash the error
+  // over a working analysis (backend failures arrive as chat messages).
   useEffect(() => {
     setLoadFailed(false);
     if (markers.length > 0) return;
-    const t = setTimeout(() => { if (useChatStore.getState().markers.length === 0) setLoadFailed(true); }, 8000);
+    const t = setTimeout(() => {
+      const st = useChatStore.getState();
+      if (st.markers.length === 0 && st.messages.length === 0) setLoadFailed(true);
+    }, 60000);
     return () => clearTimeout(t);
   }, [sessionId, markers.length]);
 
