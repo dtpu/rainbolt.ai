@@ -164,10 +164,10 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
           "A tightly packed alley of two-story izakaya, vertical kanji signage, and red paper lanterns. The narrow lane width, overhead utility lines, and the JR rail embankment at the end of the street point to Nonbei Yokocho in Shibuya, Tokyo.",
         mapillary_images: ["/demo/tokyo-1.jpg"],
         clues: [
-          { sign: "Vertical kanji signage", implies: "Dense urban Japan" },
-          { sign: "Red paper lanterns", implies: "Izakaya nightlife alley" },
-          { sign: "JR rail embankment at the lane's end", implies: "Beside the Yamanote tracks" },
-          { sign: "~1.5 m lane width", implies: "Nonbei Yokocho, not Golden Gai" },
+          { sign: "Vertical kanji signage", implies: "Dense urban Japan", at: [0.3, 0.17] },
+          { sign: "Red paper lanterns", implies: "Izakaya nightlife alley", at: [0.41, 0.44] },
+          { sign: "JR rail embankment at the lane's end", implies: "Beside the Yamanote tracks", at: [0.44, 0.66] },
+          { sign: "~1.5 m lane width", implies: "Nonbei Yokocho, not Golden Gai", at: [0.52, 0.86] },
         ],
       },
       {
@@ -229,10 +229,10 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
           "A stone-paved sloped lane lined with wooden machiya townhouses, with a glimpse of a pagoda above the rooflines. The preserved streetscape and gentle gradient indicate the Higashiyama approach to Kiyomizu-dera in Kyoto.",
         mapillary_images: ["/demo/kyoto-1.jpg"],
         clues: [
-          { sign: "Hand-set stone paving", implies: "Heritage preservation district" },
-          { sign: "Unpainted timber machiya", implies: "Kyoto townhouses" },
+          { sign: "Hand-set stone paving", implies: "Heritage preservation district", at: [0.55, 0.83] },
+          { sign: "Unpainted timber machiya", implies: "Kyoto townhouses", at: [0.28, 0.42] },
           { sign: "Pagoda finial above the roofs", implies: "Kiyomizu-dera approach" },
-          { sign: "Steady uphill gradient", implies: "Higashiyama slope" },
+          { sign: "Steady uphill gradient", implies: "Higashiyama slope", at: [0.66, 0.48] },
         ],
       },
       {
@@ -294,10 +294,10 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
           "Steep glacier-carved valley walls drop to deep blue water, with scattered red-painted cabins and a switchback road guarded by stone-topped barriers. The vegetation line and fjord geometry match the Geiranger area in western Norway.",
         mapillary_images: ["/demo/fjords-1.jpg"],
         clues: [
-          { sign: "U-shaped glacial valley", implies: "Western Norway fjord" },
-          { sign: "Turquoise meltwater", implies: "Glacier-fed" },
-          { sign: "Red falu-painted cabins", implies: "Scandinavian build" },
-          { sign: "Switchback road guardrails", implies: "Geiranger tourist route" },
+          { sign: "U-shaped glacial valley", implies: "Western Norway fjord", at: [0.38, 0.5] },
+          { sign: "Turquoise meltwater", implies: "Glacier-fed", at: [0.55, 0.78] },
+          { sign: "Red falu-painted cabins", implies: "Scandinavian build", at: [0.47, 0.93] },
+          { sign: "Switchback road guardrails", implies: "Geiranger tourist route", at: [0.24, 0.84] },
         ],
       },
       {
@@ -360,10 +360,10 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         mapillary_images: ["/demo/sahara-1.jpg"],
         streetView: false,
         clues: [
-          { sign: "Date palms around a whitewashed ksar", implies: "Saharan oasis town" },
-          { sign: "Red-and-white kerb striping", implies: "Maghreb road standard" },
-          { sign: "Pole-mounted highway lighting", implies: "Algerian trunk road" },
-          { sign: "Hard blue sky over a low sand ridge", implies: "Deep central Sahara" },
+          { sign: "Date palms around a whitewashed ksar", implies: "Saharan oasis town", at: [0.56, 0.58] },
+          { sign: "Red-and-white kerb striping", implies: "Maghreb road standard", at: [0.47, 0.74] },
+          { sign: "Pole-mounted highway lighting", implies: "Algerian trunk road", at: [0.36, 0.3] },
+          { sign: "Hard blue sky over a low sand ridge", implies: "Deep central Sahara", at: [0.7, 0.52] },
         ],
       },
       {
@@ -425,10 +425,10 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
         mapillary_images: ["/demo/patagonia-1.jpg"],
         streetView: false,
         clues: [
-          { sign: "Sheer granite towers", implies: "Southern Patagonia" },
-          { sign: "Treeless golden steppe", implies: "Windswept plateau" },
+          { sign: "Sheer granite towers", implies: "Southern Patagonia", at: [0.36, 0.28] },
+          { sign: "Treeless golden steppe", implies: "Windswept plateau", at: [0.22, 0.82] },
           { sign: "Milky-blue glacial lake", implies: "Glacier-fed basin" },
-          { sign: "Three-horn 'Torres' silhouette", implies: "Chilean national park" },
+          { sign: "Three-horn 'Torres' silhouette", implies: "Chilean national park", at: [0.68, 0.22] },
         ],
       },
       {
@@ -490,10 +490,10 @@ const DEMO_CONTENT_BY_SLUG: Record<string, DemoSessionContent> = {
           "Yellow tactile warning tiles along the platform edge, riveted steel I-beam columns, and the track and third-rail layout identify the New York City subway. The platform construction points to an original IRT Lexington Avenue line station in Manhattan.",
         mapillary_images: ["/demo/nyc-1.jpg"],
         clues: [
-          { sign: "Yellow tactile edge tiles", implies: "NYC subway platform" },
-          { sign: "Riveted steel I-beam columns", implies: "IRT-era construction" },
-          { sign: "Cut-and-cover track layout", implies: "Original Lexington line" },
-          { sign: "Narrow column spacing", implies: "Manhattan local stop" },
+          { sign: "Yellow tactile edge tiles", implies: "NYC subway platform", at: [0.5, 0.75] },
+          { sign: "Riveted steel I-beam columns", implies: "IRT-era construction", at: [0.78, 0.12] },
+          { sign: "Cut-and-cover track layout", implies: "Original Lexington line", at: [0.15, 0.3] },
+          { sign: "Narrow column spacing", implies: "Manhattan local stop", at: [0.9, 0.5] },
         ],
       },
       {
