@@ -93,10 +93,12 @@ export default function LearningPage() {
       <UploadModal
         isOpen={showUpload}
         onClose={() => setShowUpload(false)}
+        guestNote={isGuest || !firebaseUserId}
         onCreateSession={async (t: string) => {
-          // Guests carry an anonymous Firebase id, so check the real account:
-          // without it Firestore rejects the write with a raw permission error.
-          if (isGuest || !firebaseUserId) throw new Error("Sign in (top right) to start your own session.");
+          // Guests get a throwaway local session id: the analysis pipeline
+          // runs exactly the same, it just never lands on a saved globe
+          // (Firestore rejects guest ids, so nothing is written).
+          if (isGuest || !firebaseUserId) return `guest-s-${Math.random().toString(36).slice(2, 10)}`;
           return createNewSession(t);
         }}
       />
