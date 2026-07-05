@@ -70,7 +70,7 @@ export default function LearningPage() {
 
   const title = isGuest
     ? "Guest world"
-    : `${user?.displayName || user?.email?.split("@")[0] || "Your"}'s world`;
+    : `${user?.name || user?.email?.split("@")[0] || "Your"}'s world`;
 
   if (isLoading || sessionsLoading) {
     return (

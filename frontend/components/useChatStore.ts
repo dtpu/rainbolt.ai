@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { createFirebaseStorage } from "@/lib/firebase-storage";
+import { createSupabaseStorage } from "@/lib/supabase-storage";
 import { setCurrentSessionId } from "@/lib/session-context";
 
 export type Message = {
@@ -561,7 +561,7 @@ export const useChatStore = create<ChatState>()(
     {
       name: "rainbolt-chat-storage",
       storage: createJSONStorage(() =>
-        createFirebaseStorage({
+        createSupabaseStorage({
           getUserId: () => {
             // Imported dynamically to avoid a circular dependency.
             const { getCurrentUserId } = require("@/lib/user-context");
@@ -572,7 +572,6 @@ export const useChatStore = create<ChatState>()(
             const { getCurrentSessionId } = require("@/lib/session-context");
             return getCurrentSessionId();
           },
-          collectionName: "globeSessions",
         }),
       ),
       partialize: (state) => {

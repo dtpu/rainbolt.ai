@@ -1,18 +1,10 @@
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "./firebase";
+import { supabase } from "./supabase";
 
-// Serialization helpers for session data
+// ── Serialization helpers ──────────────────────────────────────────────────
+// Session data is a map of key -> JSON-stringified value (the zustand persist
+// layer writes whole stores as single keys). Stored as-is inside a jsonb
+// column, so the shape survives the Firestore -> Postgres move unchanged.
+
 export const serializeSessionData = (data: any): Record<string, string> => {
   const serialized: Record<string, string> = {};
   for (const [key, value] of Object.entries(data)) {
@@ -20,7 +12,6 @@ export const serializeSessionData = (data: any): Record<string, string> => {
       serialized[key] = JSON.stringify(value);
     }
   }
-
   return serialized;
 };
 
@@ -28,34 +19,22 @@ export const deserializeSessionData = (
   serializedData: Record<string, string>,
 ): any => {
   const deserialized: any = {};
-
   for (const [key, value] of Object.entries(serializedData)) {
+    if (typeof value !== "string") {
+      deserialized[key] = value;
+      continue;
+    }
     try {
       deserialized[key] = JSON.parse(value);
-    } catch (error) {
-      console.warn(`Failed to parse session data for key "${key}":`, error);
-      // If parsing fails, keep as string
+    } catch {
       deserialized[key] = value;
     }
   }
-
   return deserialized;
 };
 
-// TypeScript interfaces for your data structures
-export interface UserSession {
-  id: string;
-  userId: string;
-  auth0Id: string; // Link to Auth0 user ID
-  email: string;
-  displayName: string;
-  profilePicture?: string;
-  sessionIds?: string[]; // Array of globe session IDs
-  createdAt: any;
-  lastActive: any;
-}
+// ── Types ──────────────────────────────────────────────────────────────────
 
-// Globe Learning Session - focused on actual globe interactions
 export interface GlobeSession {
   id: string;
   userId: string;
@@ -64,12 +43,9 @@ export interface GlobeSession {
   createdAt: any;
   updatedAt: any;
   lastAccessedAt: any;
-
-  // Serialized data stored as strings in database, deserialized as objects in memory
-  data: Record<string, string>; // In database: strings
+  data: Record<string, string>;
 }
 
-// Globe Session with deserialized data for use in components
 export interface GlobeSessionWithData {
   id: string;
   userId: string;
@@ -78,118 +54,44 @@ export interface GlobeSessionWithData {
   createdAt: any;
   updatedAt: any;
   lastAccessedAt: any;
-
-  // Deserialized data as objects for use in application
-  data: any; // In memory: objects
+  data: any;
 }
 
-// User session management functions
-export const createUserSession = async (
-  userData: Omit<UserSession, "id" | "createdAt" | "lastActive">,
-) => {
-  try {
-    const userSessionData = {
-      ...userData,
-      createdAt: serverTimestamp(),
-      lastActive: serverTimestamp(),
-    };
+interface SessionRow {
+  id: string;
+  user_id: string;
+  title: string;
+  status: string;
+  data: Record<string, string> | null;
+  created_at: string;
+  updated_at: string;
+  last_accessed_at: string;
+}
 
-    const docRef = doc(collection(db, "userSessions"), userData.userId);
-    await setDoc(docRef, userSessionData);
+const rowToSession = (r: SessionRow): GlobeSessionWithData => ({
+  id: r.id,
+  userId: r.user_id,
+  title: r.title,
+  status: (r.status as "active" | "completed") ?? "active",
+  createdAt: r.created_at,
+  updatedAt: r.updated_at,
+  lastAccessedAt: r.last_accessed_at,
+  data: deserializeSessionData(r.data ?? {}),
+});
 
-    return { success: true, id: userData.userId };
-  } catch (error) {
-    console.error("Error creating user session:", error);
-    return { success: false, error: (error as Error).message };
-  }
-};
+// ── Globe sessions ─────────────────────────────────────────────────────────
 
-export const getUserSession = async (
-  userId: string,
-): Promise<UserSession | null> => {
-  try {
-    const docRef = doc(db, "userSessions", userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() } as UserSession;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Error getting user session:", error);
-    return null;
-  }
-};
-
-export const getUserByAuth0Id = async (
-  auth0Id: string,
-): Promise<UserSession | null> => {
-  try {
-    const q = query(
-      collection(db, "userSessions"),
-      where("auth0Id", "==", auth0Id),
-    );
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      const doc = querySnapshot.docs[0];
-      return { id: doc.id, ...doc.data() } as UserSession;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting user by Auth0 ID:", error);
-    return null;
-  }
-};
-
-export const updateUserLastActive = async (userId: string) => {
-  try {
-    const docRef = doc(db, "userSessions", userId);
-    await updateDoc(docRef, {
-      lastActive: serverTimestamp(),
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating last active:", error);
-    return { success: false, error: (error as Error).message };
-  }
-};
-
-export const getUserSessionIds = async (userId: string): Promise<string[]> => {
-  try {
-    const docRef = doc(db, "userSessions", userId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const userData = docSnap.data();
-      return userData.sessionIds || [];
-    }
-
-    return [];
-  } catch (error) {
-    console.error("Error getting user session IDs:", error);
-    return [];
-  }
-};
-
-// Globe session management functions
 export const createGlobeSession = async (userId: string, title: string) => {
   try {
-    const sessionId = `globe_${userId}_${Date.now()}`;
-    const globeSession: Omit<GlobeSession, "id"> = {
-      userId,
+    const sessionId = `globe_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const { error } = await supabase.from("globe_sessions").insert({
+      id: sessionId,
+      user_id: userId,
       title,
       status: "active",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      lastAccessedAt: serverTimestamp(),
       data: {},
-    };
-
-    const docRef = doc(collection(db, "globeSessions"), sessionId);
-    await setDoc(docRef, globeSession);
-
+    });
+    if (error) throw error;
     return { success: true, id: sessionId };
   } catch (error) {
     console.error("Error creating globe session:", error);
@@ -201,25 +103,13 @@ export const getGlobeSession = async (
   sessionId: string,
 ): Promise<GlobeSessionWithData | null> => {
   try {
-    const docRef = doc(db, "globeSessions", sessionId);
-    const sessionSnap = await getDoc(docRef);
-
-    if (sessionSnap.exists()) {
-      const sessionData = {
-        id: sessionSnap.id,
-        ...sessionSnap.data(),
-      } as GlobeSession;
-
-      // Deserialize the data field from strings to objects
-      const deserializedSession: GlobeSessionWithData = {
-        ...sessionData,
-        data: deserializeSessionData(sessionData.data || {}),
-      };
-
-      return deserializedSession;
-    } else {
-      return null;
-    }
+    const { data, error } = await supabase
+      .from("globe_sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? rowToSession(data as SessionRow) : null;
   } catch (error) {
     console.error("Error getting globe session:", error);
     return null;
@@ -230,26 +120,13 @@ export const getUserGlobeSessions = async (
   userId: string,
 ): Promise<GlobeSessionWithData[]> => {
   try {
-    const q = query(
-      collection(db, "globeSessions"),
-      where("userId", "==", userId),
-    );
-    const querySnapshot = await getDocs(q);
-
-    const sessions: GlobeSessionWithData[] = [];
-    querySnapshot.forEach((doc) => {
-      const sessionData = { id: doc.id, ...doc.data() } as GlobeSession;
-
-      // Deserialize the data field from strings to objects
-      const deserializedSession: GlobeSessionWithData = {
-        ...sessionData,
-        data: deserializeSessionData(sessionData.data || {}),
-      };
-
-      sessions.push(deserializedSession);
-    });
-
-    return sessions;
+    const { data, error } = await supabase
+      .from("globe_sessions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return ((data ?? []) as SessionRow[]).map(rowToSession);
   } catch (error) {
     console.error("Error getting user globe sessions:", error);
     return [];
@@ -258,8 +135,11 @@ export const getUserGlobeSessions = async (
 
 export const deleteGlobeSession = async (sessionId: string) => {
   try {
-    const sessionRef = doc(db, "globeSessions", sessionId);
-    await deleteDoc(sessionRef);
+    const { error } = await supabase
+      .from("globe_sessions")
+      .delete()
+      .eq("id", sessionId);
+    if (error) throw error;
     return { success: true };
   } catch (error) {
     console.error("Error deleting globe session:", error);
@@ -270,20 +150,18 @@ export const deleteGlobeSession = async (sessionId: string) => {
   }
 };
 
-// Update session data with automatic serialization
 export const updateSessionData = async (sessionId: string, newData: any) => {
   try {
-    const docRef = doc(db, "globeSessions", sessionId);
-
-    // Serialize the data before storing
-    const serializedData = serializeSessionData(newData);
-
-    await updateDoc(docRef, {
-      data: serializedData,
-      updatedAt: serverTimestamp(),
-      lastAccessedAt: serverTimestamp(),
-    });
-
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("globe_sessions")
+      .update({
+        data: serializeSessionData(newData),
+        updated_at: now,
+        last_accessed_at: now,
+      })
+      .eq("id", sessionId);
+    if (error) throw error;
     return { success: true };
   } catch (error) {
     console.error("Error updating session data:", error);
@@ -291,24 +169,27 @@ export const updateSessionData = async (sessionId: string, newData: any) => {
   }
 };
 
-// Add or update a specific key in session data
+// Merge one key into the session's data map (read-modify-write; sessions are
+// only ever written by their owner, so lost updates aren't a practical risk).
 export const updateSessionDataKey = async (
   sessionId: string,
   key: string,
   value: any,
 ) => {
   try {
-    const docRef = doc(db, "globeSessions", sessionId);
-
-    // Serialize the specific value
-    const serializedValue = JSON.stringify(value);
-
-    await updateDoc(docRef, {
-      [`data.${key}`]: serializedValue,
-      updatedAt: serverTimestamp(),
-      lastAccessedAt: serverTimestamp(),
-    });
-
+    const { data, error } = await supabase
+      .from("globe_sessions")
+      .select("data")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (error) throw error;
+    const merged = { ...((data?.data as Record<string, string>) ?? {}), [key]: JSON.stringify(value) };
+    const now = new Date().toISOString();
+    const { error: upErr } = await supabase
+      .from("globe_sessions")
+      .update({ data: merged, updated_at: now, last_accessed_at: now })
+      .eq("id", sessionId);
+    if (upErr) throw upErr;
     return { success: true };
   } catch (error) {
     console.error("Error updating session data key:", error);
@@ -326,92 +207,62 @@ export const addGlobeImage = async (
   },
 ) => {
   try {
-    const docRef = doc(db, "globeSessions", sessionId);
-    const sessionSnap = await getDoc(docRef);
-
-    if (!sessionSnap.exists()) {
-      return { success: false, error: "Session not found" };
-    }
-
-    const sessionData = sessionSnap.data() as GlobeSession;
+    const session = await getGlobeSession(sessionId);
+    if (!session) return { success: false, error: "Session not found" };
     const newImage = {
       id: `img_${Date.now()}`,
       ...imageData,
-      timestamp: new Date().toISOString(), // Use ISO string instead of serverTimestamp()
+      timestamp: new Date().toISOString(),
     };
-
-    const currentImages = Array.isArray(sessionData.data?.globeImages)
-      ? sessionData.data.globeImages
+    const images = Array.isArray(session.data?.globeImages)
+      ? session.data.globeImages
       : [];
-    const updatedImages = [...currentImages, newImage];
-
-    await updateDoc(docRef, {
-      "data.globeImages": updatedImages,
-      updatedAt: serverTimestamp(),
-      lastAccessedAt: serverTimestamp(),
-    });
-
-    return { success: true, imageId: newImage.id };
+    const result = await updateSessionDataKey(sessionId, "globeImages", [
+      ...images,
+      newImage,
+    ]);
+    return result.success
+      ? { success: true, imageId: newImage.id }
+      : { success: false, error: result.error };
   } catch (error) {
     console.error("Error adding globe image:", error);
     return { success: false, error: (error as Error).message };
   }
 };
 
-export const addChatMessage = async (
-  sessionId: string,
-  message: {
-    role: "user" | "ai";
-    message: string;
-    relatedImage?: string;
-  },
-) => {
-  try {
-    const docRef = doc(db, "globeSessions", sessionId);
-    const sessionSnap = await getDoc(docRef);
+// ── Session links (constellation edges between related sessions) ──────────
 
-    if (!sessionSnap.exists()) {
-      return { success: false, error: "Session not found" };
-    }
-
-    const sessionData = sessionSnap.data() as GlobeSession;
-    const newMessage = {
-      id: `chat_${Date.now()}`,
-      ...message,
-      timestamp: new Date().toISOString(), // Use ISO string instead of serverTimestamp()
-    };
-
-    const currentChatHistory = Array.isArray(sessionData.data?.chatHistory)
-      ? sessionData.data.chatHistory
-      : [];
-    const updatedChatHistory = [...currentChatHistory, newMessage];
-
-    await updateDoc(docRef, {
-      "data.chatHistory": updatedChatHistory,
-      updatedAt: serverTimestamp(),
-      lastAccessedAt: serverTimestamp(),
-    });
-
-    return { success: true, messageId: newMessage.id };
-  } catch (error) {
-    console.error("Error adding chat message:", error);
-    return { success: false, error: (error as Error).message };
-  }
-};
-
-// Session Link Interface
 export interface SessionLink {
   id: string;
   userId: string;
   fromSessionId: string;
   toSessionId: string;
   createdAt: any;
-  updatedAt: any;
-  linkType?: "related" | "sequential" | "reference"; // Optional categorization
-  description?: string; // Optional description of the relationship
+  updatedAt?: any;
+  linkType?: "related" | "sequential" | "reference";
+  description?: string;
 }
 
-// Create a link between two sessions
+interface LinkRow {
+  id: string;
+  user_id: string;
+  from_session_id: string;
+  to_session_id: string;
+  link_type: string;
+  description: string | null;
+  created_at: string;
+}
+
+const rowToLink = (r: LinkRow): SessionLink => ({
+  id: r.id,
+  userId: r.user_id,
+  fromSessionId: r.from_session_id,
+  toSessionId: r.to_session_id,
+  linkType: (r.link_type as SessionLink["linkType"]) ?? "related",
+  description: r.description ?? undefined,
+  createdAt: r.created_at,
+});
+
 export const createSessionLink = async (
   userId: string,
   fromSessionId: string,
@@ -421,28 +272,15 @@ export const createSessionLink = async (
 ): Promise<{ success: boolean; linkId?: string; error?: string }> => {
   try {
     const linkId = `link_${fromSessionId}_${toSessionId}_${Date.now()}`;
-    const linkRef = doc(db, "sessionLinks", linkId);
-
-    const linkData: Partial<SessionLink> = {
+    const { error } = await supabase.from("session_links").insert({
       id: linkId,
-      userId,
-      fromSessionId,
-      toSessionId,
-      linkType,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    // Only add description if it's provided and not undefined
-    if (
-      description !== undefined &&
-      description !== null &&
-      description.trim() !== ""
-    ) {
-      linkData.description = description;
-    }
-
-    await setDoc(linkRef, linkData);
+      user_id: userId,
+      from_session_id: fromSessionId,
+      to_session_id: toSessionId,
+      link_type: linkType,
+      description: description?.trim() || null,
+    });
+    if (error) throw error;
     return { success: true, linkId };
   } catch (error) {
     console.error("Error creating session link:", error);
@@ -450,36 +288,31 @@ export const createSessionLink = async (
   }
 };
 
-// Get all links for a user
 export const getUserSessionLinks = async (
   userId: string,
 ): Promise<SessionLink[]> => {
   try {
-    const linksQuery = query(
-      collection(db, "sessionLinks"),
-      where("userId", "==", userId),
-    );
-
-    const linksSnapshot = await getDocs(linksQuery);
-
-    const links = linksSnapshot.docs.map((doc) => {
-      const data = doc.data() as SessionLink;
-      return data;
-    });
-
-    return links;
+    const { data, error } = await supabase
+      .from("session_links")
+      .select("*")
+      .eq("user_id", userId);
+    if (error) throw error;
+    return ((data ?? []) as LinkRow[]).map(rowToLink);
   } catch (error) {
     console.error("Error fetching user session links:", error);
     return [];
   }
 };
 
-// Delete a session link
 export const deleteSessionLink = async (
   linkId: string,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    await deleteDoc(doc(db, "sessionLinks", linkId));
+    const { error } = await supabase
+      .from("session_links")
+      .delete()
+      .eq("id", linkId);
+    if (error) throw error;
     return { success: true };
   } catch (error) {
     console.error("Error deleting session link:", error);
@@ -487,33 +320,15 @@ export const deleteSessionLink = async (
   }
 };
 
-// Delete all links related to a session (called when deleting a session)
 export const deleteSessionLinks = async (
   sessionId: string,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Find all links that involve this session
-    const fromLinksQuery = query(
-      collection(db, "sessionLinks"),
-      where("fromSessionId", "==", sessionId),
-    );
-    const toLinksQuery = query(
-      collection(db, "sessionLinks"),
-      where("toSessionId", "==", sessionId),
-    );
-
-    const [fromSnapshot, toSnapshot] = await Promise.all([
-      getDocs(fromLinksQuery),
-      getDocs(toLinksQuery),
-    ]);
-
-    // Delete all found links
-    const deletePromises = [
-      ...fromSnapshot.docs.map((doc) => deleteDoc(doc.ref)),
-      ...toSnapshot.docs.map((doc) => deleteDoc(doc.ref)),
-    ];
-
-    await Promise.all(deletePromises);
+    const { error } = await supabase
+      .from("session_links")
+      .delete()
+      .or(`from_session_id.eq.${sessionId},to_session_id.eq.${sessionId}`);
+    if (error) throw error;
     return { success: true };
   } catch (error) {
     console.error("Error deleting session links:", error);
@@ -521,69 +336,32 @@ export const deleteSessionLinks = async (
   }
 };
 
-// Migration function to convert old structure to new structure
-export const migrateGlobeSessionData = async (sessionId: string) => {
-  try {
-    const docRef = doc(db, "globeSessions", sessionId);
-    const sessionSnap = await getDoc(docRef);
+// ── Legacy user-profile shims ──────────────────────────────────────────────
+// The Auth0 era kept a userSessions collection mapping external ids to app
+// users. Supabase's auth.uid() IS the app user id, so these are no-ops kept
+// only so the old UserProvider keeps compiling; nothing calls them with
+// meaningful input anymore.
 
-    if (!sessionSnap.exists()) {
-      return { success: false, error: "Session not found" };
-    }
+export interface UserSession {
+  id: string;
+  userId: string;
+  auth0Id: string;
+  email: string;
+  displayName: string;
+  profilePicture?: string;
+  sessionIds?: string[];
+  createdAt: any;
+  lastActive: any;
+}
 
-    const sessionData = sessionSnap.data();
+export const createUserSession = async (
+  userData: Omit<UserSession, "id" | "createdAt" | "lastActive">,
+) => ({ success: true, id: userData.userId });
 
-    // Check if migration is needed (old structure has globeImages and chatHistory as top-level fields)
-    if (
-      sessionData.globeImages &&
-      sessionData.chatHistory &&
-      !sessionData.data
-    ) {
-      const migratedData: any = {
-        ...sessionData,
-        data: {
-          globeImages: sessionData.globeImages || [],
-          chatHistory: sessionData.chatHistory || [],
-        },
-      };
+export const getUserSession = async (_userId: string): Promise<UserSession | null> => null;
 
-      // Remove old fields
-      delete migratedData.globeImages;
-      delete migratedData.chatHistory;
+export const getUserByAuth0Id = async (_id: string): Promise<UserSession | null> => null;
 
-      await updateDoc(docRef, migratedData);
+export const updateUserLastActive = async (_userId: string) => ({ success: true });
 
-      return { success: true, message: "Session migrated successfully" };
-    }
-
-    return { success: true, message: "Session already using new structure" };
-  } catch (error) {
-    console.error("Error migrating session data:", error);
-    return { success: false, error: (error as Error).message };
-  }
-};
-
-// Helper function to ensure session has proper data structure
-export const ensureSessionDataStructure = (session: any): GlobeSession => {
-  // If session has old structure, convert it on the fly
-  if (session.globeImages && session.chatHistory && !session.data) {
-    return {
-      ...session,
-      data: {
-        globeImages: session.globeImages || [],
-        chatHistory: session.chatHistory || [],
-      },
-    };
-  }
-
-  // If session doesn't have data field at all, create empty one
-  if (!session.data) {
-    return {
-      ...session,
-      data: {},
-    };
-  }
-
-  // Return session as-is since data is just a simple object
-  return session;
-};
+export const getUserSessionIds = async (_userId: string): Promise<string[]> => [];

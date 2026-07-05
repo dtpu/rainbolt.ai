@@ -22,15 +22,17 @@ export default function LoginComponent() {
       <div className="flex items-center gap-1.5">
         {/* "Guest" is a shortcut duplicated by the menu's Learning link, so
             it yields its space to the logo on phones. */}
+        {/* Same pill for both - dark-tinted glass so they read over the
+            white props without becoming heavy slabs. */}
         <Link
           href="/learning"
-          className="hidden rounded-full px-4 py-2.5 text-base font-medium text-fg/70 transition-colors hover:text-fg sm:block"
+          className="hidden whitespace-nowrap rounded-full border border-white/15 bg-space-950/50 px-4 py-2 text-sm font-medium text-fg backdrop-blur-md transition-colors hover:border-white/30 hover:bg-space-950/70 sm:block md:px-6 md:py-2.5 md:text-base"
         >
           Guest
         </Link>
         <a
           href="/login"
-          className="whitespace-nowrap rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-sm font-medium text-fg transition-colors hover:border-white/30 hover:bg-white/[0.08] md:px-6 md:py-2.5 md:text-base"
+          className="whitespace-nowrap rounded-full border border-white/15 bg-space-950/50 px-4 py-2 text-sm font-medium text-fg backdrop-blur-md transition-colors hover:border-white/30 hover:bg-space-950/70 md:px-6 md:py-2.5 md:text-base"
         >
           Sign in
         </a>
@@ -41,7 +43,7 @@ export default function LoginComponent() {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
-        <button className="flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-white/5 py-2 pl-2 pr-5 transition-colors hover:border-white/30 hover:bg-white/10">
+        <button className="flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-space-950/50 py-2 pl-2 pr-5 backdrop-blur-md transition-colors hover:border-white/30 hover:bg-space-950/70">
           <Avatar
             size="2"
             src={user.picture || ""}
@@ -56,9 +58,17 @@ export default function LoginComponent() {
 
       <DropdownMenu.Content className="min-w-[180px]">
         <DropdownMenu.Item asChild>
-          <a href="/auth/logout" className="cursor-pointer text-red-500">
+          <button
+            type="button"
+            onClick={async () => {
+              const { supabase } = await import("@/lib/supabase");
+              await supabase.auth.signOut();
+              window.location.href = "/";
+            }}
+            className="w-full cursor-pointer text-left text-red-500"
+          >
             Log Out
-          </a>
+          </button>
         </DropdownMenu.Item>
       </DropdownMenu.Content>
     </DropdownMenu.Root>

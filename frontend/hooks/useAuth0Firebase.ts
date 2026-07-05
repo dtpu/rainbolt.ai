@@ -1,14 +1,12 @@
-import { useUser } from "@auth0/nextjs-auth0";
+"use client";
+
 import { useEffect, useState } from "react";
-import {
-  createUserSession,
-  getUserByAuth0Id,
-  updateUserLastActive,
-} from "@/lib/globe-database";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 // A stable per-browser id for signed-out visitors, so guests (e.g. interviewers)
 // get the full app - create sessions, upload, chat - without an account. Their
-// data lives under this id, separate from real Auth0 users.
+// data lives in localStorage under this id, separate from real accounts.
 function getOrCreateGuestId(): string {
   if (typeof window === "undefined") return "guest";
   let id = window.localStorage.getItem("rainbolt-guest-id");
@@ -21,56 +19,56 @@ function getOrCreateGuestId(): string {
   return id;
 }
 
+export interface AppUser {
+  /** Supabase auth user id (uuid) - doubles as the database user_id. */
+  sub: string;
+  email: string;
+  name: string;
+  picture?: string;
+}
+
+function mapUser(u: User | null | undefined): AppUser | null {
+  if (!u) return null;
+  const meta = (u.user_metadata ?? {}) as Record<string, string | undefined>;
+  return {
+    sub: u.id,
+    email: u.email ?? "",
+    name: meta.full_name || meta.name || u.email?.split("@")[0] || "Explorer",
+    picture: meta.avatar_url || meta.picture,
+  };
+}
+
+/**
+ * Auth state for the whole app, backed by Supabase Auth. Keeps the historical
+ * name/shape from the Auth0+Firebase era so call sites didn't have to change:
+ * `firebaseUserId` is the account's database id, or a per-browser guest id.
+ */
 export function useAuth0Firebase() {
-  const { user, isLoading, error } = useUser();
-  const [firebaseUserId, setFirebaseUserId] = useState<string | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      // Wait for Auth0 to resolve, then fall back to a guest identity.
-      setFirebaseUserId(isLoading ? null : getOrCreateGuestId());
-      return;
-    }
-
-    const syncUserToFirebase = async () => {
-      try {
-        // Check if user already exists in Firebase
-        const existingUser = await getUserByAuth0Id(user.sub!);
-
-        if (existingUser) {
-          // User exists, just update last active
-          await updateUserLastActive(existingUser.id);
-          setFirebaseUserId(existingUser.id);
-        } else {
-          // Create new user in Firebase
-          const result = await createUserSession({
-            userId: user.sub!, // Use Auth0 sub as user ID
-            auth0Id: user.sub!,
-            email: user.email!,
-            displayName: user.name || user.email!,
-            profilePicture: user.picture,
-          });
-
-          if (result.success) {
-            setFirebaseUserId(result.id!);
-          } else {
-            setSyncError(result.error || "Failed to sync user");
-          }
-        }
-      } catch (err) {
-        console.error("Firebase sync error:", err);
-        setSyncError(err instanceof Error ? err.message : "Failed to sync user");
-      }
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setUser(mapUser(data.session?.user));
+      setIsLoading(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setUser(mapUser(session?.user));
+      setIsLoading(false);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
     };
-
-    syncUserToFirebase();
-  }, [user, isLoading]);
+  }, []);
 
   return {
     user,
-    firebaseUserId,
+    firebaseUserId: isLoading ? null : (user?.sub ?? getOrCreateGuestId()),
     isLoading,
-    error: error || syncError,
+    error: null as string | null,
   };
 }

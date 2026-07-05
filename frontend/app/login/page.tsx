@@ -4,12 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
+import { supabase } from "@/lib/supabase";
 import StarryNightBackground from "@/components/globe/StarryNightBackground";
 import { ArrowRight, Github, Star } from "lucide-react";
 
 // Auth0 social connection identifiers. Adjust if the tenant names them differently.
-const GOOGLE_CONNECTION = "google-oauth2";
-const GITHUB_CONNECTION = "github";
 
 function GoogleGlyph() {
   return (
@@ -141,20 +140,43 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth0Firebase();
   const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Already signed in, go straight to the constellation.
   React.useEffect(() => {
     if (!isLoading && user) router.replace("/learning");
   }, [isLoading, user, router]);
 
-  // /auth/login is handled server-side by the Auth0 middleware, so use a full
-  // navigation (not the client router) and forward the typed email as a hint.
-  const continueWithEmail = (e: React.FormEvent) => {
+  // Passwordless: Supabase emails a magic link; opening it lands signed in.
+  const continueWithEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    const hint = email.trim()
-      ? `?login_hint=${encodeURIComponent(email.trim())}`
-      : "";
-    window.location.href = `/auth/login${hint}`;
+    if (!email.trim() || status === "sending") return;
+    setStatus("sending");
+    setAuthError(null);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/learning` },
+    });
+    if (error) {
+      setAuthError(error.message);
+      setStatus("error");
+    } else {
+      setStatus("sent");
+    }
+  };
+
+  const continueWithOAuth = async (provider: "google" | "github") => {
+    setAuthError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/learning` },
+    });
+    if (error) {
+      setAuthError(
+        `${provider === "google" ? "Google" : "GitHub"} sign-in isn't enabled yet - use email below.`,
+      );
+    }
   };
 
   return (
@@ -204,20 +226,20 @@ export default function LoginPage() {
               </div>
 
               <div className="flex flex-col gap-2.5">
-                <a
-                  href={`/auth/login?connection=${GOOGLE_CONNECTION}`}
+                <button
+                  onClick={() => continueWithOAuth("google")}
                   className="flex h-11 items-center justify-center gap-3 rounded-md border border-white/10 bg-white/[0.04] text-sm font-medium text-white transition-colors hover:border-white/20 hover:bg-white/[0.08]"
                 >
                   <GoogleGlyph />
                   Continue with Google
-                </a>
-                <a
-                  href={`/auth/login?connection=${GITHUB_CONNECTION}`}
+                </button>
+                <button
+                  onClick={() => continueWithOAuth("github")}
                   className="flex h-11 items-center justify-center gap-3 rounded-md border border-white/10 bg-white/[0.04] text-sm font-medium text-white transition-colors hover:border-white/20 hover:bg-white/[0.08]"
                 >
                   <Github className="h-[18px] w-[18px]" />
                   Continue with GitHub
-                </a>
+                </button>
               </div>
 
               <div className="flex items-center gap-3">
@@ -248,17 +270,27 @@ export default function LoginPage() {
                 </label>
                 <button
                   type="submit"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-sky-400/40 bg-sky-500/15 text-sm font-semibold text-white shadow-[0_0_18px_-8px_rgba(56,189,248,0.6)] transition-all hover:border-sky-300/70 hover:bg-sky-500/25"
+                  disabled={status === "sending" || status === "sent"}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-sky-400/40 bg-sky-500/15 text-sm font-semibold text-white shadow-[0_0_18px_-8px_rgba(56,189,248,0.6)] transition-all hover:border-sky-300/70 hover:bg-sky-500/25 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Continue
-                  <ArrowRight className="h-4 w-4" />
+                  {status === "sending" ? "Sending link…" : status === "sent" ? "Link sent" : "Email me a sign-in link"}
+                  {status === "idle" && <ArrowRight className="h-4 w-4" />}
                 </button>
               </form>
 
-              <p className="text-xs text-fg-muted/80">
-                New here? Your account is created automatically the first time
-                you sign in.
-              </p>
+              {status === "sent" ? (
+                <p className="text-xs leading-relaxed text-emerald-300/90">
+                  Check your inbox - the link signs you in instantly. New here?
+                  The same link creates your account.
+                </p>
+              ) : authError ? (
+                <p className="text-xs leading-relaxed text-red-400/90">{authError}</p>
+              ) : (
+                <p className="text-xs text-fg-muted/80">
+                  New here? Your account is created automatically the first time
+                  you sign in.
+                </p>
+              )}
             </section>
 
             {/* RIGHT: Guest mode */}
@@ -291,8 +323,8 @@ export default function LoginPage() {
               </button>
 
               <p className="text-xs text-fg-muted/80">
-                Guest sessions are a read-only preview. Sign in to create and
-                save your own.
+                Guests get the full app - uploads, chat, annotations. Sign in
+                only if you want your world saved across devices.
               </p>
             </section>
           </div>
