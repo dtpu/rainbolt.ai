@@ -13,6 +13,8 @@ AI-powered geolocation: upload a photo and the system predicts where it was take
 
 ![Example reasoning: the model's thinking streamed live, with sourced reference photos backing each candidate and the predicted location on the globe](images/ex1.png)
 
+![Photo view: every clue the model used is pinned on the analyzed image; users drop their own pins and ask about them, and clue mentions in chat link back to the pins](images/annotate.png)
+
 ![Your world: past sessions pinned and linked on an interactive globe, with a session rail to jump back in](images/canvas.png)
 
 This document is the developer and operator guide. For the original project story, see the [Devpost submission](https://devpost.com/software/rainbolt-ai).
@@ -28,7 +30,7 @@ rainbolt.ai is a retrieval-augmented geolocation pipeline. A photo flows through
    - `features`: CLIP text embeddings of GeoGuessr-style clues (bollards, road-line styles, license plates, scripts, Street View car metadata, and so on), stored as `metadata['text']`. The image embedding is matched against these text vectors to surface human-readable evidence. Image-to-text scores are low (~0.19 to 0.28), so a lower threshold (~0.22) is used for this namespace.
 4. Gemini reasoning. The candidate coordinates and matched feature clues are handed to Gemini (via LangChain, `langchain_google_genai`). Gemini reasons over the evidence, narrows the location, and explains its thinking. The reasoning is streamed token by token to the client over a WebSocket so the UI can show the model working in real time.
 5. Mapillary verification. The predicted coordinates are checked against Mapillary street-level imagery to confirm and contextualize the guess.
-6. Presentation. The Next.js frontend (responsive down to phones) renders the prediction on an interactive globe and constellation view, shows the streamed reasoning with sourced photo evidence for each candidate (Wikimedia Commons geosearch), and displays the street-view imagery.
+6. Presentation. The Next.js frontend (responsive down to phones) renders the prediction on an interactive globe and constellation view, shows the streamed reasoning with sourced photo evidence for each candidate (Wikimedia Commons geosearch), and displays the street-view imagery. The centre stage flips between the globe and an annotated Photo view: every clue the model used is pinned on the image, clue mentions in chat are links that jump to their pin, and users can drop their own pins - notes ride along as context so the model can answer questions about them. A Places tab lists the ranked candidates alongside the user's own geocoded hunches (OpenStreetMap Nominatim) for comparison.
 
 ## Tech stack
 
