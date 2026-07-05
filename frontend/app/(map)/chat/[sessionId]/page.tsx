@@ -10,10 +10,11 @@ import { motion } from "framer-motion";
 const EvidenceMap = dynamic(() => import("@/components/chat/EvidenceMap").then((m) => m.EvidenceMap), { ssr: false });
 import {
   ArrowLeft, ExternalLink, Home, ImagePlus,
-  Loader2, Map as MapIcon, Maximize2, MessageSquare, Plus, Target, X,
+  Loader2, Map as MapIcon, Maximize2, MessageSquare, Target, X,
 } from "lucide-react";
 import { ChatHistory } from "@/components/chat/ChatHistory";
 import { ChatComposer } from "@/components/chat/ChatComposer";
+import { ImageAnnotator, type PinFocus } from "@/components/chat/ImageAnnotator";
 import { MarkerNav } from "@/components/chat/MarkerNav";
 import { Reticle } from "@/components/ui/Reticle";
 import { useChatStore, type Marker } from "@/components/useChatStore";
@@ -52,6 +53,21 @@ export default function ChatPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   // Full-screen viewer for the analyzed photo (openable from chat + dossier).
   const [lightbox, setLightbox] = useState<string | null>(null);
+  // Centre stage: the globe, or the analyzed photo with clue annotations.
+  const [centerView, setCenterView] = useState<"globe" | "image">("globe");
+  useEffect(() => { setCenterView("globe"); }, [sessionId]);
+
+  // Clue links inside chat messages jump here: swap to the photo and pop
+  // that pin open (the nonce re-triggers for repeat clicks on the same pin).
+  const [pinFocus, setPinFocus] = useState<PinFocus | null>(null);
+  useEffect(() => {
+    const onOpenPin = (e: Event) => {
+      setCenterView("image");
+      setPinFocus({ index: (e as CustomEvent<number>).detail, nonce: performance.now() });
+    };
+    window.addEventListener("rainbolt-open-pin", onOpenPin);
+    return () => window.removeEventListener("rainbolt-open-pin", onOpenPin);
+  }, []);
 
   // Phones get a single full-width panel with the dossier as an extra tab;
   // tracked in state (not just CSS) so the dossier (Leaflet map, Street View
@@ -94,11 +110,31 @@ export default function ChatPage() {
     [areaPhotos],
   );
 
-  // Feed map-style place labels: the candidate names (always) + nearby landmarks.
+  // The user's own comparison spots (Places tab), kept per session.
+  const [userPlaces, setUserPlaces] = useState<UserPlace[]>([]);
+  useEffect(() => {
+    try {
+      setUserPlaces(JSON.parse(localStorage.getItem(`rainbolt-places-${sessionId}`) ?? "[]"));
+    } catch {
+      setUserPlaces([]);
+    }
+  }, [sessionId]);
+  const changeUserPlaces = (next: UserPlace[]) => {
+    setUserPlaces(next);
+    try {
+      localStorage.setItem(`rainbolt-places-${sessionId}`, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // Feed map-style place labels: the candidate names (always) + the user's
+  // own places + nearby landmarks.
   useEffect(() => {
     const candidateLabels = markers.map((m) => ({ name: m.name, lat: m.latitude, lng: m.longitude, rank: 0 }));
-    useGlobeStore.getState().configure({ labels: [...candidateLabels, ...areaPlaces] });
-  }, [markers, areaPlaces]);
+    const placeLabels = userPlaces.map((p) => ({ name: p.name, lat: p.lat, lng: p.lng, rank: 0 }));
+    useGlobeStore.getState().configure({ labels: [...candidateLabels, ...placeLabels, ...areaPlaces] });
+  }, [markers, areaPlaces, userPlaces]);
 
   // Feed this session's candidate guesses into the shared persistent globe.
   const setCurrentRef = useRef(setCurrentMarker);
@@ -123,21 +159,10 @@ export default function ChatPage() {
     });
   }, [currentMarker, markers.length]);
 
-  // Drop a reference (text and/or image) into the chat as a comparison prompt.
-  const addToChat = (text: string, image?: string) => {
-    useChatStore.setState((s) => ({
-      messages: [
-        ...s.messages,
-        {
-          id: `ref-${Date.now()}`,
-          role: "user" as const,
-          text,
-          ts: Date.now(),
-          type: "normal" as const,
-          ...(image ? { image } : {}),
-        },
-      ],
-    }));
+  // Tee a question up in the composer (never auto-sends): the user finishes
+  // typing there and fires it themselves.
+  const askInChat = (text: string) => {
+    useChatStore.setState({ draft: text });
     setTab("chat");
   };
 
@@ -189,13 +214,41 @@ export default function ChatPage() {
 
       {/* ── Center: transparent + click-through so the globe behind is interactive ── */}
       <div className="pointer-events-none relative hidden min-w-0 flex-1 overflow-hidden md:block">
-        {markers.length > 1 && (
-          <MarkerNav
-            currentMarker={currentMarker}
-            markersCount={markers.length}
-            onPrevious={previousMarker}
-            onNext={nextMarker}
-          />
+        {/* Globe / annotated-photo switch */}
+        {marker && uploadedImageUrl && (
+          <div className="pointer-events-auto absolute left-1/2 top-4 z-20 flex -translate-x-1/2 gap-0.5 rounded-lg border border-white/[0.1] bg-space-900/85 p-0.5 text-xs font-medium shadow-lg backdrop-blur-md">
+            {([["globe", "Globe"], ["image", "Photo"]] as const).map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setCenterView(k)}
+                className={`rounded-md px-4 py-1.5 transition-colors ${
+                  centerView === k ? "bg-white/[0.14] text-fg" : "text-fg-muted hover:text-fg"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {centerView === "image" && uploadedImageUrl ? (
+          <div className="pointer-events-auto absolute inset-0 bg-space-950/95">
+            <ImageAnnotator
+              src={uploadedImageUrl}
+              clues={marker?.clues ?? []}
+              sessionId={sessionId}
+              focus={pinFocus}
+            />
+          </div>
+        ) : (
+          markers.length > 1 && (
+            <MarkerNav
+              currentMarker={currentMarker}
+              markersCount={markers.length}
+              onPrevious={previousMarker}
+              onNext={nextMarker}
+            />
+          )
         )}
       </div>
 
@@ -275,7 +328,14 @@ export default function ChatPage() {
         )}
         {tab === "photos" && <PhotosTab analyzed={uploadedImageUrl} />}
         {tab === "places" && (
-          <PlacesTab markers={markers} onAdd={addToChat} />
+          <PlacesTab
+            markers={markers}
+            currentMarker={currentMarker}
+            onSelect={setCurrentMarker}
+            userPlaces={userPlaces}
+            onChangePlaces={changeUserPlaces}
+            onAsk={askInChat}
+          />
         )}
       </aside>
 
@@ -592,67 +652,162 @@ function GuessRow({
   );
 }
 
-// ── Places tab - each candidate location, mapped + linkable ────────────
+// ── Places tab - the AI's candidates plus the user's own comparison spots ──
+type UserPlace = { id: string; name: string; lat: number; lng: number };
+
+// Quiet inline actions under a place row: coords, Maps link, ask-in-chat.
+function PlaceRowActions({
+  name, lat, lng, onAsk,
+}: { name: string; lat: number; lng: number; onAsk: (text: string) => void }) {
+  return (
+    <div className="mt-1 flex items-center gap-3 text-[11px] text-fg-muted/60">
+      <span className="font-mono tabular-nums">{coordLabel(lat, lng)}</span>
+      <a
+        href={mapsUrl(lat, lng)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1 transition-colors hover:text-fg"
+      >
+        Maps
+        <ExternalLink className="h-3 w-3" />
+      </a>
+      <button
+        onClick={() => onAsk(`Could the spot be ${name}?`)}
+        className="flex items-center gap-1 font-medium text-sky-300/90 transition-colors hover:text-sky-200"
+      >
+        <MessageSquare className="h-3 w-3" />
+        Ask in chat
+      </button>
+    </div>
+  );
+}
+
 function PlacesTab({
-  markers, onAdd,
+  markers, currentMarker, onSelect, userPlaces, onChangePlaces, onAsk,
 }: {
   markers: Marker[];
-  onAdd: (text: string, image?: string) => void;
+  currentMarker: number;
+  onSelect: (i: number) => void;
+  userPlaces: UserPlace[];
+  onChangePlaces: (next: UserPlace[]) => void;
+  onAsk: (text: string) => void;
 }) {
-  if (markers.length === 0) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-        <MapIcon className="h-5 w-5 text-fg-muted/40" />
-        <p className="text-sm text-fg-muted/60">No candidate places yet</p>
-      </div>
-    );
-  }
+  const [query, setQuery] = useState("");
+  const [looking, setLooking] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  // Free-text place -> coordinates via OpenStreetMap's public geocoder.
+  const addPlace = async () => {
+    const q = query.trim();
+    if (!q || looking) return;
+    setLooking(true);
+    setLookupError(null);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`,
+      );
+      const hits: { name?: string; lat: string; lon: string }[] = await res.json();
+      if (hits.length === 0) {
+        setLookupError("No match - try adding the city or country.");
+      } else {
+        onChangePlaces([
+          ...userPlaces,
+          { id: `p-${Math.round(performance.now())}`, name: hits[0].name || q, lat: +hits[0].lat, lng: +hits[0].lon },
+        ]);
+        setQuery("");
+      }
+    } catch {
+      setLookupError("Lookup failed - are you online?");
+    }
+    setLooking(false);
+  };
+
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto p-3">
-      <p className="mb-3 px-1 text-xs text-fg-muted/60">
-        {markers.length} candidate {markers.length === 1 ? "place" : "places"}. Open any in Google Maps
-        or add it to the chat to compare.
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <p className="mb-1 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+        Candidates
       </p>
-      <div className="space-y-3">
-        {markers.map((m, i) => {
-          const pct = Math.round(m.accuracy * 100);
-          return (
-            <div key={i} className="overflow-hidden rounded-xl border border-white/[0.07] bg-space-900">
-              <div className="p-3">
-                <div className="flex items-center gap-2">
-                  <span className="shrink-0 font-mono text-xs font-semibold tabular-nums" style={{ color: pinColor(i) }}>
-                    #{i + 1}
+      {markers.length === 0 ? (
+        <p className="py-3 text-xs text-fg-muted/50">No candidate places yet.</p>
+      ) : (
+        <div>
+          {markers.map((m, i) => {
+            const active = i === currentMarker;
+            return (
+              <div
+                key={i}
+                className={`-mx-2 rounded-lg px-2 py-2.5 transition-colors ${active ? "bg-white/[0.045]" : ""}`}
+              >
+                <button onClick={() => onSelect(i)} className="flex w-full items-center gap-2.5 text-left">
+                  <span className="w-3.5 shrink-0 text-xs font-semibold tabular-nums" style={{ color: pinColor(i) }}>
+                    {i + 1}
                   </span>
-                  <h3 className="truncate text-sm font-medium text-fg">{m.name}</h3>
-                  <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums" style={{ color: confColor(m.accuracy) }}>
-                    {pct}%
+                  <span className={`min-w-0 flex-1 truncate text-[13px] ${active ? "font-medium text-fg" : "text-fg/80"}`}>
+                    {m.name}
                   </span>
-                </div>
-                <p className="mt-1 font-mono text-[10px] tabular-nums text-fg-muted/50">
-                  {coordLabel(m.latitude, m.longitude)}
-                </p>
-                <div className="mt-2.5 flex items-center gap-2">
-                  <a
-                    href={mapsUrl(m.latitude, m.longitude)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] py-2 text-xs font-medium text-fg transition-colors hover:bg-white/[0.08]"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Google Maps
-                  </a>
-                  <button
-                    onClick={() => onAdd(`Could the spot be ${m.name}? ${mapsUrl(m.latitude, m.longitude)}`)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-white py-2 text-xs font-semibold text-space-950 transition-colors hover:bg-white/90"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add to chat
-                  </button>
+                  <span className="shrink-0 text-[11px] tabular-nums" style={{ color: confColor(m.accuracy) }}>
+                    {Math.round(m.accuracy * 100)}%
+                  </span>
+                </button>
+                <div className="pl-6">
+                  <PlaceRowActions name={m.name} lat={m.latitude} lng={m.longitude} onAsk={onAsk} />
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-5 border-t border-white/[0.06] pt-4">
+        <p className="mb-1 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+          Your places
+        </p>
+        <p className="text-xs leading-relaxed text-fg-muted/60">
+          Have your own hunch? Add it here, then ask the AI to compare.
+        </p>
+
+        <form
+          onSubmit={(e) => { e.preventDefault(); addPlace(); }}
+          className="mt-3 flex items-center gap-2"
+        >
+          <input
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setLookupError(null); }}
+            placeholder="e.g. Golden Gai, Tokyo"
+            className="min-w-0 flex-1 rounded-lg bg-white/[0.05] px-3 py-2 text-xs text-fg placeholder:text-fg-muted/40 focus:outline-none focus:ring-1 focus:ring-white/20"
+          />
+          <button
+            type="submit"
+            disabled={!query.trim() || looking}
+            className="flex h-8 w-14 shrink-0 items-center justify-center rounded-lg bg-white/[0.08] text-xs font-medium text-fg transition-colors hover:bg-white/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {looking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Add"}
+          </button>
+        </form>
+        {lookupError && <p className="mt-1.5 text-[11px] text-red-400/90">{lookupError}</p>}
+
+        {userPlaces.length > 0 && (
+          <div className="mt-2">
+            {userPlaces.map((p) => (
+              <div key={p.id} className="group -mx-2 rounded-lg px-2 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="ml-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-star-400/90" />
+                  <span className="min-w-0 flex-1 truncate text-[13px] text-fg/80">{p.name}</span>
+                  <button
+                    onClick={() => onChangePlaces(userPlaces.filter((x) => x.id !== p.id))}
+                    aria-label={`Remove ${p.name}`}
+                    className="shrink-0 text-fg-muted/0 transition-colors group-hover:text-fg-muted/50 hover:!text-red-400"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="pl-6">
+                  <PlaceRowActions name={p.name} lat={p.lat} lng={p.lng} onAsk={onAsk} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
