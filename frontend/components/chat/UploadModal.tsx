@@ -5,24 +5,30 @@ import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Dialog } from "../ui/Dialog";
 import { useChatStore } from "../useChatStore";
-import { DEMO_SESSIONS } from "@/lib/demo-constellation";
 
-const SAMPLES = DEMO_SESSIONS.slice(0, 4).map((s) => ({
-  id: s.id,
-  title: s.title,
-  thumb: s.data?.globeImages?.[0]?.imageUrl as string | undefined,
-}));
+// Distinct from the demo pins on the globe, so a sample session is a fresh
+// analysis rather than a rerun of a place the guest has already seen.
+// Photos: Wikimedia Commons (local copies in /public/samples).
+const SAMPLES = [
+  { id: "venice", title: "Canal city", thumb: "/samples/venice.jpg" },
+  { id: "santorini", title: "Blue domes", thumb: "/samples/santorini.jpg" },
+  { id: "halong", title: "Karst bay", thumb: "/samples/halong.jpg" },
+  { id: "goldengate", title: "Bridge in fog", thumb: "/samples/goldengate.jpg" },
+];
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateSession: (title: string) => Promise<string | void>;
+  /** Guest mode: sessions run fine but aren't saved - show a heads-up. */
+  guestNote?: boolean;
 }
 
 export const UploadModal: React.FC<UploadModalProps> = ({
   isOpen,
   onClose,
   onCreateSession,
+  guestNote,
 }) => {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -224,6 +230,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
               ))}
             </div>
           </div>
+        )}
+
+        {guestNote && (
+          <p className="text-xs leading-relaxed text-fg-muted/70">
+            You&apos;re exploring as a guest - this session won&apos;t be saved to a
+            globe. Sign in (top right) to keep your world.
+          </p>
         )}
 
         {/* Actions */}
