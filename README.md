@@ -1,4 +1,4 @@
-# rainbolt.ai
+# <img src="images/logo.png" alt="rainbolt logo" height="42" align="top" /> rainbolt.ai
 
 AI-powered geolocation: upload a photo and the system predicts where it was taken, streams its reasoning live, and verifies the guess against street-level imagery.
 
