@@ -40,7 +40,7 @@ rainbolt.ai is a retrieval-augmented geolocation pipeline. A photo flows through
 | Styling and UI | Tailwind CSS v4, Radix UI, framer-motion |
 | 3D and visualization | Three.js |
 | Client state | Zustand |
-| Auth and identity | Auth0 (server-side sessions), Firebase (client) |
+| Auth and data | Supabase (Google/GitHub OAuth + email magic links; Postgres with row-level security for sessions) |
 | Backend framework | FastAPI, uvicorn |
 | Realtime transport | WebSockets |
 | Embeddings | OpenAI's open-source CLIP (ViT-B/32), run locally on CPU; Pillow for image handling |
@@ -63,8 +63,7 @@ Accounts and API keys you will need:
 - Google Gemini (the reasoning model) for `GOOGLE_API_KEY`.
 - Pinecone (the vector index) for `PINECONE_API_KEY`.
 - Mapillary (street-view imagery) for `MAPILLARY_API_KEY`. Optional: the app runs without it, just with no street view.
-- Auth0 (user authentication).
-- Firebase (client-side services).
+- Supabase (authentication and the sessions database).
 - Kaggle (only needed to rebuild the Pinecone index from the source dataset).
 
 ## Environment variables
@@ -73,24 +72,14 @@ Configuration is split across three scopes. Each scope has its own example file.
 
 ### Root / Compose (`.env` from `.env.example`)
 
-Read by Docker Compose. Public `NEXT_PUBLIC_*` values are baked into the frontend bundle at build time; the Auth0 secrets are injected at runtime.
+Read by Docker Compose. Public `NEXT_PUBLIC_*` values are baked into the frontend bundle at build time.
 
 | Variable | Purpose | Required |
 |----------|---------|----------|
 | `NEXT_PUBLIC_BACKEND_URL` | HTTP URL the browser uses to reach the backend | Yes |
 | `NEXT_PUBLIC_BACKEND_WS` | WebSocket URL the browser uses for the reasoning stream | Yes |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase client config | Yes |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase client config | Yes |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase client config | Yes |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase client config | Yes |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase client config | Yes |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase client config | Yes |
-| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Firebase client config | Optional |
-| `APP_BASE_URL` | Public base URL of the frontend, used by Auth0 | Yes |
-| `AUTH0_SECRET` | Cookie/session encryption secret for Auth0 | Yes |
-| `AUTH0_DOMAIN` | Auth0 tenant domain | Yes |
-| `AUTH0_CLIENT_ID` | Auth0 application client id | Yes |
-| `AUTH0_CLIENT_SECRET` | Auth0 application client secret | Yes |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (auth + sessions database) | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase publishable anon key (RLS enforces per-user access) | Yes |
 | `BACKEND_INTERNAL_KEY` | Shared secret the Next.js `/api/upload` proxy sends to the backend. Must match the backend value. | Yes |
 
 ### Backend (`backend/.env` from `backend/.env.example`)
@@ -111,7 +100,7 @@ Read by the FastAPI service.
 
 ### Frontend (consumed via Compose, or a local `.env.local` for non-Docker dev)
 
-The frontend reads the `NEXT_PUBLIC_*` and Auth0 variables listed in the root scope above. When running the frontend outside Docker, place those values in `frontend/.env.local`.
+The frontend reads the `NEXT_PUBLIC_*` variables listed in the root scope above. When running the frontend outside Docker, place those values in `frontend/.env.local`.
 
 ## Quick start with Docker Compose
 
@@ -155,7 +144,7 @@ Frontend (Node + bun):
 ```bash
 cd frontend
 bun install
-# create frontend/.env.local with the NEXT_PUBLIC_* and Auth0 values
+# create frontend/.env.local with the NEXT_PUBLIC_* values
 bun dev
 ```
 
@@ -175,7 +164,7 @@ The backend is not meant to be hit directly from the public internet. Three gate
 
 ## Deployment
 
-- Frontend: deploy to Vercel. Set the `NEXT_PUBLIC_*` build variables and the Auth0 runtime variables in the Vercel project settings. Point `NEXT_PUBLIC_BACKEND_URL` and `NEXT_PUBLIC_BACKEND_WS` at the deployed backend.
+- Frontend: deploy to Vercel. Set the `NEXT_PUBLIC_*` build variables (backend URLs + Supabase) and `BACKEND_INTERNAL_KEY` in the Vercel project settings. Point `NEXT_PUBLIC_BACKEND_URL` and `NEXT_PUBLIC_BACKEND_WS` at the deployed backend, and add the frontend origin to Supabase's auth redirect allow-list.
 - Backend: build the container in `backend/` and run it on a container host such as Google Cloud Run. Provide all `backend/.env` variables as service environment variables, and set `ALLOWED_ORIGINS` to the deployed frontend origin.
 - Billing backstop. A GCP budget -> Pub/Sub -> Cloud Function kill switch disables billing project-wide if spend crosses a threshold, so a runaway service cannot quietly run up a bill. See [infra/billing-killswitch/README.md](infra/billing-killswitch/README.md).
 
