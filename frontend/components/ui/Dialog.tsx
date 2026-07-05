@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { Button } from "./Button";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 interface DialogProps {
   isOpen: boolean;
@@ -40,20 +42,28 @@ export const Dialog: React.FC<DialogProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <AnimatePresence>
+      {isOpen && (
+    <motion.div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      <motion.div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
         onClick={onClose}
         style={{ pointerEvents: "auto" }}
       />
 
       {/* Modal */}
-      <div
-        className={`relative z-[10000] w-full max-w-lg animate-in zoom-in-95 duration-200 ${className}`}
+      <motion.div
+        className={`relative z-[10000] w-full max-w-lg ${className}`}
+        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.24, ease: EASE }}
         onClick={(e) => e.stopPropagation()}
         style={{ pointerEvents: "auto" }}
       >
@@ -82,7 +92,9 @@ export const Dialog: React.FC<DialogProps> = ({
           {/* Content */}
           <div className="relative px-6 pb-6">{children}</div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

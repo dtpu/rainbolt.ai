@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { motion } from "framer-motion";
 import { EvidenceStrip } from "./EvidenceStrip";
 import type { GeoClue, Marker } from "@/components/useChatStore";
 
@@ -87,14 +88,24 @@ function ChatMessageComponent({ role, text, type = "normal", image, evidence, cl
 
   if (type === "status") {
     return (
-      <div className="flex w-full justify-center py-1 mb-1">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="flex w-full justify-center py-1 mb-1"
+      >
         <p className="text-[11px] italic text-white/30">{text}</p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="mb-2 w-full">
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="mb-2 w-full"
+    >
       <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
         <div
           className={`max-w-[80%] overflow-hidden rounded-2xl text-sm leading-relaxed ${
@@ -119,7 +130,7 @@ function ChatMessageComponent({ role, text, type = "normal", image, evidence, cl
           <EvidenceStrip marker={evidence} />
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 

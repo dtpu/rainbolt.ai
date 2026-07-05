@@ -1,8 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useChatStore, type GeoClue } from "@/components/useChatStore";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+// Map-marker pin: flat colour, crisp white ring, tight drop shadow.
+const pinBase =
+  "relative flex h-6 w-6 items-center justify-center rounded-full leading-none tabular-nums ring-2 ring-white/90 shadow-[0_1px_6px_rgba(0,0,0,0.55)] transition-transform duration-150 hover:scale-110";
+
+// Detached card, flipped above the pin when it sits low in the photo.
+// Module-scope (not re-created per render) so open cards never re-mount
+// - and re-animate - while unrelated state changes.
+const Card = ({ children, above }: { children: React.ReactNode; above?: boolean }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.92, y: above ? 5 : -5 }}
+    animate={{ opacity: 1, scale: 1, y: 0 }}
+    exit={{ opacity: 0, scale: 0.95, y: above ? 4 : -4 }}
+    transition={{ duration: 0.16, ease: EASE }}
+    className={`absolute left-1/2 z-10 w-56 -translate-x-1/2 rounded-lg border border-white/[0.1] bg-space-900 p-3 text-left shadow-[0_10px_36px_rgba(0,0,0,0.65)] ${
+      above ? "bottom-[34px]" : "top-[34px]"
+    }`}
+  >
+    {children}
+  </motion.div>
+);
+
+const numBadge = (n: number, cls = "") => (
+  <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-sky-500 text-[9px] font-bold leading-none tabular-nums text-white ${cls}`}>
+    {n}
+  </span>
+);
 
 interface Note {
   id: string;
@@ -101,36 +131,23 @@ export function ImageAnnotator({
   const pinned = clues.filter((c) => c.at);
   const unpinned = clues.filter((c) => !c.at);
 
-  // Map-marker pin: flat colour, crisp white ring, tight drop shadow.
-  const pinBase =
-    "relative flex h-6 w-6 items-center justify-center rounded-full leading-none tabular-nums ring-2 ring-white/90 shadow-[0_1px_6px_rgba(0,0,0,0.55)] transition-transform duration-150 hover:scale-110";
-
-  // Detached card, flipped above the pin when it sits low in the photo.
-  const Card = ({ children, above }: { children: React.ReactNode; above?: boolean }) => (
-    <div
-      className={`absolute left-1/2 z-10 w-56 -translate-x-1/2 rounded-lg border border-white/[0.1] bg-space-900 p-3 text-left shadow-[0_10px_36px_rgba(0,0,0,0.65)] ${
-        above ? "bottom-[34px]" : "top-[34px]"
-      }`}
-    >
-      {children}
-    </div>
-  );
-
-  const numBadge = (n: number, cls = "") => (
-    <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-sky-500 text-[9px] font-bold leading-none tabular-nums text-white ${cls}`}>
-      {n}
-    </span>
-  );
-
   return (
     <div className="relative flex h-full min-h-0 flex-col items-center p-6 pb-5 pt-16">
       {/* One obvious way in: drop your own pin on the photo. */}
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2.5">
+        <AnimatePresence>
         {adding && (
-          <span className="rounded-md bg-space-900/85 px-2.5 py-1.5 text-[11px] text-star-300 backdrop-blur-md">
+          <motion.span
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            transition={{ duration: 0.18, ease: EASE }}
+            className="rounded-md bg-space-900/85 px-2.5 py-1.5 text-[11px] text-star-300 backdrop-blur-md"
+          >
             Click anywhere on the photo to drop it
-          </span>
+          </motion.span>
         )}
+        </AnimatePresence>
         <button
           onClick={() => { setAdding((a) => !a); setDraft(null); setOpenId(null); }}
           className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium shadow-lg backdrop-blur-md transition-colors ${
@@ -158,20 +175,33 @@ export function ImageAnnotator({
           const id = `clue-${i}`;
           const on = openId === id;
           return (
-            <div
+            <motion.div
               key={id}
-              className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${c.at![0] * 100}%`, top: `${c.at![1] * 100}%` }}
+              className="absolute"
+              initial={false}
+              animate={{ left: `${c.at![0] * 100}%`, top: `${c.at![1] * 100}%` }}
+              transition={{ duration: 0.45, ease: EASE }}
+              style={{ x: "-50%", y: "-50%" }}
             >
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenId(on ? null : id); }}
-                aria-label={`Clue ${i + 1}: ${c.sign}`}
-                className={`${pinBase} text-[11px] font-semibold ${
-                  on ? "scale-125 bg-sky-400 text-white ring-white" : "bg-sky-500 text-white"
-                }`}
+              {/* Pop-in lives on a wrapper: framer's inline transform would
+                  otherwise clobber the button's CSS hover/active scaling. */}
+              <motion.span
+                className="block"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.12 + i * 0.06, duration: 0.25, ease: EASE }}
               >
-                {i + 1}
-              </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setOpenId(on ? null : id); }}
+                  aria-label={`Clue ${i + 1}: ${c.sign}`}
+                  className={`${pinBase} text-[11px] font-semibold ${
+                    on ? "scale-125 bg-sky-400 text-white ring-white" : "bg-sky-500 text-white"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              </motion.span>
+              <AnimatePresence>
               {on && (
                 <Card above={c.at![1] > 0.72}>
                   <div className="flex items-start gap-2">
@@ -193,7 +223,8 @@ export function ImageAnnotator({
                   </button>
                 </Card>
               )}
-            </div>
+              </AnimatePresence>
+            </motion.div>
           );
         })}
 
@@ -206,15 +237,23 @@ export function ImageAnnotator({
               className="absolute -translate-x-1/2 -translate-y-1/2"
               style={{ left: `${n.x * 100}%`, top: `${n.y * 100}%` }}
             >
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenId(on ? null : n.id); }}
-                aria-label={`Your note: ${n.text}`}
-                className={`${pinBase} ${
-                  on ? "scale-125 bg-star-300 text-space-950 ring-white" : "bg-star-400 text-space-950"
-                }`}
+              <motion.span
+                className="block"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.22, ease: EASE }}
               >
-                <Pencil className="h-3 w-3" />
-              </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setOpenId(on ? null : n.id); }}
+                  aria-label={`Your note: ${n.text}`}
+                  className={`${pinBase} ${
+                    on ? "scale-125 bg-star-300 text-space-950 ring-white" : "bg-star-400 text-space-950"
+                  }`}
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              </motion.span>
+              <AnimatePresence>
               {on && (
                 <Card above={n.y > 0.72}>
                   <div className="flex items-start gap-2">
@@ -246,21 +285,33 @@ export function ImageAnnotator({
                   </button>
                 </Card>
               )}
+              </AnimatePresence>
             </div>
           );
         })}
 
         {/* draft note being typed */}
+        <AnimatePresence>
         {draft && (
           <div
             className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%` }}
             onClick={(e) => e.stopPropagation()}
           >
-            <span className={`${pinBase} bg-star-400 text-space-950`}>
+            <motion.span
+              className={`${pinBase} bg-star-400 text-space-950`}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.2, ease: EASE }}
+            >
               <Pencil className="h-3 w-3" />
-            </span>
-            <div className={`absolute left-1/2 z-10 w-60 -translate-x-1/2 rounded-lg border border-white/[0.1] bg-space-900 p-2.5 shadow-[0_10px_36px_rgba(0,0,0,0.65)] ${draft.y > 0.72 ? "bottom-[34px]" : "top-[34px]"}`}>
+            </motion.span>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: draft.y > 0.72 ? 5 : -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.16, ease: EASE }}
+              className={`absolute left-1/2 z-10 w-60 -translate-x-1/2 rounded-lg border border-white/[0.1] bg-space-900 p-2.5 shadow-[0_10px_36px_rgba(0,0,0,0.65)] ${draft.y > 0.72 ? "bottom-[34px]" : "top-[34px]"}`}>
               <input
                 ref={draftInputRef}
                 value={draft.text}
@@ -276,9 +327,10 @@ export function ImageAnnotator({
                 <button onClick={() => setDraft(null)} className="text-fg-muted transition-colors hover:text-fg">Cancel</button>
                 <button onClick={saveDraft} className="font-semibold text-star-300 transition-colors hover:text-star-200">Save</button>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
+        </AnimatePresence>
       </div>
 
       {/* Figure caption, not a widget: a quiet clue line, notes underneath. */}

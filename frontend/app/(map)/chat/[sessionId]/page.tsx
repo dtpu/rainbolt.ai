@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 // Leaflet touches window at import, so load the map client-only.
 const EvidenceMap = dynamic(() => import("@/components/chat/EvidenceMap").then((m) => m.EvidenceMap), { ssr: false });
@@ -231,24 +233,31 @@ export default function ChatPage() {
           </div>
         )}
 
-        {centerView === "image" && uploadedImageUrl ? (
-          <div className="pointer-events-auto absolute inset-0 bg-space-950/95">
-            <ImageAnnotator
-              src={uploadedImageUrl}
-              clues={marker?.clues ?? []}
-              sessionId={sessionId}
-              focus={pinFocus}
-            />
-          </div>
-        ) : (
-          markers.length > 1 && (
-            <MarkerNav
-              currentMarker={currentMarker}
-              markersCount={markers.length}
-              onPrevious={previousMarker}
-              onNext={nextMarker}
-            />
-          )
+        <AnimatePresence>
+          {centerView === "image" && uploadedImageUrl && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="pointer-events-auto absolute inset-0 bg-space-950/95"
+            >
+              <ImageAnnotator
+                src={uploadedImageUrl}
+                clues={marker?.clues ?? []}
+                sessionId={sessionId}
+                focus={pinFocus}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {centerView !== "image" && markers.length > 1 && (
+          <MarkerNav
+            currentMarker={currentMarker}
+            markersCount={markers.length}
+            onPrevious={previousMarker}
+            onNext={nextMarker}
+          />
         )}
       </div>
 
@@ -300,7 +309,14 @@ export default function ChatPage() {
           })}
         </div>
 
-        {/* tab content */}
+        {/* tab content - keyed fade so switches feel placed, not swapped */}
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18, ease: EASE }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
         {tab === "result" && !isDesktop && resultPanel}
         {tab === "chat" && (
           <>
@@ -337,25 +353,39 @@ export default function ChatPage() {
             onAsk={askInChat}
           />
         )}
+        </motion.div>
       </aside>
 
       {/* Full-screen photo viewer. z sits above Leaflet's internal panes
           (~1000), which escape their container's stacking context. */}
-      {lightbox && (
-        <div
-          className="pointer-events-auto fixed inset-0 z-[1200] flex cursor-zoom-out items-center justify-center bg-black/90 p-4 backdrop-blur-sm md:p-10"
-          onClick={() => setLightbox(null)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={lightbox} alt="Analyzed photo" className="max-h-full max-w-full rounded-lg shadow-2xl" />
-          <button
-            aria-label="Close"
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white/80 transition-colors hover:text-white"
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="pointer-events-auto fixed inset-0 z-[1200] flex cursor-zoom-out items-center justify-center bg-black/90 p-4 backdrop-blur-sm md:p-10"
+            onClick={() => setLightbox(null)}
           >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+            <motion.img
+              src={lightbox}
+              alt="Analyzed photo"
+              initial={{ scale: 0.94 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.96 }}
+              transition={{ duration: 0.24, ease: EASE }}
+              className="max-h-full max-w-full rounded-lg shadow-2xl"
+            />
+            <button
+              aria-label="Close"
+              className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white/80 transition-colors hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -788,8 +818,17 @@ function PlacesTab({
 
         {userPlaces.length > 0 && (
           <div className="mt-2">
+            <AnimatePresence initial={false}>
             {userPlaces.map((p) => (
-              <div key={p.id} className="group -mx-2 rounded-lg px-2 py-2.5">
+              <motion.div
+                key={p.id}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0, overflow: "hidden" }}
+                transition={{ duration: 0.2, ease: EASE }}
+                className="group -mx-2 rounded-lg px-2 py-2.5"
+              >
                 <div className="flex items-center gap-2.5">
                   <span className="ml-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-star-400/90" />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-fg/80">{p.name}</span>
@@ -804,8 +843,9 @@ function PlacesTab({
                 <div className="pl-6">
                   <PlaceRowActions name={p.name} lat={p.lat} lng={p.lng} onAsk={onAsk} />
                 </div>
-              </div>
+              </motion.div>
             ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
