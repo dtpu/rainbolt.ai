@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ExternalLink, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useChatStore, type GeoClue } from "@/components/useChatStore";
+import { useClueRefs } from "@/hooks/useClueRefs";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -20,7 +21,7 @@ const Card = ({ children, above }: { children: React.ReactNode; above?: boolean 
     animate={{ opacity: 1, scale: 1, y: 0 }}
     exit={{ opacity: 0, scale: 0.95, y: above ? 4 : -4 }}
     transition={{ duration: 0.16, ease: EASE }}
-    className={`absolute left-1/2 z-10 w-56 -translate-x-1/2 rounded-lg border border-white/[0.1] bg-space-900 p-3 text-left shadow-[0_10px_36px_rgba(0,0,0,0.65)] ${
+    className={`absolute left-1/2 z-10 w-64 -translate-x-1/2 rounded-lg border border-white/[0.1] bg-space-900 p-3 text-left shadow-[0_10px_36px_rgba(0,0,0,0.65)] ${
       above ? "bottom-[34px]" : "top-[34px]"
     }`}
   >
@@ -61,12 +62,15 @@ export function ImageAnnotator({
   clues,
   sessionId,
   focus,
+  placeName,
 }: {
   src: string;
   clues: GeoClue[];
   sessionId: string;
   /** Bumping this opens the given AI pin (used by clue links in the chat). */
   focus?: PinFocus | null;
+  /** Best-guess place, used to scope each clue's reference-image search. */
+  placeName?: string;
 }) {
   const storageId = `rainbolt-notes-${sessionId}`;
   const [notes, setNotes] = useState<Note[]>([]);
@@ -131,6 +135,12 @@ export function ImageAnnotator({
   const pinned = clues.filter((c) => c.at);
   const unpinned = clues.filter((c) => !c.at);
 
+  // Reference imagery for the one open clue card: what this clue looks like
+  // elsewhere, each thumb linking to its Wikimedia source page.
+  const openClue = openId?.startsWith("clue-") ? pinned[Number(openId.slice(5))] : null;
+  const refQuery = openClue ? `${openClue.sign} ${placeName ?? ""}`.trim() : null;
+  const { photos: refPhotos, loading: refsLoading } = useClueRefs(refQuery, openClue?.sign ?? null);
+
   return (
     <div className="relative flex h-full min-h-0 flex-col items-center p-6 pb-5 pt-16">
       {/* One obvious way in: drop your own pin on the photo. */}
@@ -142,7 +152,7 @@ export function ImageAnnotator({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 8 }}
             transition={{ duration: 0.18, ease: EASE }}
-            className="rounded-md bg-space-900/85 px-2.5 py-1.5 text-[11px] text-star-300 backdrop-blur-md"
+            className="rounded-full bg-space-900/85 px-3 py-1.5 text-[11px] text-star-300 backdrop-blur-md"
           >
             Click anywhere on the photo to drop it
           </motion.span>
@@ -150,10 +160,10 @@ export function ImageAnnotator({
         </AnimatePresence>
         <button
           onClick={() => { setAdding((a) => !a); setDraft(null); setOpenId(null); }}
-          className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium shadow-lg backdrop-blur-md transition-colors ${
+          className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-md transition-colors ${
             adding
               ? "border-star-400/60 bg-star-400 text-space-950"
-              : "border-white/[0.1] bg-space-900/85 text-fg hover:bg-white/[0.08]"
+              : "border-white/[0.1] bg-space-900/90 text-fg hover:bg-white/[0.08]"
           }`}
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -211,16 +221,61 @@ export function ImageAnnotator({
                       <p className="mt-0.5 text-[11px] leading-snug text-fg-muted">{c.implies}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      useChatStore.setState({ draft: `About clue ${i + 1} ("${c.sign}"):` });
-                    }}
-                    className="mt-2.5 flex items-center gap-1.5 text-[11px] font-medium text-sky-300 transition-colors hover:text-sky-200"
-                  >
-                    <MessageSquare className="h-3 w-3" />
-                    Ask in chat
-                  </button>
+
+                  {/* What this clue looks like elsewhere - thumbs link to
+                      their Wikimedia Commons page (the source). */}
+                  {refsLoading ? (
+                    <div className="mt-2.5 grid grid-cols-3 gap-1">
+                      {[0, 1, 2].map((n) => (
+                        <div key={n} className="aspect-[4/3] animate-pulse rounded-md bg-white/[0.05]" />
+                      ))}
+                    </div>
+                  ) : refPhotos.length > 0 ? (
+                    <>
+                      <div className="mt-2.5 grid grid-cols-3 gap-1">
+                        {refPhotos.map((p, n) => (
+                          <a
+                            key={n}
+                            href={p.full}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={p.title}
+                            onClick={(e) => e.stopPropagation()}
+                            className="aspect-[4/3] overflow-hidden rounded-md border border-white/[0.07] bg-space-950"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.thumb} alt={p.title} loading="lazy" className="h-full w-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                      <p className="mt-1 text-[10px] text-fg-muted/50">
+                        similar imagery · source: Wikimedia Commons
+                      </p>
+                    </>
+                  ) : null}
+
+                  <div className="mt-2.5 flex items-center gap-3.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        useChatStore.setState({ draft: `About clue ${i + 1} ("${c.sign}"):` });
+                      }}
+                      className="flex items-center gap-1.5 text-[11px] font-medium text-sky-300 transition-colors hover:text-sky-200"
+                    >
+                      <MessageSquare className="h-3 w-3" />
+                      Ask in chat
+                    </button>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(`${c.sign} ${placeName ?? ""}`.trim())}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 text-[11px] text-fg-muted transition-colors hover:text-fg"
+                    >
+                      Verify
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
                 </Card>
               )}
               </AnimatePresence>
