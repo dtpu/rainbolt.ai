@@ -11,7 +11,7 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 // Leaflet touches window at import, so load the map client-only.
 const EvidenceMap = dynamic(() => import("@/components/chat/EvidenceMap").then((m) => m.EvidenceMap), { ssr: false });
 import {
-  ArrowLeft, ExternalLink, Home, ImagePlus,
+  ArrowLeft, ExternalLink, Globe as GlobeIcon, Home, Image as ImageIcon, ImagePlus,
   Loader2, Map as MapIcon, Maximize2, MessageSquare, Target, X,
 } from "lucide-react";
 import { ChatHistory } from "@/components/chat/ChatHistory";
@@ -200,7 +200,12 @@ export default function ChatPage() {
   return (
     <div className="pointer-events-none relative z-10 flex h-screen text-fg">
       {/* ── Left: result + ranked guesses (desktop only) ─────────────────── */}
-      <aside className="pointer-events-auto hidden w-[340px] shrink-0 flex-col border-r border-white/[0.08] bg-space-950 md:flex">
+      <motion.aside
+        initial={{ x: -48, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.38, ease: EASE }}
+        className="pointer-events-auto hidden w-[340px] shrink-0 flex-col border-r border-white/[0.08] bg-space-950 md:flex"
+      >
         <div className="flex h-14 shrink-0 items-center border-b border-white/[0.07] px-3">
           <button
             onClick={handleBack}
@@ -212,24 +217,35 @@ export default function ChatPage() {
         </div>
 
         {isDesktop && resultPanel}
-      </aside>
+      </motion.aside>
 
       {/* ── Center: transparent + click-through so the globe behind is interactive ── */}
       <div className="pointer-events-none relative hidden min-w-0 flex-1 overflow-hidden md:block">
-        {/* Globe / annotated-photo switch */}
+        {/* Globe / annotated-photo switch: pill with a sliding active thumb */}
         {marker && uploadedImageUrl && (
-          <div className="pointer-events-auto absolute left-1/2 top-4 z-20 flex -translate-x-1/2 gap-0.5 rounded-lg border border-white/[0.1] bg-space-900/85 p-0.5 text-xs font-medium shadow-lg backdrop-blur-md">
-            {([["globe", "Globe"], ["image", "Photo"]] as const).map(([k, label]) => (
-              <button
-                key={k}
-                onClick={() => setCenterView(k)}
-                className={`rounded-md px-4 py-1.5 transition-colors ${
-                  centerView === k ? "bg-white/[0.14] text-fg" : "text-fg-muted hover:text-fg"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="pointer-events-auto absolute left-1/2 top-4 z-20 flex -translate-x-1/2 rounded-full border border-white/[0.1] bg-space-900/90 p-1 text-xs font-medium shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-md">
+            {([["globe", "Globe", GlobeIcon], ["image", "Photo", ImageIcon]] as const).map(([k, label, Icon]) => {
+              const on = centerView === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setCenterView(k)}
+                  className="relative flex items-center gap-1.5 rounded-full px-4 py-1.5"
+                >
+                  {on && (
+                    <motion.span
+                      layoutId="center-view-thumb"
+                      className="absolute inset-0 rounded-full bg-white"
+                      transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                    />
+                  )}
+                  <Icon className={`relative h-3.5 w-3.5 transition-colors ${on ? "text-space-950" : "text-fg-muted"}`} />
+                  <span className={`relative transition-colors ${on ? "font-semibold text-space-950" : "text-fg-muted hover:text-fg"}`}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -240,13 +256,14 @@ export default function ChatPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
-              className="pointer-events-auto absolute inset-0 bg-space-950/95"
+              className="pointer-events-auto absolute inset-0 bg-space-950"
             >
               <ImageAnnotator
                 src={uploadedImageUrl}
                 clues={marker?.clues ?? []}
                 sessionId={sessionId}
                 focus={pinFocus}
+                placeName={marker?.name}
               />
             </motion.div>
           )}
@@ -262,7 +279,12 @@ export default function ChatPage() {
       </div>
 
       {/* ── Right: tabbed panel (the whole screen on phones) ─────────────── */}
-      <aside className="pointer-events-auto flex w-full shrink-0 flex-col bg-space-950 md:w-[360px] md:border-l md:border-white/[0.08]">
+      <motion.aside
+        initial={isDesktop ? { x: 48, opacity: 0 } : { opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.38, ease: EASE }}
+        className="pointer-events-auto flex w-full shrink-0 flex-col bg-space-950 md:w-[360px] md:border-l md:border-white/[0.08]"
+      >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
           <span className="flex items-center gap-1 text-sm font-semibold text-fg">
             <button
@@ -354,7 +376,7 @@ export default function ChatPage() {
           />
         )}
         </motion.div>
-      </aside>
+      </motion.aside>
 
       {/* Full-screen photo viewer. z sits above Leaflet's internal panes
           (~1000), which escape their container's stacking context. */}
