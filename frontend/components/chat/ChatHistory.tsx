@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
@@ -8,19 +8,39 @@ import { ChatMessage } from "./ChatMessage";
 import { useChatStore } from "../useChatStore";
 
 export function ChatHistory() {
-  const { messages, sending, thinking, markers } = useChatStore();
+  const { messages, sending, thinking, markers, currentMarker } = useChatStore();
+  const clues = markers[currentMarker]?.clues;
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
-  useEffect(() => {
-    if (isAtBottom && scrollViewportRef.current) {
-      scrollViewportRef.current.scrollTo({
-        top: scrollViewportRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+  // First fill (mount, or switching back to this tab) jumps straight to the
+  // latest message before paint - animated travel from the top is nauseating.
+  // Only genuinely new messages scroll smoothly.
+  const prevCount = useRef(0);
+  useLayoutEffect(() => {
+    const vp = scrollViewportRef.current;
+    if (vp && isAtBottom) {
+      if (prevCount.current === 0) vp.scrollTop = vp.scrollHeight;
+      else vp.scrollTo({ top: vp.scrollHeight, behavior: "smooth" });
     }
+    prevCount.current = messages.length;
   }, [messages.length, isAtBottom]);
+
+  // Late-loading content (evidence thumbnails) grows the history after the
+  // initial jump; stay pinned to the bottom unless the user scrolled away.
+  const atBottomRef = useRef(true);
+  atBottomRef.current = isAtBottom;
+  useLayoutEffect(() => {
+    const vp = scrollViewportRef.current;
+    const content = vp?.firstElementChild;
+    if (!vp || !content) return;
+    const ro = new ResizeObserver(() => {
+      if (atBottomRef.current) vp.scrollTop = vp.scrollHeight;
+    });
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, []);
 
   const handleScroll = () => {
     if (!scrollViewportRef.current) return;
@@ -61,6 +81,7 @@ export function ChatHistory() {
                 type={msg.type}
                 image={msg.image}
                 evidence={msg.evidenceIndex != null ? markers[msg.evidenceIndex] : undefined}
+                clues={clues}
               />
             ))}
 
