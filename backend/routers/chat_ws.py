@@ -11,12 +11,25 @@ from config import (
     logger,
 )
 from pineconedb import query_pinecone_with_image
-from reasoning import chat_with_context, estimate_coordinates, think
+from reasoning import annotate_clues, chat_with_context, estimate_coordinates, think
 from routers.upload import UPLOAD_DIR
 from security import origin_allowed, safe_session_id
 from ws_manager import manager
 
 router = APIRouter()
+
+
+def friendly_error(e: Exception, fallback: str) -> str:
+    """Users should never see a raw quota dump from the model API."""
+    text = str(e)
+    if "RESOURCE_EXHAUSTED" in text or "429" in text:
+        return (
+            "The reasoning model is out of free-tier quota for today. "
+            "Give it a minute and try again, or come back later."
+        )
+    if "UNAVAILABLE" in text or "503" in text:
+        return "The reasoning model is briefly overloaded - try again in a few seconds."
+    return f"{fallback}: {text}"
 
 
 async def handle_chat_message(session_id: str, message_data: dict):
@@ -90,6 +103,17 @@ async def handle_chat_message(session_id: str, message_data: dict):
                 "text": new_coords
             })
 
+            # The guess changed - refresh the photo's clue pins to match.
+            try:
+                clues = annotate_clues(response, image)
+                if clues:
+                    await manager.send_message(session_id, {
+                        "type": "clues",
+                        "text": clues
+                    })
+            except Exception:
+                logger.exception("Clue annotation failed")
+
         await manager.send_message(session_id, {
             "type": "chat_response_chunk",
             "text": response
@@ -104,7 +128,7 @@ async def handle_chat_message(session_id: str, message_data: dict):
         logger.exception("Error processing chat")
         await manager.send_message(session_id, {
             "type": "error",
-            "message": f"Error processing message: {str(e)}"
+            "message": friendly_error(e, "Error processing message")
         })
 
 
@@ -179,6 +203,22 @@ async def handle_process_image(session_id: str, message_data: dict):
             "text": coordinates
         })
 
+        # Pin the visual clues onto the photo (best-effort - the analysis is
+        # already useful without them, so a failure here never blocks).
+        await manager.send_message(session_id, {
+            "type": "status",
+            "message": "Pinning the visual clues on your photo..."
+        })
+        try:
+            clues = annotate_clues(reasoning_text, image)
+            if clues:
+                await manager.send_message(session_id, {
+                    "type": "clues",
+                    "text": clues
+                })
+        except Exception:
+            logger.exception("Clue annotation failed")
+
         # Send completion message
         await manager.send_message(session_id, {
             "type": "complete",
@@ -186,9 +226,10 @@ async def handle_process_image(session_id: str, message_data: dict):
         })
 
     except Exception as e:
+        logger.exception("Error processing image")
         await manager.send_message(session_id, {
             "type": "error",
-            "message": f"Error processing image: {str(e)}"
+            "message": friendly_error(e, "Error processing image")
         })
 
 

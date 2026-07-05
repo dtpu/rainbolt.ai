@@ -11,3 +11,4 @@ python-multipart
 # used by ingest.py to rebuild the Pinecone index from the Kaggle dataset
 kagglehub
 msgpack
+json-repair
