@@ -20,6 +20,11 @@ const STEPS = [
     body: "Every photo lands as a pin on your globe. Open one to see ranked guesses, compare street-level matches, and ask follow-ups.",
     image: "/howto/map.jpg",
   },
+  {
+    title: "Pin the evidence",
+    body: "Flip a session to Photo view to see every clue pinned on your image. Drop your own pins and ask about them in the chat.",
+    image: "/howto/annotate.jpg",
+  },
 ];
 
 const EASE = [0.22, 1, 0.36, 1] as const;
