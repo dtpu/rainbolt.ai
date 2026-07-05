@@ -2,6 +2,7 @@
 
 import { forwardRef, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Loader2, MapPin, Plus, X } from "lucide-react";
 import { GlobeSessionWithData, SessionLink } from "@/lib/globe-database";
 import { sessionPlace, SessionPlace } from "@/lib/session-place";
@@ -75,7 +76,9 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
     if (timerRef.current) clearTimeout(timerRef.current);
     setPendingOpenId(id);
     setActiveId(id);
-    timerRef.current = setTimeout(() => onOpen(id), 260);
+    // Long enough for the page chrome (preview, rail, titles) to animate out
+    // while the globe keeps flying - the route swap lands on a quiet frame.
+    timerRef.current = setTimeout(() => onOpen(id), 420);
   }, [pendingOpenId, onOpen]);
 
   // Keep latest handlers reachable from the (stable) store callbacks.
@@ -118,6 +121,8 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
   }, []);
 
   const selectedEntry = selectedId ? placed.find(p => p.session.id === selectedId) : null;
+  // Opening a session: fade this page's chrome out before the route swaps.
+  const leaving = !!pendingOpenId;
 
   return (
     // Phones stack: globe on top, the rail as a full-width bottom sheet.
@@ -126,19 +131,20 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
       <div className="pointer-events-none relative min-w-0 flex-1 overflow-hidden">
         <Link
           href="/"
-          className="pointer-events-auto absolute left-6 top-5 z-20 flex items-center gap-2 text-fg transition-opacity hover:opacity-80"
-          style={{ textShadow: "0 2px 16px rgba(5,7,15,0.95)" }}
+          className="pointer-events-auto absolute left-6 top-5 z-20 flex items-center gap-2 text-fg transition-opacity duration-300 hover:opacity-80"
+          style={{ textShadow: "0 2px 16px rgba(5,7,15,0.95)", opacity: leaving ? 0 : 1 }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/rainbolt_logo.png" alt="" className="h-8 w-auto object-contain" />
           <span className="text-lg font-semibold tracking-tight">rainbolt.ai</span>
         </Link>
         <div
-          className="pointer-events-none absolute bottom-4 left-6 z-20 transition-all duration-700 md:bottom-8 md:left-8"
+          className="pointer-events-none absolute bottom-4 left-6 z-20 transition-all md:bottom-8 md:left-8"
           style={{
             textShadow: "0 2px 16px rgba(5,7,15,0.95)",
-            opacity: entered ? 1 : 0,
-            transform: entered ? "translateY(0)" : "translateY(10px)",
+            transitionDuration: leaving ? "300ms" : "700ms",
+            opacity: entered && !leaving ? 1 : 0,
+            transform: entered && !leaving ? "translateY(0)" : "translateY(10px)",
           }}
         >
           <h1 className="text-2xl font-semibold tracking-tight text-fg">{title}</h1>
@@ -159,21 +165,27 @@ export function GlobeRail({ sessions, links, title, onOpen, onNewSession }: Glob
         </div>
 
         {/* Floating session preview - opens to the left of the globe */}
-        {selectedEntry && !pendingOpenId && (
-          <SessionPreview
-            key={selectedEntry.session.id}
-            session={selectedEntry.session}
-            place={selectedEntry.place}
-            onClose={() => { setSelectedId(null); setActiveId(null); }}
-            onOpen={() => handleOpen(selectedEntry.session.id)}
-          />
-        )}
+        <AnimatePresence>
+          {selectedEntry && !pendingOpenId && (
+            <SessionPreview
+              key={selectedEntry.session.id}
+              session={selectedEntry.session}
+              place={selectedEntry.place}
+              onClose={() => { setSelectedId(null); setActiveId(null); }}
+              onOpen={() => handleOpen(selectedEntry.session.id)}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Rail */}
       <aside
         className="pointer-events-auto flex h-[46%] w-full shrink-0 flex-col overflow-hidden rounded-t-2xl border-t border-white/[0.08] bg-space-950 transition-all duration-500 md:h-auto md:w-[340px] md:rounded-none md:border-l md:border-t-0"
-        style={{ opacity: entered ? 1 : 0, transform: entered ? "translateX(0)" : "translateX(16px)" }}
+        style={{
+          transitionDuration: leaving ? "320ms" : "500ms",
+          opacity: entered && !leaving ? 1 : 0,
+          transform: entered && !leaving ? "translateX(0)" : "translateX(16px)",
+        }}
       >
         {/* Account header */}
         <div className="flex h-14 shrink-0 items-center justify-end border-b border-white/[0.06] px-4 md:h-[68px]">
@@ -263,73 +275,75 @@ function SessionPreview({
     : "#e5373e";
 
   return (
-    <div className="pointer-events-auto absolute left-1/2 top-1/2 z-30 flex w-[calc(100%-2.5rem)] max-w-[300px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-space-900/95 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-left-2 duration-200 md:left-6 md:w-[300px] md:translate-x-0">
-      {/* Hero image */}
-      {place.thumb && (
-        <div className="relative aspect-video w-full overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={place.thumb}
-            alt={place.name || session.title}
-            className="h-full w-full object-cover"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-space-900/70 to-transparent" />
-          <Reticle />
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-2.5 top-2.5 rounded-full bg-black/50 p-1.5 text-white/70 backdrop-blur-sm transition-colors hover:text-white"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
+    <motion.div
+      initial={{ opacity: 0, x: -14, scale: 0.98 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: -20, scale: 0.97 }}
+      transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+      className="pointer-events-auto absolute left-1/2 top-1/2 z-30 w-[calc(100%-2.5rem)] max-w-[380px] -translate-x-1/2 -translate-y-1/2 md:left-8 md:w-[380px] md:translate-x-0"
+    >
+      {/* Whole card opens the session - mirrors the dossier header on the
+          session page: verdict overlaid on the photo, quiet footer row. */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(e) => { if (e.key === "Enter") onOpen(); }}
+        className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-white/[0.09] bg-space-900 shadow-[0_16px_48px_rgba(0,0,0,0.6)] transition-colors hover:border-white/20"
+      >
+        {place.thumb && (
+          <div className="relative aspect-[16/10] w-full overflow-hidden bg-space-950">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={place.thumb}
+              alt={place.name || session.title}
+              className="h-full w-full object-cover"
+            />
+            <Reticle />
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose(); }}
+              aria-label="Close"
+              className="absolute right-2.5 top-2.5 rounded-full bg-black/50 p-1.5 text-white/70 backdrop-blur-sm transition-colors hover:text-white"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
 
-      <div className="px-4 py-4">
-        <div className="mb-1 flex items-center gap-1.5">
-          <MapPin className="h-3 w-3 shrink-0 text-fg-muted/60" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
-            Best guess
-          </span>
-        </div>
-        <h2 className="text-sm font-semibold leading-snug text-fg">
-          {place.name || session.title}
-        </h2>
-        <p className="mt-0.5 text-[11px] tabular-nums text-fg-muted">
-          {Math.abs(place.lat).toFixed(3)}°{place.lat >= 0 ? "N" : "S"}
-          &ensp;
-          {Math.abs(place.lng).toFixed(3)}°{place.lng >= 0 ? "E" : "W"}
-        </p>
-
-        {pct !== null && barColor && (
-          <div className="mt-3 flex items-center gap-2.5">
-            <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/[0.07]">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${pct}%`, backgroundColor: barColor }}
-              />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-space-900 via-space-900/70 to-transparent px-4 pb-3 pt-12">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/70">Best guess</p>
+              <h2 className="mt-0.5 text-base font-semibold leading-snug text-fg">
+                {place.name || session.title}
+              </h2>
+              <div className="mt-1.5 flex items-center gap-2.5">
+                <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                  {Math.abs(place.lat).toFixed(3)}°{place.lat >= 0 ? "N" : "S"} {Math.abs(place.lng).toFixed(3)}°{place.lng >= 0 ? "E" : "W"}
+                </span>
+                {pct !== null && barColor && (
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <span className="h-[3px] w-14 overflow-hidden rounded-full bg-white/[0.14]">
+                      <span className="block h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                    </span>
+                    <span className="text-xs font-medium tabular-nums" style={{ color: barColor }}>
+                      {pct}%
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="shrink-0 text-[11px] font-medium tabular-nums" style={{ color: barColor }}>
-              {pct}%
-            </span>
           </div>
         )}
 
         {marker?.facts && (
-          <p className="mt-3 line-clamp-4 text-xs leading-relaxed text-fg/60">
+          <p className="line-clamp-3 px-4 pt-3 text-[13px] leading-relaxed text-fg-muted">
             {marker.facts}
           </p>
         )}
 
-        <button
-          onClick={onOpen}
-          className="group mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-space-950 transition-colors hover:bg-white/90"
-        >
+        <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] px-4 py-3 text-[13px] font-medium text-fg">
           Open session
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </button>
+          <ArrowRight className="h-4 w-4 text-fg-muted transition-transform group-hover:translate-x-0.5 group-hover:text-fg" />
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
