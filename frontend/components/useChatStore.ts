@@ -198,6 +198,9 @@ function handleSocketMessage(event: MessageEvent, { get, set }: StoreApi) {
       }
 
       const coordinates = JSON.parse(cleanedText);
+      if (!Array.isArray(coordinates) || coordinates.length === 0) {
+        throw new Error("Empty coordinates payload");
+      }
 
       const newMessage: Message = {
         id: `assistant-${Date.now()}`,
@@ -239,6 +242,41 @@ function handleSocketMessage(event: MessageEvent, { get, set }: StoreApi) {
       }
     } catch (e) {
       console.error("Failed to parse coordinates:", e, "Raw data:", data.text);
+      // Surface it - a silent failure here looks like the app just froze.
+      const failMsg: Message = {
+        id: `coord-fail-${Date.now()}`,
+        role: "assistant",
+        text: "I couldn't pin down usable coordinates from that pass. Ask me to try again - e.g. \"give me your best guesses\".",
+        ts: Date.now(),
+        type: "normal",
+      };
+      set({ messages: [...get().messages, failMsg] });
+    }
+  } else if (data.type === "clues") {
+    // The backend pinned the visual clues it used onto the photo. Attach them
+    // to every candidate (the photo - and its clues - are shared), replacing
+    // any previous set so a revised guess re-pins the image live.
+    try {
+      const parsed = JSON.parse(data.text);
+      if (!Array.isArray(parsed)) throw new Error("clues payload is not a list");
+      const clues: GeoClue[] = parsed
+        .filter((c) => c && typeof c.sign === "string" && c.sign.trim())
+        .slice(0, 8)
+        .map((c) => ({
+          sign: String(c.sign).trim(),
+          implies: String(c.implies ?? "").trim(),
+          ...(Array.isArray(c.at) && c.at.length === 2 && isFinite(+c.at[0]) && isFinite(+c.at[1])
+            ? { at: [
+                Math.min(0.97, Math.max(0.03, +c.at[0])),
+                Math.min(0.97, Math.max(0.03, +c.at[1])),
+              ] as [number, number] }
+            : {}),
+        }));
+      if (clues.length > 0) {
+        set({ markers: get().markers.map((m) => ({ ...m, clues })) });
+      }
+    } catch (e) {
+      console.error("Failed to parse clues:", e, "Raw data:", data.text);
     }
   } else if (data.type === "complete") {
     clearSendingTimeout(get().ws);
@@ -561,6 +599,7 @@ export const useChatStore = create<ChatState>()(
             facts: marker.facts,
             name: marker.name,
             mapillary_images: marker.mapillary_images,
+            clues: marker.clues,
           })),
           currentMarker: state.currentMarker,
         };
