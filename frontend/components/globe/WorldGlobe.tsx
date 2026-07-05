@@ -362,7 +362,10 @@ export default function WorldGlobe() {
       if (flyTarget.active) {
         spinGroup.rotation.y += (flyTarget.rotY - spinGroup.rotation.y) * 0.16;
         spinGroup.rotation.x += (flyTarget.rotX - spinGroup.rotation.x) * 0.16;
-      } else if (!isDragging && hoveredId === null) {
+      } else if (!isDragging && hoveredId === null && useGlobeStore.getState().focusIndex == null) {
+        // Idle showcase spin - but never while a location is focused (e.g. the
+        // session page after a drag/zoom broke the fly-lock): the user picked
+        // a spot and the globe should hold it.
         spinGroup.rotation.y += 0.0009;
       }
       // The zoom targets are tuned for a landscape canvas where the globe is
