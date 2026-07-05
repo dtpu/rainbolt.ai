@@ -16,7 +16,13 @@ export type Message = {
   evidenceIndex?: number;
 };
 
-export type GeoClue = { sign: string; implies: string };
+export type GeoClue = {
+  sign: string;
+  implies: string;
+  /** Where the clue sits on the analyzed photo, as width/height fractions;
+   *  omitted = listed in the legend but not pinned on the image. */
+  at?: [number, number];
+};
 
 export type Marker = {
   latitude: number;
@@ -33,6 +39,9 @@ export type Marker = {
 
 type ChatState = {
   open: boolean;
+  /** Text queued for the composer (from the Places tab or a photo note):
+   *  lands in the input ready to edit, never auto-sends. */
+  draft: string;
   messages: Message[];
   sending: boolean;
   thinking: boolean;
@@ -77,6 +86,43 @@ type CoordinatePayload = {
   facts: string | string[];
   name?: string;
 };
+
+// Where a fractional photo coordinate sits, in words the model can use.
+function regionLabel(x: number, y: number): string {
+  const v = y < 0.34 ? "top" : y < 0.67 ? "middle" : "bottom";
+  const h = x < 0.34 ? "left" : x < 0.67 ? "center" : "right";
+  return v === "middle" && h === "center" ? "center" : `${v} ${h}`;
+}
+
+// Annotations on the analyzed photo (the AI's numbered clue pins + the
+// user's own notes from the Photo view), phrased as a context message so
+// the model can answer "what about pin 2?" or "look at my note on the sign".
+function annotationContext(sessionId: string | null, marker: Marker | undefined): string | null {
+  if (!sessionId) return null;
+  let notes: { x: number; y: number; text: string }[] = [];
+  try {
+    notes = JSON.parse(localStorage.getItem(`rainbolt-notes-${sessionId}`) ?? "[]");
+  } catch {
+    /* ignore */
+  }
+  const pins = marker?.clues?.filter((c) => c.at) ?? [];
+  if (notes.length === 0 && pins.length === 0) return null;
+
+  const lines: string[] = [];
+  if (pins.length > 0) {
+    lines.push(
+      "Numbered clue pins on the analyzed photo: " +
+        pins.map((c, i) => `#${i + 1} ${c.sign} (${regionLabel(c.at![0], c.at![1])})`).join("; "),
+    );
+  }
+  if (notes.length > 0) {
+    lines.push(
+      "Notes I pinned on the photo myself: " +
+        notes.map((n) => `"${n.text}" (${regionLabel(n.x, n.y)})`).join("; "),
+    );
+  }
+  return `For reference, the analyzed photo is annotated. ${lines.join(". ")}. If I mention a pin number or one of my notes, use this to know what and where it is.`;
+}
 
 // The backend (FastAPI) is a separate service from the frontend, so the socket
 // URL always comes from NEXT_PUBLIC_BACKEND_WS (baked in at build time), falling
@@ -242,6 +288,7 @@ export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
       open: false,
+      draft: "",
       messages: [],
       sending: false,
       thinking: false,
@@ -434,14 +481,20 @@ export const useChatStore = create<ChatState>()(
             throw new Error("WebSocket not connected");
           }
 
+          // Photo annotations ride along as leading context so the model can
+          // resolve "pin 2" or "my note about the sign".
+          const ctx = annotationContext(sessionId, freshState.markers[freshState.currentMarker]);
           const chatMessage = {
             type: "chat_message",
             text: text.trim(),
             session_id: sessionId,
-            history: freshState.messages.map((msg) => ({
-              role: msg.role,
-              text: msg.text,
-            })),
+            history: [
+              ...(ctx ? [{ role: "user" as const, text: ctx }] : []),
+              ...freshState.messages.map((msg) => ({
+                role: msg.role,
+                text: msg.text,
+              })),
+            ],
           };
 
           freshState.ws.send(JSON.stringify(chatMessage));
@@ -457,6 +510,7 @@ export const useChatStore = create<ChatState>()(
 
       clear: () => {
         set({
+          draft: "",
           messages: [],
           currentAssistantMessage: "",
           uploadedImageUrl: null,

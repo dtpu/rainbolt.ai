@@ -6,8 +6,27 @@ import { useChatStore } from "../useChatStore";
 
 export function ChatComposer() {
   const [value, setValue] = useState("");
+  // Briefly ring the input when queued text lands, so it's obvious where
+  // "Ask in chat" put it.
+  const [flash, setFlash] = useState(false);
   const { send, sending } = useChatStore();
+  const draft = useChatStore((s) => s.draft);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Queued text from elsewhere (Places tab, a photo note) lands in the input
+  // ready to edit - nothing goes out until the user actually hits send.
+  // Consume via getState so StrictMode's double effect can't apply it twice.
+  useEffect(() => {
+    if (!draft) return;
+    const queued = useChatStore.getState().draft;
+    if (!queued) return;
+    useChatStore.setState({ draft: "" });
+    setValue((v) => (v.trim() ? `${v.trimEnd()} ${queued}` : queued));
+    textareaRef.current?.focus();
+    setFlash(true);
+    const t = setTimeout(() => setFlash(false), 1400);
+    return () => clearTimeout(t);
+  }, [draft]);
 
   const handleSend = async () => {
     if (!value.trim() || sending) return;
@@ -42,7 +61,9 @@ export function ChatComposer() {
           placeholder="Ask anything…"
           disabled={sending}
           rows={1}
-          className="flex-1 resize-none rounded-xl bg-white/[0.06] px-3.5 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-white/20 disabled:opacity-40"
+          className={`flex-1 resize-none rounded-xl bg-white/[0.06] px-3.5 py-2.5 text-sm text-white transition-shadow duration-300 placeholder:text-white/25 focus:outline-none disabled:opacity-40 ${
+            flash ? "ring-1 ring-sky-400/70" : "focus:ring-1 focus:ring-white/20"
+          }`}
           style={{ maxHeight: "120px", minHeight: "40px" }}
         />
         <button
