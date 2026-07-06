@@ -49,13 +49,11 @@ export interface PinFocus {
 }
 
 /**
- * The analyzed photo with annotations: numbered pins for the AI's clues
- * (positions ship with the clue data) and amber pins the user drops
- * themselves. A chip bar under the photo lists everything compactly, so the
- * pane has no dead space and the clues read as a checklist. User notes persist per session in
- * localStorage and are fed to the model as chat context. Pins are placed in
- * width/height fractions inside a wrapper that shrink-wraps the img, so
- * they stay glued at any size.
+ * The analyzed photo with annotations: numbered pins for the AI's clues and
+ * amber pins the user drops themselves, with a quiet caption legend below.
+ * User notes persist per session in localStorage and ride along as chat
+ * context. Pins are placed in width/height fractions inside a wrapper that
+ * shrink-wraps the img, so they stay glued at any size.
  */
 export function ImageAnnotator({
   src,
@@ -142,7 +140,14 @@ export function ImageAnnotator({
   const { photos: refPhotos, loading: refsLoading } = useClueRefs(refQuery, openClue?.sign ?? null);
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col items-center p-6 pb-5 pt-16">
+    <div
+      className="relative flex h-full min-h-0 flex-col items-center p-6 pb-5 pt-16"
+      onPointerDown={(e) => {
+        // Click anywhere that isn't a pin, card or legend item: close the
+        // open popup (the pin UI is tagged so its own toggles still work).
+        if (openId && !(e.target as HTMLElement).closest("[data-pin-ui]")) setOpenId(null);
+      }}
+    >
       {/* One obvious way in: drop your own pin on the photo. */}
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2.5">
         <AnimatePresence>
@@ -191,7 +196,8 @@ export function ImageAnnotator({
               initial={false}
               animate={{ left: `${c.at![0] * 100}%`, top: `${c.at![1] * 100}%` }}
               transition={{ duration: 0.45, ease: EASE }}
-              style={{ x: "-50%", y: "-50%" }}
+              style={{ x: "-50%", y: "-50%", zIndex: on ? 30 : 1 }}
+              data-pin-ui
             >
               {/* Pop-in lives on a wrapper: framer's inline transform would
                   otherwise clobber the button's CSS hover/active scaling. */}
@@ -290,7 +296,8 @@ export function ImageAnnotator({
             <div
               key={n.id}
               className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${n.x * 100}%`, top: `${n.y * 100}%` }}
+              style={{ left: `${n.x * 100}%`, top: `${n.y * 100}%`, zIndex: on ? 30 : 1 }}
+              data-pin-ui
             >
               <motion.span
                 className="block"
@@ -352,6 +359,7 @@ export function ImageAnnotator({
             className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
             style={{ left: `${draft.x * 100}%`, top: `${draft.y * 100}%` }}
             onClick={(e) => e.stopPropagation()}
+            data-pin-ui
           >
             <motion.span
               className={`${pinBase} bg-star-400 text-space-950`}
@@ -397,6 +405,7 @@ export function ImageAnnotator({
           return (
             <button
               key={id}
+              data-pin-ui
               onClick={() => setOpenId(on ? null : id)}
               title={c.implies}
               className={`flex items-center gap-1.5 transition-colors ${on ? "text-fg" : "text-fg-muted hover:text-fg"}`}
@@ -417,7 +426,7 @@ export function ImageAnnotator({
         {notes.map((n) => {
           const on = openId === n.id;
           return (
-            <span key={n.id} className={`group flex min-w-0 max-w-56 items-center gap-1.5 ${on ? "text-fg" : "text-fg-muted"}`}>
+            <span key={n.id} data-pin-ui className={`group flex min-w-0 max-w-56 items-center gap-1.5 ${on ? "text-fg" : "text-fg-muted"}`}>
               <button onClick={() => setOpenId(on ? null : n.id)} className="flex min-w-0 items-center gap-1.5 transition-colors hover:text-fg">
                 <Pencil className={`h-3 w-3 shrink-0 ${on ? "text-star-300" : "text-star-400/90"}`} />
                 <span className="truncate">{n.text}</span>
