@@ -72,13 +72,57 @@ export function useChatSession(sessionId: string) {
       };
     }
 
-    const { connectWebSocket } = useChatStore.getState();
+    if (!sessionId) return;
+    let cancelled = false;
 
-    if (sessionId) {
-      connectWebSocket(sessionId).catch((err) => {
+    (async () => {
+      // Re-opening a saved session: restore the stored analysis instead of
+      // re-running the whole pipeline (the learning page clears the store on
+      // navigation, so without this every visit meant a full re-process).
+      const st = useChatStore.getState();
+      if (st.sessionId !== sessionId || st.markers.length === 0) {
+        try {
+          const { getGlobeSession } = await import("@/lib/globe-database");
+          const row = await getGlobeSession(sessionId);
+          const persisted = row?.data?.["rainbolt-chat-storage"];
+          const state =
+            typeof persisted === "string" ? JSON.parse(persisted)?.state : persisted?.state;
+          if (!cancelled && state?.markers?.length) {
+            useChatStore.setState({
+              sessionId,
+              messages: state.messages ?? [],
+              markers: state.markers ?? [],
+              currentMarker: state.currentMarker ?? 0,
+              uploadedImageUrl: state.uploadedImageUrl ?? null,
+              hasProcessedSession: true,
+              sending: false,
+              thinking: false,
+            });
+          }
+        } catch {
+          // No saved copy (fresh upload, guest, or offline) - process normally.
+        }
+      }
+      // Photo recovery: the upload preview only lives in the uploading tab,
+      // so reloads and other devices pull the copy from Supabase Storage.
+      if (!useChatStore.getState().uploadedImageUrl) {
+        try {
+          const { supabase } = await import("@/lib/supabase");
+          const url = supabase.storage.from("photos").getPublicUrl(`${sessionId}.jpg`).data.publicUrl;
+          const head = await fetch(url, { method: "HEAD" });
+          if (head.ok && !cancelled) useChatStore.setState({ uploadedImageUrl: url });
+        } catch {
+          // No stored copy - the session just renders without its photo.
+        }
+      }
+
+      if (cancelled) return;
+      useChatStore.getState().connectWebSocket(sessionId).catch((err) => {
         console.error("Failed to connect WebSocket:", err);
       });
-    }
+    })();
+
+    return () => { cancelled = true; };
   }, [sessionId]);
 
   useEffect(() => {

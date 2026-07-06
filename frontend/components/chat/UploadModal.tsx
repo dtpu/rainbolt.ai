@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Dialog } from "../ui/Dialog";
 import { useChatStore } from "../useChatStore";
+import { supabase } from "@/lib/supabase";
 
 // Distinct from the demo pins on the globe, so a sample session is a fresh
 // analysis rather than a rerun of a place the guest has already seen.
@@ -87,9 +88,29 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Upload failed.");
 
+      // Signed-in uploads also go to Supabase Storage so the photo survives
+      // reloads and other devices (the local preview only lives in this tab,
+      // and the backend's copy sits on ephemeral disk). Guests keep the
+      // in-browser preview.
+      let displayUrl = preview;
+      try {
+        const { data: auth } = await supabase.auth.getSession();
+        if (auth.session) {
+          const path = `${firebaseSessionId}.jpg`;
+          const { error: storeErr } = await supabase.storage
+            .from("photos")
+            .upload(path, file, { upsert: true, contentType: file.type || "image/jpeg" });
+          if (!storeErr) {
+            displayUrl = supabase.storage.from("photos").getPublicUrl(path).data.publicUrl;
+          }
+        }
+      } catch {
+        // Storage is a nice-to-have; the preview still covers this tab.
+      }
+
       const store = useChatStore.getState();
       store.clear();
-      if (preview) useChatStore.setState({ uploadedImageUrl: preview });
+      if (displayUrl) useChatStore.setState({ uploadedImageUrl: displayUrl });
 
       handleClose();
       router.push(`/chat/${firebaseSessionId}`);

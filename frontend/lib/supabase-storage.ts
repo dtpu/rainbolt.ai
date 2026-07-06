@@ -26,6 +26,15 @@ export function createSupabaseStorage(
   let writeQueue: Array<{ key: string; value: string }> = [];
   let writeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Best-effort flush when the tab goes away, so a quick navigation right
+  // after the analysis doesn't lose the freshly arrived result.
+  if (typeof window !== "undefined") {
+    window.addEventListener("pagehide", () => {
+      void processWriteQueueRef();
+    });
+  }
+  let processWriteQueueRef = async () => {};
+
   const processWriteQueue = async () => {
     if (writeQueue.length === 0) return;
     const batch = writeQueue;
@@ -35,6 +44,8 @@ export function createSupabaseStorage(
     const sessionId = getSessionId?.() ?? null;
     const userId = getUserId();
     if (!sessionId || !userId) return;
+    // Demo sessions (s_*) are read-only showcases - never mint rows for them.
+    if (sessionId.startsWith("s_") || sessionId.startsWith("guest-")) return;
 
     try {
       const { data, error } = await supabase
@@ -73,6 +84,7 @@ export function createSupabaseStorage(
       // localStorage already holds the state, so nothing is lost locally.
     }
   };
+  processWriteQueueRef = processWriteQueue;
 
   return {
     getItem: async (name: string): Promise<string | null> => {
@@ -125,7 +137,7 @@ export function createSupabaseStorage(
       writeTimer = setTimeout(() => {
         processWriteQueue();
         writeTimer = null;
-      }, 1000);
+      }, 500);
     },
 
     removeItem: async (name: string): Promise<void> => {
