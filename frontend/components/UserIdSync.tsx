@@ -5,11 +5,10 @@ import { useAuth0Firebase } from "@/hooks/useAuth0Firebase";
 import { setCurrentUserId } from "@/lib/user-context";
 
 /**
- * Firebase User Sync Component
- * This component sets up the global user ID for Firebase storage sync
- * Should be mounted at the root of the app
+ * Publishes the current user id into the global user context so non-React
+ * code (the zustand storage adapter) can read it. Mounted once at the root.
  */
-export function FirebaseUserSync() {
+export function UserIdSync() {
   const { firebaseUserId } = useAuth0Firebase();
 
   useEffect(() => {

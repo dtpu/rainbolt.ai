@@ -31,7 +31,7 @@ export function EvidenceStrip({ marker }: { marker: Marker }) {
               href={p.full}
               target="_blank"
               rel="noopener noreferrer"
-              title={`${p.title} — source on Wikimedia Commons`}
+              title={`${p.title} - source on Wikimedia Commons`}
               className="group relative aspect-square overflow-hidden rounded-md border border-white/[0.08] bg-space-900"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

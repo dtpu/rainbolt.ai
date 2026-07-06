@@ -1,6 +1,6 @@
 /**
- * Global session context module
- * Used to track the current chat session ID for Firebase storage
+ * Global session id, kept in sync by the chat store, read by the storage
+ * adapter to know which session row to write.
  */
 
 let currentSessionId: string | null = null;

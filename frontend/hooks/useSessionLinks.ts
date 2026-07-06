@@ -14,8 +14,7 @@ export const useSessionLinks = () => {
 
   // Load links from database
   const loadLinks = async () => {
-    // Guests aren't authenticated to Firebase; skip Firestore (which denies the
-    // read) and rely on the demo links instead.
+    // Guests have no database rows; rely on the demo links instead.
     if (!firebaseUserId || firebaseUserId.startsWith("guest-")) {
       setLinks([]);
       setLoading(false);

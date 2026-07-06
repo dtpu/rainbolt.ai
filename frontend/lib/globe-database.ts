@@ -335,33 +335,3 @@ export const deleteSessionLinks = async (
     return { success: false, error: (error as Error).message };
   }
 };
-
-// ── Legacy user-profile shims ──────────────────────────────────────────────
-// The Auth0 era kept a userSessions collection mapping external ids to app
-// users. Supabase's auth.uid() IS the app user id, so these are no-ops kept
-// only so the old UserProvider keeps compiling; nothing calls them with
-// meaningful input anymore.
-
-export interface UserSession {
-  id: string;
-  userId: string;
-  auth0Id: string;
-  email: string;
-  displayName: string;
-  profilePicture?: string;
-  sessionIds?: string[];
-  createdAt: any;
-  lastActive: any;
-}
-
-export const createUserSession = async (
-  userData: Omit<UserSession, "id" | "createdAt" | "lastActive">,
-) => ({ success: true, id: userData.userId });
-
-export const getUserSession = async (_userId: string): Promise<UserSession | null> => null;
-
-export const getUserByAuth0Id = async (_id: string): Promise<UserSession | null> => null;
-
-export const updateUserLastActive = async (_userId: string) => ({ success: true });
-
-export const getUserSessionIds = async (_userId: string): Promise<string[]> => [];

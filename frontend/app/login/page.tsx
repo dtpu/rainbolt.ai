@@ -8,8 +8,6 @@ import { supabase } from "@/lib/supabase";
 import StarryNightBackground from "@/components/globe/StarryNightBackground";
 import { ArrowRight, Github, Star } from "lucide-react";
 
-// Auth0 social connection identifiers. Adjust if the tenant names them differently.
-
 function GoogleGlyph() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">

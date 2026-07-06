@@ -1,6 +1,6 @@
 /**
- * Global user ID storage for Firebase sync
- * This is set by the app when user authentication is established
+ * Global user id, set once auth resolves, read by the storage adapter
+ * (which lives outside React).
  */
 let currentUserId: string | null = null;
 

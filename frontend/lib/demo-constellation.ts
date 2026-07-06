@@ -12,7 +12,7 @@ interface DemoPlace {
   thumb: string;
 }
 
-// Real sessions use Firebase-generated unique ids; these demos derive a stable,
+// Real sessions get generated unique ids; these demos derive a stable,
 // opaque id from their slug so the URLs read like real session ids (e.g.
 // /chat/s_1a2b3c) instead of guessable names, and still expand cleanly.
 function oid(slug: string): string {
