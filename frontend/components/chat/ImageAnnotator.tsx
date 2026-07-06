@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useChatStore, type GeoClue } from "@/components/useChatStore";
@@ -28,6 +28,35 @@ const Card = ({ children, above }: { children: React.ReactNode; above?: boolean 
     {children}
   </motion.div>
 );
+
+// The model sometimes pins several clues on the same spot; relax any pair
+// closer than minDist apart so every pin stays individually visible and
+// clickable. Pins that are already separated don't move.
+function spreadPins(pts: [number, number][], minDist = 0.05): [number, number][] {
+  const out = pts.map((p) => [...p] as [number, number]);
+  for (let iter = 0; iter < 24; iter++) {
+    let moved = false;
+    for (let i = 0; i < out.length; i++) {
+      for (let j = i + 1; j < out.length; j++) {
+        const dx = out[j][0] - out[i][0];
+        const dy = out[j][1] - out[i][1];
+        const d = Math.hypot(dx, dy);
+        if (d >= minDist) continue;
+        // Perfectly stacked pins get a deterministic direction per pair.
+        const ux = d < 1e-4 ? Math.cos(i * 2.4 + j) : dx / d;
+        const uy = d < 1e-4 ? Math.sin(i * 2.4 + j) : dy / d;
+        const push = (minDist - d) / 2 + 0.002;
+        out[i][0] -= ux * push;
+        out[i][1] -= uy * push;
+        out[j][0] += ux * push;
+        out[j][1] += uy * push;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return out.map(([x, y]) => [Math.min(0.97, Math.max(0.03, x)), Math.min(0.97, Math.max(0.03, y))]);
+}
 
 const numBadge = (n: number, cls = "") => (
   <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-sky-500 text-[9px] font-bold leading-none tabular-nums text-white ${cls}`}>
@@ -132,6 +161,12 @@ export function ImageAnnotator({
 
   const pinned = clues.filter((c) => c.at);
   const unpinned = clues.filter((c) => !c.at);
+  // Display positions: same as the model's placements unless pins collide.
+  const pinPos = useMemo(
+    () => spreadPins(pinned.map((c) => c.at as [number, number])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clues],
+  );
 
   // Reference imagery for the one open clue card: what this clue looks like
   // elsewhere, each thumb linking to its Wikimedia source page.
@@ -194,7 +229,7 @@ export function ImageAnnotator({
               key={id}
               className="absolute"
               initial={false}
-              animate={{ left: `${c.at![0] * 100}%`, top: `${c.at![1] * 100}%` }}
+              animate={{ left: `${(pinPos[i]?.[0] ?? c.at![0]) * 100}%`, top: `${(pinPos[i]?.[1] ?? c.at![1]) * 100}%` }}
               transition={{ duration: 0.45, ease: EASE }}
               style={{ x: "-50%", y: "-50%", zIndex: on ? 30 : 1 }}
               data-pin-ui
@@ -219,7 +254,7 @@ export function ImageAnnotator({
               </motion.span>
               <AnimatePresence>
               {on && (
-                <Card above={c.at![1] > 0.72}>
+                <Card above={(pinPos[i]?.[1] ?? c.at![1]) > 0.72}>
                   <div className="flex items-start gap-2">
                     {numBadge(i + 1, "mt-px")}
                     <div className="min-w-0">
