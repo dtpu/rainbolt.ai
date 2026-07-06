@@ -99,12 +99,20 @@ export default function ChatPage() {
     if (markers.length > 0) return;
     const t = setTimeout(() => {
       const st = useChatStore.getState();
-      if (st.markers.length === 0 && st.messages.length === 0) setLoadFailed(true);
+      // Error responses ("Image file not found") don't count as progress -
+      // without them an unknown id would spin forever behind its chat error.
+      const alive = st.messages.some((m) => !m.text.startsWith("Error"));
+      if (st.markers.length === 0 && !alive) setLoadFailed(true);
     }, 60000);
     return () => clearTimeout(t);
   }, [sessionId, markers.length]);
 
   const marker = markers.length > 0 && currentMarker < markers.length ? markers[currentMarker] : null;
+  // Photo clues describe the analyzed image, not one candidate: keep the
+  // photo view annotated whichever candidate is selected.
+  const photoClues = marker?.clues?.length
+    ? marker.clues
+    : (markers.find((m) => m.clues?.length)?.clues ?? []);
   const hasStreetView = marker?.streetView !== false;
   const { photos: areaPhotos, loading: photosLoading } = useAreaPhotos(marker?.latitude, marker?.longitude);
   const areaPlaces = useAreaPlaces(marker?.latitude, marker?.longitude);
@@ -267,10 +275,10 @@ export default function ChatPage() {
             >
               <ImageAnnotator
                 src={uploadedImageUrl}
-                clues={marker?.clues ?? []}
+                clues={photoClues}
                 sessionId={sessionId}
                 focus={pinFocus}
-                placeName={marker?.name}
+                placeName={markers[0]?.name ?? marker?.name}
               />
             </motion.div>
           )}

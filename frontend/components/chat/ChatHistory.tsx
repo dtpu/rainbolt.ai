@@ -9,7 +9,11 @@ import { useChatStore } from "../useChatStore";
 
 export function ChatHistory() {
   const { messages, sending, thinking, markers, currentMarker } = useChatStore();
-  const clues = markers[currentMarker]?.clues;
+  // Clues annotate the analyzed photo, not a specific candidate - fall back
+  // to whichever marker carries them so links survive candidate switches.
+  const clues = markers[currentMarker]?.clues?.length
+    ? markers[currentMarker].clues
+    : markers.find((m) => m.clues?.length)?.clues;
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
