@@ -50,6 +50,12 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+/* No rubber-band overscroll past the page edges (macOS/iOS bounce). */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 body {
   background-color: var(--color-space-950);
   color: var(--color-fg);
