@@ -56,6 +56,7 @@ export function useClueRefs(query: string | null, broadQuery?: string | null, li
     const hit = cache.get(query);
     if (hit) {
       setPhotos(hit);
+      setLoading(false); // a superseded in-flight request may have left it on
       return;
     }
     let cancelled = false;

@@ -11,9 +11,12 @@ export function ChatHistory() {
   const { messages, sending, thinking, markers, currentMarker } = useChatStore();
   // Clues annotate the analyzed photo, not a specific candidate - fall back
   // to whichever marker carries them so links survive candidate switches.
-  const clues = markers[currentMarker]?.clues?.length
+  // Only pinned clues (with a photo position) are passed: pin numbers in
+  // chat must match the numbers on the photo, which count the pinned subset.
+  const allClues = markers[currentMarker]?.clues?.length
     ? markers[currentMarker].clues
     : markers.find((m) => m.clues?.length)?.clues;
+  const clues = allClues?.filter((c) => !!c.at);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
