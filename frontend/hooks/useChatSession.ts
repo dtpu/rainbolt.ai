@@ -80,6 +80,12 @@ export function useChatSession(sessionId: string) {
       // re-running the whole pipeline (the learning page clears the store on
       // navigation, so without this every visit meant a full re-process).
       const st = useChatStore.getState();
+      // Different session than the store holds (browser back/forward skips
+      // the rail's clear): wipe first, or the old session's markers leak
+      // into this one and suppress its processing.
+      if (st.sessionId !== sessionId && (st.markers.length > 0 || st.messages.length > 0)) {
+        useChatStore.getState().clear();
+      }
       if (st.sessionId !== sessionId || st.markers.length === 0) {
         try {
           const { getGlobeSession } = await import("@/lib/globe-database");
