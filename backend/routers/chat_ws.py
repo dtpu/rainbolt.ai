@@ -43,7 +43,7 @@ async def handle_chat_message(session_id: str, message_data: dict):
     # URL-decode the session ID to handle special characters, then strip to a
     # filesystem-safe token (prevents '../' path traversal into other sessions'
     # images or arbitrary files).
-    decoded_session_id = safe_session_id(unquote(chat_session_id))
+    decoded_session_id = safe_session_id(unquote(str(chat_session_id)))
     logger.info(f"Decoded session_id: {decoded_session_id}")
 
     expected_file_path = UPLOAD_DIR / f"{decoded_session_id}.jpg"
@@ -137,7 +137,7 @@ async def handle_process_image(session_id: str, message_data: dict):
     # URL-decode the session ID, then strip to a filesystem-safe token (same
     # path-traversal guard as the chat handler). Falls back to the connection's
     # already-sanitized id so a missing payload field can't raise.
-    process_session_id = safe_session_id(unquote(message_data.get("session_id", session_id)))
+    process_session_id = safe_session_id(unquote(str(message_data.get("session_id") or session_id)))
     logger.info(f"Decoded session_id: {process_session_id}")
 
     file_path = UPLOAD_DIR / f"{process_session_id}.jpg"
@@ -263,12 +263,24 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
                 logger.warning(f"Ignoring malformed frame from {session_id}: {e}")
                 continue
 
-            if message_type == "chat_message":
-                await handle_chat_message(session_id, message_data)
-                continue
-
-            if message_type == "process_image":
-                await handle_process_image(session_id, message_data)
+            # Handler bugs on weird payloads must not tear down the loop
+            # either - report and keep serving.
+            try:
+                if message_type == "chat_message":
+                    await handle_chat_message(session_id, message_data)
+                elif message_type == "process_image":
+                    await handle_process_image(session_id, message_data)
+            except WebSocketDisconnect:
+                raise
+            except Exception:
+                logger.exception(f"Handler error for {session_id}; dropping frame")
+                try:
+                    await manager.send_message(session_id, {
+                        "type": "error",
+                        "message": "That request couldn't be processed."
+                    })
+                except Exception:
+                    pass
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected: {session_id}")
