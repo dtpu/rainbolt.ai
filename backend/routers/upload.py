@@ -26,16 +26,33 @@ async def upload_image(session_id: str, file: UploadFile = File(...), _: None = 
     Session ID is passed as a path parameter
     """
     session_id = safe_session_id(session_id)
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Invalid session id")
     logger.info(f"Received upload request for session_id: {session_id}")
 
     # Check if file is an image
     if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    # Check file size (limit to 10MB)
-    contents = await file.read()
-    if len(contents) > 10 * 1024 * 1024:  # 10MB
-        raise HTTPException(status_code=400, detail="File too large")
+    # Enforce the 10MB cap while reading, so an oversized body can't balloon
+    # memory on the single instance before the check.
+    max_bytes = 10 * 1024 * 1024
+    buf = bytearray()
+    while chunk := await file.read(1024 * 1024):
+        buf.extend(chunk)
+        if len(buf) > max_bytes:
+            raise HTTPException(status_code=400, detail="File too large")
+    contents = bytes(buf)
+
+    # Ephemeral housekeeping: uploads older than a week are dead sessions.
+    try:
+        import time as _time
+        cutoff = _time.time() - 7 * 24 * 3600
+        for old_file in UPLOAD_DIR.glob("*.jpg"):
+            if old_file.stat().st_mtime < cutoff:
+                old_file.unlink(missing_ok=True)
+    except OSError:
+        pass
 
     try:
         image = Image.open(io.BytesIO(contents))

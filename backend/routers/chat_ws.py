@@ -244,13 +244,24 @@ async def websocket_chat(websocket: WebSocket, session_id: str):
         return
 
     session_id = safe_session_id(session_id)
+    if not session_id:
+        await websocket.close(code=1008)
+        return
     await manager.connect(session_id, websocket)
     logger.info(f"WebSocket connected: {session_id}")
     try:
         while True:
             data = await websocket.receive_text()
-            message_data = json.loads(data)
-            message_type = message_data.get("type")
+            # A malformed frame (bad JSON, non-object payload, junk types)
+            # should be dropped, not tear down the whole session.
+            try:
+                message_data = json.loads(data)
+                if not isinstance(message_data, dict):
+                    raise ValueError("payload is not an object")
+                message_type = message_data.get("type")
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Ignoring malformed frame from {session_id}: {e}")
+                continue
 
             if message_type == "chat_message":
                 await handle_chat_message(session_id, message_data)
