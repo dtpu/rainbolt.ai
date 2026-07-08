@@ -166,7 +166,10 @@ function handleSocketMessage(event: MessageEvent, { get, set }: StoreApi) {
     if (
       lastMessage &&
       lastMessage.role === "assistant" &&
-      lastMessage.type !== "status"
+      lastMessage.type !== "status" &&
+      // Evidence captions are standalone - a following response chunk
+      // (recalculation flow) must open its own bubble.
+      lastMessage.evidenceIndex == null
     ) {
       const updatedMessages = [...state.messages];
       updatedMessages[updatedMessages.length - 1] = {
@@ -201,6 +204,9 @@ function handleSocketMessage(event: MessageEvent, { get, set }: StoreApi) {
       if (!Array.isArray(coordinates) || coordinates.length === 0) {
         throw new Error("Empty coordinates payload");
       }
+      // Coordinates end the current stream segment; anything after starts
+      // fresh instead of concatenating onto accumulated reasoning.
+      set({ currentAssistantMessage: "" });
 
       const newMessage: Message = {
         id: `assistant-${Date.now()}`,
@@ -215,7 +221,9 @@ function handleSocketMessage(event: MessageEvent, { get, set }: StoreApi) {
         (coord: CoordinatePayload) => ({
           latitude: coord.latitude,
           longitude: coord.longitude,
-          accuracy: coord.accuracy / 100,
+          accuracy: Number.isFinite(+coord.accuracy)
+            ? Math.min(100, Math.max(0, +coord.accuracy)) / 100
+            : 0.5,
           facts: Array.isArray(coord.facts)
             ? coord.facts.join(". ")
             : coord.facts,
@@ -308,17 +316,23 @@ function attachSocketHandlers(
   api: StoreApi,
   reject: (reason?: unknown) => void,
 ) {
-  ws.onmessage = (event) => handleSocketMessage(event, api);
+  // A socket that has been replaced (session switch, reconnect) must not
+  // touch the store any more - its late messages belong to another session.
+  const isCurrent = () => api.get().ws === ws;
+
+  ws.onmessage = (event) => {
+    if (isCurrent()) handleSocketMessage(event, api);
+  };
 
   ws.onerror = (error) => {
     console.error("WebSocket error:", error);
-    api.set({ thinking: false, sending: false });
+    if (isCurrent()) api.set({ thinking: false, sending: false });
     reject(error);
   };
 
   ws.onclose = () => {
     // Reconnection (if needed) is handled lazily on the next send.
-    api.set({ thinking: false, sending: false, ws: null });
+    if (isCurrent()) api.set({ thinking: false, sending: false, ws: null });
   };
 }
 
@@ -459,6 +473,9 @@ export const useChatStore = create<ChatState>()(
         if (!text.trim() || state.sending) {
           return;
         }
+        // Claim the flag before any await so a double Enter can't slip
+        // two sends through the reconnect gap.
+        set({ sending: true });
 
         // Reconnect if the socket dropped but we still have a session.
         if (!state.ws && state.sessionId) {
@@ -473,13 +490,14 @@ export const useChatStore = create<ChatState>()(
               ts: Date.now(),
               type: "normal",
             };
-            set({ messages: [...state.messages, errorMessage] });
+            set({ messages: [...state.messages, errorMessage], sending: false });
             return;
           }
         }
 
         const currentState = get();
         if (!currentState.ws) {
+          set({ sending: false });
           return;
         }
 

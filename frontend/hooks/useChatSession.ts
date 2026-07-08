@@ -128,12 +128,12 @@ export function useChatSession(sessionId: string) {
       });
     })();
 
-    return () => { cancelled = true; };
-  }, [sessionId]);
-
-  useEffect(() => {
     return () => {
+      cancelled = true;
+      // Runs on unmount AND when the session id changes in place (the page
+      // component survives /chat/A -> /chat/B). Without this the old socket
+      // stays open and its late messages corrupt the new session's store.
       useChatStore.getState().disconnectWebSocket();
     };
-  }, []);
+  }, [sessionId]);
 }
