@@ -94,7 +94,9 @@ def _stream(payload):
                 if not _recoverable(e):
                     raise
                 logger.warning("Primary stream dropped mid-way - continuing with partial reasoning")
-        return
+            return
+        # Empty-but-successful stream (e.g. safety-blocked): try the fallback.
+        logger.warning("Primary stream returned nothing - trying flash-lite")
     last_err: Exception | None = None
     for delay in _RETRY_DELAYS:
         try:
