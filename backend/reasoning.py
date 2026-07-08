@@ -86,7 +86,14 @@ def _stream(payload):
     else:
         if first is not None:
             yield first
-            yield from it
+            try:
+                yield from it
+            except Exception as e:
+                # Mid-stream quota/capacity drop: keep the partial reasoning
+                # instead of failing the whole analysis.
+                if not _recoverable(e):
+                    raise
+                logger.warning("Primary stream dropped mid-way - continuing with partial reasoning")
         return
     last_err: Exception | None = None
     for delay in _RETRY_DELAYS:
@@ -102,7 +109,12 @@ def _stream(payload):
             continue
         if ffirst is not None:
             yield ffirst
-            yield from fit
+            try:
+                yield from fit
+            except Exception as e:
+                if not _recoverable(e):
+                    raise
+                logger.warning("Fallback stream dropped mid-way - continuing with partial reasoning")
         return
     raise last_err
 
