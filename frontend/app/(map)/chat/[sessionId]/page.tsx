@@ -457,75 +457,64 @@ function ResultPanel({
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      {/* dossier header: analyzed photo with the verdict overlaid */}
-      {uploadedImageUrl && (
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-space-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={uploadedImageUrl}
-            alt="Analyzed photo"
-            onClick={() => onViewPhoto(uploadedImageUrl)}
-            className="h-full w-full cursor-zoom-in object-cover"
-          />
-          <span className="absolute left-2.5 top-2.5 rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
-            Analyzed photo
-          </span>
-          <Reticle />
-          {marker && (
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-space-950 via-space-950/70 to-transparent px-4 pb-3 pt-10">
-              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/70">Best guess</p>
-              <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
-              <div className="mt-1.5 flex items-center gap-2.5">
-                <span className="font-mono text-[11px] tabular-nums text-fg-muted">
-                  {coordLabel(marker.latitude, marker.longitude)}
-                </span>
-                <span className="ml-auto flex items-center gap-1.5">
-                  <span className="h-[3px] w-14 overflow-hidden rounded-full bg-white/[0.14]">
-                    <span
-                      className="block h-full rounded-full"
-                      style={{ width: `${Math.round(marker.accuracy * 100)}%`, backgroundColor: confColor(marker.accuracy) }}
-                    />
-                  </span>
-                  <span className="text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
-                    {Math.round(marker.accuracy * 100)}%
-                  </span>
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {marker ? (
         <div className="px-4 py-4">
-          {/* text header when there is no photo to overlay */}
-          {!uploadedImageUrl && (
-            <div className="mb-5">
-              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">Best guess</p>
-              <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
-              <div className="mt-2 flex items-center gap-2.5">
-                <span className="font-mono text-[11px] tabular-nums text-fg-muted">
-                  {coordLabel(marker.latitude, marker.longitude)}
+          {/* verdict: name + coords + confidence, with the analyzed photo
+              of the place right below it */}
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">Best guess</p>
+            <h1 className="mt-0.5 text-lg font-semibold leading-snug text-fg">{marker.name}</h1>
+            <div className="mt-2 flex items-center gap-2.5">
+              <span className="font-mono text-[11px] tabular-nums text-fg-muted">
+                {coordLabel(marker.latitude, marker.longitude)}
+              </span>
+              <span className="ml-auto flex items-center gap-1.5">
+                <span className="h-[3px] w-14 overflow-hidden rounded-full bg-white/[0.14]">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{ width: `${Math.round(marker.accuracy * 100)}%`, backgroundColor: confColor(marker.accuracy) }}
+                  />
                 </span>
-                <span className="ml-auto text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
+                <span className="text-xs font-medium tabular-nums" style={{ color: confColor(marker.accuracy) }}>
                   {Math.round(marker.accuracy * 100)}%
                 </span>
-              </div>
+              </span>
             </div>
+          </div>
+
+          {uploadedImageUrl && (
+            <button
+              onClick={() => onViewPhoto(uploadedImageUrl)}
+              className="group relative mt-3.5 block w-full overflow-hidden rounded-lg border border-white/[0.08] bg-space-900"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={uploadedImageUrl}
+                alt="Analyzed photo"
+                className="aspect-[16/10] w-full cursor-zoom-in object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              />
+              <span className="absolute left-2 top-2 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-[0.14em] text-white/80 backdrop-blur-sm">
+                Analyzed photo
+              </span>
+              <Reticle />
+            </button>
           )}
 
-          {/* key clues / evidence: observation on top, what it reads as
-              beneath - a field-notes hierarchy, not a "A -> B" data dump. */}
+          {/* key clues / evidence */}
           {marker.clues && marker.clues.length > 0 && (
-            <div className="pt-1">
-              <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+            <div className="mt-5 pt-1">
+              <p className="mb-2.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
                 Key clues
               </p>
-              <ul className="space-y-3.5">
+              <ul className="space-y-2.5">
                 {marker.clues.map((c, i) => (
-                  <li key={i} className="border-l border-white/[0.09] pl-3">
-                    <p className="text-[13px] font-medium leading-snug text-fg/90">{c.sign}</p>
-                    <p className="mt-1 text-[12px] leading-relaxed text-fg-muted/80">{c.implies}</p>
+                  <li key={i} className="flex gap-2.5 text-[13px] leading-snug">
+                    <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-fg-muted/50" />
+                    <span className="min-w-0">
+                      <span className="text-fg/85">{c.sign}</span>
+                      <span className="px-1 font-mono text-fg-muted/40">→</span>
+                      <span className="text-fg-muted">{c.implies}</span>
+                    </span>
                   </li>
                 ))}
               </ul>
