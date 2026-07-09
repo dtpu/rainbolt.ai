@@ -514,21 +514,18 @@ function ResultPanel({
             </div>
           )}
 
-          {/* key clues / evidence */}
+          {/* key clues / evidence: observation on top, what it reads as
+              beneath - a field-notes hierarchy, not a "A -> B" data dump. */}
           {marker.clues && marker.clues.length > 0 && (
             <div className="pt-1">
-              <p className="mb-2.5 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
+              <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted/60">
                 Key clues
               </p>
-              <ul className="space-y-2.5">
+              <ul className="space-y-3.5">
                 {marker.clues.map((c, i) => (
-                  <li key={i} className="flex gap-2.5 text-[13px] leading-snug">
-                    <span className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-fg-muted/50" />
-                    <span className="min-w-0">
-                      <span className="text-fg/85">{c.sign}</span>
-                      <span className="px-1 font-mono text-fg-muted/40">→</span>
-                      <span className="text-fg-muted">{c.implies}</span>
-                    </span>
+                  <li key={i} className="border-l border-white/[0.09] pl-3">
+                    <p className="text-[13px] font-medium leading-snug text-fg/90">{c.sign}</p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-fg-muted/80">{c.implies}</p>
                   </li>
                 ))}
               </ul>
