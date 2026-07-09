@@ -123,7 +123,7 @@ export default function WorldGlobe() {
         vec3 p = position + jit + nn * (relief + flow + scatter + vGlow*0.010);
         vec4 mvPos = modelViewMatrix*vec4(p,1.0); vec3 vN=normalMatrix*normal;
         vVisible=step(0.0,dot(-normalize(mvPos.xyz),normalize(vN)));
-        gl_PointSize=size*(1.0 + uZoom*0.18); gl_Position=projectionMatrix*mvPos; }`;
+        gl_PointSize=size*(1.0 + uZoom*1.15); gl_Position=projectionMatrix*mvPos; }`; // grow with zoom so dots fill into readable land, not tiny specks in a widening grid
     const POINT_FRAG = `
       uniform sampler2D alphaTexture, otherTexture; uniform float uZoom, uDense;
       varying vec2 vUv; varying float vVisible; varying float vGlow;
@@ -397,8 +397,10 @@ export default function WorldGlobe() {
         u.uTime.value = t;
       }
       densePoints.visible = baseMat.uniforms.uZoom.value > 0.32; // density LOD: off at rest, on only when zoomed in
-      wireMat.opacity = 0.6 * Math.max(0, 1 - baseMat.uniforms.uZoom.value * 1.2); // triangles fade with zoom
-      wireMesh.visible = wireMat.opacity > 0.02; // and fully off up close
+      // Triangles fade out with zoom - the enlarged dots now carry the land
+      // shape up close, so the net just adds noise there.
+      wireMat.opacity = 0.6 * Math.max(0, 1 - baseMat.uniforms.uZoom.value * 1.2);
+      wireMesh.visible = wireMat.opacity > 0.02;
 
       if (frame % 3 === 0 && !isDragging) {
         const hit = pickPin();
